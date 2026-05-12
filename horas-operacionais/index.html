@@ -268,6 +268,7 @@ canvas{display:block;width:100%}
         <div class="cs" id="cs-dow"><div class="cs-btn" onclick="csToggle('cs-dow')"><span class="cs-lbl">Todos</span><span class="cs-arr">▼</span></div><div class="cs-menu"><label><input type="checkbox" value="0" onchange="csChange('dow','cs-dow')"> Seg</label><label><input type="checkbox" value="1" onchange="csChange('dow','cs-dow')"> Ter</label><label><input type="checkbox" value="2" onchange="csChange('dow','cs-dow')"> Qua</label><label><input type="checkbox" value="3" onchange="csChange('dow','cs-dow')"> Qui</label><label><input type="checkbox" value="4" onchange="csChange('dow','cs-dow')"> Sex</label><label><input type="checkbox" value="5" onchange="csChange('dow','cs-dow')"> Sáb</label><label><input type="checkbox" value="6" onchange="csChange('dow','cs-dow')"> Dom</label></div></div>
       </div>
       <button class="btn-reset" onclick="resetFilters()">↺ Resetar</button>
+      <button id="btn-ocultar-lojas" class="btn-reset" onclick="toggleAllLojas()" style="background:#EEF2FF;border-color:#C7D2FE;color:#4338CA;font-weight:600">☰ Ocultar Lojas</button>
     </div>
   </div>
   <div class="content">
@@ -618,6 +619,21 @@ function applyFilters(){
   }
   renderAll();
 }
+let _lojasVisible=true;
+function toggleAllLojas(){
+  _lojasVisible=!_lojasVisible;
+  document.querySelectorAll('.loja-row').forEach(tr=>tr.style.display=_lojasVisible?'':'none');
+  document.querySelectorAll('[id^="rarr-"]').forEach(el=>el.textContent=_lojasVisible?'▼':'▶');
+  const btn=document.getElementById('btn-ocultar-lojas');
+  if(btn) btn.textContent=_lojasVisible?'☰ Ocultar Lojas':'☰ Mostrar Lojas';
+}
+function toggleRegLojas(safeReg){
+  const rows=document.querySelectorAll('.reg-'+safeReg);
+  const arrow=document.getElementById('rarr-'+safeReg);
+  const wasVisible=rows.length>0&&rows[0].style.display!=='none';
+  rows.forEach(tr=>tr.style.display=wasVisible?'none':'');
+  if(arrow) arrow.textContent=wasVisible?'▶':'▼';
+}
 function resetFilters(){
   state.canal='all';state.regional='all';state.mes='all';state.tipo_loja='all';state.dia='all';state.dow='all';
   Object.values(CS_FIELD_IDS).flat().forEach(id=>csSetVals(id,'all'));
@@ -883,32 +899,36 @@ function renderSummaryTable(){
   });
   body+='</tr>';
 
-  // Regional header → lojas → subtotal (subtotal no final do grupo)
+  // Regional row with subtotals inline + collapsible loja rows
   regionals.forEach(reg=>{
     const lojaList=DASH.loja_info.filter(l=>vl.has(l.loja_norm)&&l.regional===reg).sort((a,b)=>a.loja.localeCompare(b.loja));
     const regVals=regValsMap[reg];
-    // Regional header row
-    body+=`<tr class="reg-hdr"><td colspan="${1+METRICS.length}" class="lc">📍 ${reg}</td></tr>`;
-    // Loja rows first
-    lojaList.forEach(info=>{
-      const vals=METRICS.map(m=>calcFromT4(new Set([info.loja_norm]),m.cLbl,m.tKey));
-      body+=`<tr><td class="lc" style="padding-left:28px;font-size:.76rem">${info.loja}</td>`;
-      vals.forEach((v,i)=>{body+=`<td>${pv(v,regVals[i])}</td>`;});
-      body+='</tr>';
-    });
-    // Subtotal row at the bottom of the group — visually prominent indigo
-    body+='<tr style="background:#EEF2FF;border-top:2px solid #C7D2FE;border-bottom:2px solid #C7D2FE">';
-    body+=`<td class="lc" style="padding-left:14px;font-weight:700;color:#4338CA;font-size:.78rem">↳ Subtotal ${reg}</td>`;
+    const safeReg=reg.replace(/[^a-z0-9]/gi,'_');
+    // Regional row with subtotal values inline + toggle arrow
+    body+=`<tr class="reg-hdr" style="cursor:pointer" onclick="toggleRegLojas('${safeReg}')">`;
+    body+=`<td class="lc" style="font-weight:700;color:#4338CA;font-size:.8rem"><span id="rarr-${safeReg}" style="font-size:.65rem;margin-right:5px;display:inline-block;transition:transform .15s">▼</span>📍 ${reg}</td>`;
     regVals.forEach((v,i)=>{
       const col=v===null?'var(--mid)':(v>=grandVals[i]?'#16A34A':'#DC2626');
       body+=`<td style="background:#EEF2FF;font-weight:800;font-size:.82rem;color:${col}">${v!==null?v.toFixed(1)+'%':'—'}</td>`;
     });
     body+='</tr>';
+    // Loja rows tagged for toggling
+    lojaList.forEach(info=>{
+      const vals=METRICS.map(m=>calcFromT4(new Set([info.loja_norm]),m.cLbl,m.tKey));
+      body+=`<tr class="loja-row reg-${safeReg}"><td class="lc" style="padding-left:28px;font-size:.76rem">${info.loja}</td>`;
+      vals.forEach((v,i)=>{body+=`<td>${pv(v,regVals[i])}</td>`;});
+      body+='</tr>';
+    });
   });
   body+='</tbody>';
 
   const wrap=document.getElementById('summary-table-wrap');
   if(wrap) wrap.innerHTML=`<table class="st">${hdr}${body}</table>`;
+  // Re-apply loja visibility after re-render
+  if(!_lojasVisible){
+    document.querySelectorAll('.loja-row').forEach(tr=>tr.style.display='none');
+    document.querySelectorAll('[id^="rarr-"]').forEach(el=>el.textContent='▶');
+  }
 }
 
 // ── Lojas page ──────────────────────────────────────────────────────────
