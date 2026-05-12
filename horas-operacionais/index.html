@@ -269,6 +269,7 @@ canvas{display:block;width:100%}
       </div>
       <button class="btn-reset" onclick="resetFilters()">↺ Resetar</button>
       <button id="btn-ocultar-lojas" class="btn-reset" onclick="toggleAllLojas()" style="background:#EEF2FF;border-color:#C7D2FE;color:#4338CA;font-weight:600">☰ Ocultar Lojas</button>
+      <button class="btn-reset" onclick="exportResumoXLSX()" style="background:#E8F7F1;border-color:#6EE7B7;color:#065F46;font-weight:600">⬇ Exportar Excel</button>
     </div>
   </div>
   <div class="content">
@@ -618,6 +619,54 @@ function applyFilters(){
     ['f2-dia','f3-dia','f5-dia'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=v;});
   }
   renderAll();
+}
+function exportResumoXLSX(){
+  const tbl=document.querySelector('#summary-table-wrap table');
+  if(!tbl){alert('Tabela não encontrada.');return;}
+
+  // Build Excel-compatible HTML (opens natively no Excel sem dependências)
+  const styles=`
+    <style>
+      body{font-family:Calibri,Arial,sans-serif;font-size:11pt}
+      table{border-collapse:collapse;width:100%}
+      th,td{border:1px solid #D1D5DB;padding:5px 8px;white-space:nowrap}
+      thead th{background:#1a1d21;color:#ffffff;font-weight:bold;text-align:center}
+      .reg-hdr td{background:#EEF2FF;color:#4338CA;font-weight:bold}
+      tr:not(.reg-hdr):not(:first-child) td:first-child{padding-left:20px}
+      tr:first-child td{background:#F0F2F5;font-weight:bold}
+    </style>`;
+
+  // Clone table to strip onclick/class noise but keep structure
+  const clone=tbl.cloneNode(true);
+  // Remove arrow spans from regional rows
+  clone.querySelectorAll('[id^="rarr-"]').forEach(el=>el.remove());
+
+  const now=new Date();
+  const dt=`${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
+  const mes=state.mes==='all'?'Período Todo':state.mes;
+  const canal=state.canal==='all'?'Todos os Canais':state.canal;
+
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:x="urn:schemas-microsoft-com:office:excel"
+    xmlns="http://www.w3.org/TR/REC-html40">
+  <head><meta charset="UTF-8">${styles}</head>
+  <body>
+    <p style="font-size:13pt;font-weight:bold;margin-bottom:4px">Resumo Operacional — Horas Operacionais</p>
+    <p style="font-size:10pt;color:#6B7280;margin-bottom:12px">Exportado em ${dt} · Filtros: ${mes} · ${canal}</p>
+    ${clone.outerHTML}
+  </body></html>`;
+
+  const blob=new Blob(['﻿'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const fileDate=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const fileMes=state.mes==='all'?'PeriodoTodo':state.mes.replace('-','');
+  a.download=`Horas_Operacionais_Resumo_${fileMes}_${fileDate}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 let _lojasVisible=true;
 function toggleAllLojas(){
