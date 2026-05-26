@@ -233,6 +233,16 @@ canvas{display:block;width:100%}
 .gran-btn{padding:4px 12px;border:none;background:transparent;font-size:.72rem;font-weight:600;color:var(--mid);cursor:pointer;font-family:var(--font);transition:all .15s}
 .gran-btn.active{background:var(--red);color:#fff}
 .gran-btn:hover:not(.active){background:var(--bg)}
+/* ── Analysis Box ── */
+.insight-list{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+.insight-item{display:flex;align-items:flex-start;gap:10px;padding:9px 13px;border-radius:8px;font-size:.78rem;line-height:1.45}
+.insight-item.good{background:#F0FDF4;border-left:3px solid #22C55E}
+.insight-item.warn{background:#FEFCE8;border-left:3px solid #F59E0B}
+.insight-item.alert{background:var(--red-soft);border-left:3px solid var(--red)}
+.insight-item.info{background:var(--bg);border-left:3px solid var(--light)}
+.insight-icon{font-size:.95rem;flex-shrink:0;margin-top:1px}
+.insight-text{color:var(--dark)}
+.insight-text strong{font-weight:700}
 </style>
 
 <!--[if gte mso 9]><xml>
@@ -432,6 +442,14 @@ canvas{display:block;width:100%}
       <div class="cw" style="height:380px"><canvas id="c-evol-dia"></canvas></div>
     </div>
   </div>
+  <div class="content">
+    <div class="panel" id="evol-analysis-panel">
+      <div class="panel-head">
+        <div class="panel-title">🔍 Destaques da Análise</div>
+      </div>
+      <div id="evol-analysis-body"><p class="nodata">Carregando…</p></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ PAGE: HORÁRIO ═════════════════════════════════════════════════ -->
@@ -453,6 +471,10 @@ canvas{display:block;width:100%}
         <button class="fp-close" onclick="closeFP(3)">✕</button>
       </div>
       <div class="fp-grid">
+        <div class="fp-group full">
+          <div class="fp-lbl">Loja</div>
+          <select id="f3-loja" onchange="applyHorLoja(this.value)"><option value="all">Todas</option></select>
+        </div>
         <div class="fp-group">
           <div class="fp-lbl">Canal</div>
           <div class="cs" id="cs3-canal"><div class="cs-btn" onclick="csToggle('cs3-canal')"><span class="cs-lbl">Todos</span><span class="cs-arr">▼</span></div><div class="cs-menu"><label><input type="checkbox" value="Delivery" onchange="csChange('canal','cs3-canal')"> Delivery</label><label><input type="checkbox" value="Salão" onchange="csChange('canal','cs3-canal')"> Salão</label></div></div>
@@ -527,6 +549,10 @@ canvas{display:block;width:100%}
         <button class="fp-close" onclick="closeFP(5)">✕</button>
       </div>
       <div class="fp-grid">
+        <div class="fp-group full">
+          <div class="fp-lbl">Loja</div>
+          <select id="f5-loja" onchange="applyHmLoja(this.value)"><option value="all">Todas</option></select>
+        </div>
         <div class="fp-group full">
           <div class="fp-lbl">Canal</div>
           <div style="display:flex;gap:16px;flex-wrap:wrap;padding:4px 0">
@@ -615,7 +641,7 @@ const TURNO_SOLID={
   'Jantar':'#C0392B',
   'Madrugada':'#8E44AD'
 };
-const state={canal:'all',regional:'all',mes:'all',evol_loja:'all',tipo_loja:'all',dia:'all',semana:'all',dow:'all',evol_gran:'dia'};
+const state={canal:'all',regional:'all',mes:'all',evol_loja:'all',hor_loja:'all',hm_loja:'all',tipo_loja:'all',dia:'all',semana:'all',dow:'all',evol_gran:'dia'};
 
 // ── CS Checkbox Dropdown component ──────────────────────────────────────────
 function csToggle(csId){
@@ -835,18 +861,20 @@ function updateFilterBadge(){
   const n=[state.canal,state.regional,state.mes,state.semana,state.tipo_loja,state.dia,state.dow].filter(isActive).length;
   const nEvol=n+(state.evol_loja!=='all'?1:0);
   const hmCanal=(document.querySelector('input[name="hm-c"]:checked')||{}).value||'all';
-  const n5=n+(hmCanal!=='all'?1:0);
-  [{id:'filter-badge',btn:'btn-filtros',cnt:n},{id:'filter-badge2',btn:'btn-filtros2',cnt:nEvol},{id:'filter-badge3',btn:'btn-filtros3',cnt:n},{id:'filter-badge5',btn:'btn-filtros5',cnt:n5}]
+  const n3=n+(state.hor_loja!=='all'?1:0);
+  const n5=n+(hmCanal!=='all'?1:0)+(state.hm_loja!=='all'?1:0);
+  [{id:'filter-badge',btn:'btn-filtros',cnt:n},{id:'filter-badge2',btn:'btn-filtros2',cnt:nEvol},{id:'filter-badge3',btn:'btn-filtros3',cnt:n3},{id:'filter-badge5',btn:'btn-filtros5',cnt:n5}]
   .forEach(({id,btn,cnt})=>{
     const b=document.getElementById(id);if(b){b.textContent=cnt;b.style.display=cnt>0?'inline-block':'none';}
     const el=document.getElementById(btn);if(el)el.classList.toggle('has-active',cnt>0);
   });
 }
 function resetFilters(){
-  state.canal='all';state.regional='all';state.mes='all';state.tipo_loja='all';state.dia='all';state.semana='all';state.dow='all';
+  state.canal='all';state.regional='all';state.mes='all';state.tipo_loja='all';state.dia='all';state.semana='all';state.dow='all';state.hor_loja='all';state.hm_loja='all';
   Object.values(CS_FIELD_IDS).flat().forEach(id=>csSetVals(id,'all'));
   ['f-dia','f2-dia','f3-dia','f5-dia'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='all';});
   const semEl=document.getElementById('f-sem');if(semEl)semEl.value='all';
+  ['f3-loja','f5-loja'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='all';});
   document.querySelectorAll('input[name="hm-c"]').forEach(r=>{r.checked=(r.value==='all');});
   updateDiaOptions();
   renderAll();
@@ -1280,11 +1308,13 @@ function renderSummaryTable(){
 function slotToTime(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 // ── Lojas page ──────────────────────────────────────────────────────────
 function applyEvolLoja(val){state.evol_loja=val;renderEvolucao();}
+function applyHorLoja(val){state.hor_loja=val;renderHorario();}
+function applyHmLoja(val){state.hm_loja=val;renderHeatmap();}
 function resetEvolFilters(){
-  state.evol_loja='all';state.canal='all';state.mes='all';state.tipo_loja='all';state.dia='all';state.dow='all';
+  state.evol_loja='all';state.hor_loja='all';state.hm_loja='all';state.canal='all';state.mes='all';state.tipo_loja='all';state.dia='all';state.dow='all';
   Object.values(CS_FIELD_IDS).flat().forEach(id=>csSetVals(id,'all'));
   ['f-dia','f2-dia','f3-dia','f5-dia'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='all';});
-  const lojaEl=document.getElementById('f2-loja');if(lojaEl)lojaEl.value='all';
+  ['f2-loja','f3-loja','f5-loja'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='all';});
   updateDiaOptions();
   renderAll();
 }
@@ -1389,13 +1419,15 @@ function svgLineEvol(id,labels,datasets,gran){
   _svgR(id,(W,H)=>{
     const twoLine=gran==='dia'&&labels.length>0&&labels[0].includes('|');
     const nDS=datasets.length;
-    // Legend: 2 cols when 4 datasets (each col ~90px)
-    const legendW=nDS>2?188:100;
-    const mg={t:26,r:legendW,b:twoLine?48:36,l:34};
+    // Legend below chart — libera toda a largura para o gráfico
+    const legH=22;
+    const mg={t:26,r:10,b:(twoLine?48:36)+legH,l:34};
     const iW=W-mg.l-mg.r,iH=H-mg.t-mg.b,n=labels.length;
     if(n===0)return'<text x="50%" y="50%" text-anchor="middle" fill="#9CA3AF" font-family="sans-serif" font-size="12">Sem dados</text>';
     let s=_yg(mg,iW,iH);
-    const maxLbls=Math.max(1,Math.floor(iW/32));
+    // X-axis: step menor para mostrar todos os dias possíveis
+    const minPxPerLbl=twoLine?22:28;
+    const maxLbls=Math.max(1,Math.floor(iW/minPxPerLbl));
     const step=Math.max(1,Math.ceil(n/maxLbls));
     // X-axis labels
     labels.forEach((lbl,i)=>{
@@ -1403,27 +1435,30 @@ function svgLineEvol(id,labels,datasets,gran){
       const x=(mg.l+(i/(Math.max(n-1,1)))*iW).toFixed(1);
       if(twoLine){
         const parts=lbl.split('|');
-        s+=`<text x="${x}" y="${(H-28).toFixed(1)}" text-anchor="middle" fill="#9CA3AF" font-size="9" font-family="sans-serif">${parts[0]}</text>`;
-        s+=`<text x="${x}" y="${(H-16).toFixed(1)}" text-anchor="middle" fill="#C4B0C0" font-size="8" font-family="sans-serif">${parts[1]}</text>`;
+        s+=`<text x="${x}" y="${(mg.t+iH+16).toFixed(1)}" text-anchor="middle" fill="#9CA3AF" font-size="9" font-family="sans-serif">${parts[0]}</text>`;
+        s+=`<text x="${x}" y="${(mg.t+iH+28).toFixed(1)}" text-anchor="middle" fill="#C4B0C0" font-size="8" font-family="sans-serif">${parts[1]}</text>`;
       }else{
-        s+=`<text x="${x}" y="${(H-6).toFixed(1)}" text-anchor="middle" fill="#9CA3AF" font-size="9" font-family="sans-serif">${lbl}</text>`;
+        s+=`<text x="${x}" y="${(mg.t+iH+14).toFixed(1)}" text-anchor="middle" fill="#9CA3AF" font-size="9" font-family="sans-serif">${lbl}</text>`;
       }
     });
-    // Draw lines + legend (2-column layout when nDS>2)
-    const legX0=W-mg.r+6,legColW=90;
+    // Draw lines
     datasets.forEach((ds,di)=>{
       const pts=ds.data.map((v,i)=>`${(mg.l+(i/(Math.max(n-1,1)))*iW).toFixed(1)},${(mg.t+iH*(1-v/100)).toFixed(1)}`);
       if(di===0&&!ds.nofill)s+=`<polygon points="${mg.l},${(mg.t+iH).toFixed(1)} ${pts.join(' ')} ${(mg.l+iW).toFixed(1)},${(mg.t+iH).toFixed(1)}" fill="rgba(192,57,43,.06)"/>`;
       const dash=ds.dashed?'stroke-dasharray="6,4"':'';
       s+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${ds.borderColor}" stroke-width="${ds.borderWidth||1.5}" stroke-linejoin="round" ${dash}/>`;
-      // Legend: 2-col when nDS>2
-      const col=nDS>2?di%2:0,row=nDS>2?Math.floor(di/2):di;
-      const lx=legX0+col*legColW,ly=22+row*20;
-      s+=`<line x1="${lx}" y1="${ly}" x2="${lx+14}" y2="${ly}" stroke="${ds.borderColor}" stroke-width="2" ${dash}/>`;
-      s+=`<text x="${lx+18}" y="${(ly+4).toFixed(1)}" fill="#6B7280" font-size="10" font-family="sans-serif">${ds.label}</text>`;
     });
-    // Dots + value labels at step positions
-    // Label offsets per dataset index to minimise overlap (Total above, Almoço below, Jantar above-mid)
+    // Legenda horizontal centralizada abaixo do eixo X
+    const itemW=82,legTotalW=nDS*itemW;
+    const legX0=mg.l+(iW-legTotalW)/2;
+    const legY=H-8;
+    datasets.forEach((ds,di)=>{
+      const dash=ds.dashed?'stroke-dasharray="6,4"':'';
+      const lx=legX0+di*itemW;
+      s+=`<line x1="${lx}" y1="${legY}" x2="${lx+14}" y2="${legY}" stroke="${ds.borderColor}" stroke-width="2" ${dash}/>`;
+      s+=`<text x="${lx+18}" y="${(legY+4).toFixed(1)}" fill="#6B7280" font-size="10" font-family="sans-serif">${ds.label}</text>`;
+    });
+    // Dots + value labels
     const lblOffsets=[-11,+13,-4,+8];
     const dotR=n>20?1.8:3;
     datasets.forEach((ds,di)=>{
@@ -1485,10 +1520,146 @@ function renderEvolucao(){
   ],gran);
   const badge=document.getElementById('evol-dia-badge');
   if(badge)badge.textContent=(state.evol_loja==='all'?'Todas as lojas':lojaName(state.evol_loja))+(state.canal==='all'?'':' · '+state.canal);
+  renderEvolAnalysis();
 }
+// ── Evolução Analysis Box ────────────────────────────────────────────────
+function renderEvolAnalysis(){
+  const body=document.getElementById('evol-analysis-body');
+  if(!body||!DASH)return;
+  // ── Insights gerados por IA (prioridade máxima) ───────────────────────────
+  if(DASH.ai_insights&&DASH.ai_insights.length>0){
+    const dt=DASH.ai_insights_date?`<div style="font-size:.65rem;color:var(--mid);text-align:right;margin-bottom:6px;font-style:italic">✨ Análise IA · ${DASH.ai_insights_date}</div>`:'';
+    body.innerHTML=dt+'<div class="insight-list">'+DASH.ai_insights.map(ins=>`<div class="insight-item ${ins.type||'info'}"><span class="insight-icon">${ins.icon||'ℹ️'}</span><span class="insight-text">${ins.text}</span></div>`).join('')+'</div>';
+    return;
+  }
+  // ── Fallback: análise por regras JS ──────────────────────────────────────
+  if(!DASH.tbl2)return;
+  let t2cur=ft2eff();
+  if(state.evol_loja!=='all')t2cur=t2cur.filter(r=>r.loja_norm===state.evol_loja);
+  if(t2cur.length===0){body.innerHTML='<p class="nodata">Sem dados para o período selecionado.</p>';return;}
+  const slots=Object.keys(DASH.slot_labels||{}).map(Number).sort((a,b)=>a-b);
+  const slotLabels=DASH.slot_labels||{};
+  const slotTurnos=DASH.slot_turnos||{};
+  // Current slot aggregation (with all filters)
+  const curSlot={};
+  t2cur.forEach(r=>{
+    if(!curSlot[r.slot])curSlot[r.slot]={p:0,h:0,lojas:{}};
+    curSlot[r.slot].p+=r.planned;curSlot[r.slot].h+=r.has_sale;
+    if(!curSlot[r.slot].lojas[r.loja_norm])curSlot[r.slot].lojas[r.loja_norm]={p:0,h:0};
+    curSlot[r.slot].lojas[r.loja_norm].p+=r.planned;curSlot[r.slot].lojas[r.loja_norm].h+=r.has_sale;
+  });
+  // Historical baseline: loja/canal/regional filters only, all months
+  const vl=validLojas();
+  const lojas=state.evol_loja==='all'?[...vl]:[state.evol_loja];
+  const canais=['Salão','Delivery'].filter(c=>inFilter(c,state.canal));
+  const histData=DASH.tbl2.filter(r=>lojas.includes(r.loja_norm)&&canais.includes(r.canal));
+  // Per-month slot stats for std dev
+  const monthSlotMap={};
+  histData.forEach(r=>{
+    if(!monthSlotMap[r.mes])monthSlotMap[r.mes]={};
+    if(!monthSlotMap[r.mes][r.slot])monthSlotMap[r.mes][r.slot]={p:0,h:0};
+    monthSlotMap[r.mes][r.slot].p+=r.planned;monthSlotMap[r.mes][r.slot].h+=r.has_sale;
+  });
+  const slotHist={};
+  slots.forEach(s=>{
+    const vals=Object.values(monthSlotMap).map(m=>m[s]).filter(Boolean).map(d=>pct(d.h,d.p)).filter(v=>v!==null);
+    if(vals.length<2)return;
+    const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const variance=vals.reduce((a,v)=>a+(v-mean)**2,0)/vals.length;
+    slotHist[s]={mean,std:Math.sqrt(variance),n:vals.length};
+  });
+  // Foco em Almoço e Jantar para todas as análises
+  const FOCUS=['Almoço','Jantar'];
+  const TURNO_ICON={'Almoço':'☀️','Jantar':'🍽️'};
+  const insights=[];
+  // Helper: pior dia (T5) para um turno dentro dos filtros ativos
+  function worstDayT5(turno){
+    const dows=activeDow();
+    const dayAgg={};
+    lojas.forEach(ln=>{canais.forEach(c=>{
+      const tdata=((T5[ln]||{})[c]||{})[turno]||{};
+      Object.entries(tdata).forEach(([date,pv])=>{
+        if(!inFilter(date.slice(0,7),state.mes))return;
+        if(state.dia!=='all'&&date!==state.dia)return;
+        if(dows!==null){const dt=new Date(date+'T12:00:00');const dow=dt.getDay()===0?6:dt.getDay()-1;if(!dows.includes(dow))return;}
+        if(!dayAgg[date])dayAgg[date]=[0,0];
+        dayAgg[date][0]+=pv[0];dayAgg[date][1]+=pv[1];
+      });
+    });});
+    const entries=Object.entries(dayAgg).map(([date,[p,h]])=>({date,v:pct(h,p)})).filter(x=>x.v!==null);
+    if(entries.length<2)return null;
+    entries.sort((a,b)=>a.v-b.v);
+    const w=entries[0];
+    const dt=new Date(w.date+'T12:00:00');
+    const WD2=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    return{fmt:String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+' ('+WD2[dt.getDay()]+')',v:w.v};
+  }
+  const allSlotPcts=slots.map(s=>({slot:s,pct:curSlot[s]?pct(curSlot[s].h,curSlot[s].p):null,turno:slotTurnos[String(s)]}));
+  // 1. Melhor horário por turno de foco (Almoço e Jantar separados)
+  FOCUS.forEach(turno=>{
+    const tp=allSlotPcts.filter(x=>x.turno===turno&&x.pct!==null&&x.pct>0);
+    if(tp.length===0)return;
+    const best=tp.reduce((a,b)=>b.pct>a.pct?b:a);
+    insights.push({type:'good',icon:TURNO_ICON[turno],priority:2,score:best.pct,text:`Melhor horário de <strong>${turno}</strong>: <strong>${slotLabels[String(best.slot)]||''}</strong> com <strong>${best.pct}%</strong> de compliance`});
+  });
+  // 2. Anomalias nos turnos de foco (1.5× desvio padrão abaixo da média histórica) + pior dia
+  const anomalies=[];
+  slots.forEach(s=>{
+    const turno=slotTurnos[String(s)]||'';
+    if(!FOCUS.includes(turno))return;
+    const cur=curSlot[s];const hist=slotHist[s];
+    if(!cur||!hist||hist.n<3)return;
+    const cp=pct(cur.h,cur.p);if(cp===null)return;
+    const threshold=hist.mean-1.5*hist.std;
+    if(cp<threshold&&hist.std>3)anomalies.push({slot:s,curPct:cp,histMean:Math.round(hist.mean*10)/10,histStd:Math.round(hist.std*10)/10,deviation:hist.mean-cp,lbl:slotLabels[String(s)]||'',turno});
+  });
+  anomalies.sort((a,b)=>b.deviation-a.deviation);
+  anomalies.slice(0,2).forEach((top,i)=>{
+    const wd=worstDayT5(top.turno);
+    const wdTxt=wd?` — pior dia: <strong>${wd.fmt}</strong> (${wd.v}%)`:'';
+    insights.push({type:i===0?'alert':'warn',icon:'⚠️',priority:1,score:top.deviation,text:`Queda anormal no <strong>${top.turno}</strong> (${top.lbl}): <strong>${top.curPct}%</strong> vs histórico ${top.histMean}% ±${top.histStd}pp${wdTxt}`});
+  });
+  // 3. Loja com intervalos consecutivos sem vendas — apenas Almoço e Jantar
+  const FOCUS_CONSEC=['Almoço','Jantar'];
+  const allLojas=state.evol_loja!=='all'?[state.evol_loja]:lojas;
+  const lojaConsec=[];
+  allLojas.forEach(ln=>{
+    FOCUS_CONSEC.forEach(turno=>{
+      const tSlots=slots.filter(s=>slotTurnos[String(s)]===turno);
+      if(tSlots.length===0)return;
+      const vals=tSlots.map(s=>{const d=curSlot[s]&&curSlot[s].lojas[ln];return d?pct(d.h,d.p):null;});
+      let maxRun=0,maxStart=-1,maxEnd=-1,run=0,runStart=0;
+      vals.forEach((v,i)=>{if(v===0){if(run===0)runStart=i;run++;if(run>maxRun){maxRun=run;maxStart=runStart;maxEnd=i;}}else run=0;});
+      if(maxRun>=2)lojaConsec.push({loja:ln,turno,run:maxRun,startLbl:slotLabels[String(tSlots[maxStart])]||'',endLbl:slotLabels[String(tSlots[maxEnd])]||''});
+    });
+  });
+  lojaConsec.sort((a,b)=>b.run-a.run);
+  if(lojaConsec.length>0){
+    const top=lojaConsec[0];
+    insights.push({type:'alert',icon:'🔴',priority:1,score:top.run,text:`<strong>${lojaName(top.loja)}</strong> com <strong>${top.run} intervalos seguidos</strong> sem vendas no <strong>${top.turno}</strong> (${top.startLbl}–${top.endLbl})`});
+  }
+  // 4. Compliance por turno de foco vs histórico
+  FOCUS.forEach(turno=>{
+    const curT=t2cur.filter(r=>slotTurnos[String(r.slot)]===turno);
+    const histT=histData.filter(r=>slotTurnos[String(r.slot)]===turno);
+    const cp=pct(curT.reduce((a,r)=>a+r.has_sale,0),curT.reduce((a,r)=>a+r.planned,0));
+    const hp=pct(histT.reduce((a,r)=>a+r.has_sale,0),histT.reduce((a,r)=>a+r.planned,0));
+    if(cp===null||hp===null)return;
+    const diff=Math.round((cp-hp)*10)/10;
+    const type=diff>=5?'good':diff<=-5?'warn':'info';
+    insights.push({type,icon:diff>=5?'📈':diff<=-5?'📉':TURNO_ICON[turno],priority:3,score:Math.abs(diff),text:`<strong>${turno}</strong>: <strong>${cp}%</strong> de compliance no período (histórico: ${hp}%)${diff!==0?' – <strong>'+(diff>0?'+':'')+diff+'pp</strong>':''}`});
+  });
+  // Sort by priority then score, top 5
+  insights.sort((a,b)=>a.priority!==b.priority?a.priority-b.priority:b.score-a.score);
+  const top5=insights.slice(0,5);
+  if(top5.length===0){body.innerHTML='<p class="nodata">Nenhum destaque encontrado.</p>';return;}
+  body.innerHTML='<div class="insight-list">'+top5.map(ins=>`<div class="insight-item ${ins.type}"><span class="insight-icon">${ins.icon}</span><span class="insight-text">${ins.text}</span></div>`).join('')+'</div>';
+}
+
 // ── Horário ───────────────────────────────────────────────────────────────
 function renderHorario(){
-  const t2=ft2eff();
+  let t2=ft2eff();
+  if(state.hor_loja!=='all')t2=t2.filter(r=>r.loja_norm===state.hor_loja);
   const slots=DASH.slot_labels?Object.keys(DASH.slot_labels).map(Number).sort((a,b)=>a-b):[];
   const labels=slots.map(s=>DASH.slot_labels[String(s)]||'');
   const values=slots.map(s=>{const rows=t2.filter(r=>r.slot===s);return pct(rows.reduce((a,r)=>a+r.has_sale,0),rows.reduce((a,r)=>a+r.planned,0))||0;});
@@ -1510,7 +1681,7 @@ function renderHeatmap(){
   const vl=validLojas();
   const t2=ft2effHm(hmCanal);
   const slots=DASH.slot_labels?Object.keys(DASH.slot_labels).map(Number).sort((a,b)=>a-b):[];
-  const lojas=[...vl].sort((a,b)=>lojaName(a).localeCompare(lojaName(b)));
+  const lojas=(state.hm_loja!=='all'?[state.hm_loja]:[...vl]).sort((a,b)=>lojaName(a).localeCompare(lojaName(b)));
   const agg={};
   t2.forEach(r=>{
     const k=r.loja_norm+':'+r.slot;
@@ -1563,12 +1734,11 @@ function renderHeatmap(){
   DASH=JSON.parse(await _decompress(_DASH_GZ));
   T5=JSON.parse(await _decompress(_T5_GZ));
   // Populate dropdowns
-  const lojaSel2=document.getElementById('f2-loja');
-  if(lojaSel2){
-    DASH.loja_info.slice().sort((a,b)=>a.loja.localeCompare(b.loja,'pt')).forEach(l=>{
-      const o=document.createElement('option');o.value=l.loja_norm;o.textContent=l.loja;lojaSel2.appendChild(o);
-    });
-  }
+  const sortedLojas=DASH.loja_info.slice().sort((a,b)=>a.loja.localeCompare(b.loja,'pt'));
+  ['f2-loja','f3-loja','f5-loja'].forEach(selId=>{
+    const sel=document.getElementById(selId);
+    if(sel)sortedLojas.forEach(l=>{const o=document.createElement('option');o.value=l.loja_norm;o.textContent=l.loja;sel.appendChild(o);});
+  });
   // Populate Regional CS checkboxes
   DASH.regionals.forEach(reg=>{
     ['cs-regional','cs3-regional','cs5-regional'].forEach(csId=>{
