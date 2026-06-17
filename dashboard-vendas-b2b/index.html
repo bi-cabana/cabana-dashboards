@@ -132,6 +132,7 @@ body.dark-mode .rfm-legend-title{color:var(--brand)}
 .pipe-hdr .num{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 .pipe-hdr h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.2}
 .pipe-hdr p{font-size:12px;color:var(--text3);margin-top:2px;line-height:1.4}
+.sub-ano{font-size:10.5px;color:var(--text3);font-weight:400;margin-top:1px}
 .act{display:inline-block;padding:3px 9px;border-radius:7px;background:var(--brand-l);color:var(--brand-d);font-size:11.5px;font-weight:600;white-space:nowrap}
 .act.urgent{background:#fee2e2;color:#b91c1c}
 .act.warn{background:#fef3c7;color:#92400e}
@@ -926,9 +927,9 @@ function renderPipeline(){
 
   const linhasPot=topGap.map(o=>{const a=acaoPot(o);return `<tr>
     <td>${o.nome}</td><td>${o.vendNome}</td>
-    <td class="num">${BRL(o.val12)}</td>
-    <td class="num">${BRL(o.potencial)}</td>
-    <td class="num"><b>${BRL(o.gap)}</b></td>
+    <td class="num">${BRL(o.val12/12)}<div class="sub-ano">${BRL(o.val12)}/ano</div></td>
+    <td class="num">${BRL(o.potencial/12)}<div class="sub-ano">${BRL(o.potencial)}/ano</div></td>
+    <td class="num"><b>${BRL(o.gap/12)}</b><div class="sub-ano">${BRL(o.gap)}/ano</div></td>
     <td class="num">${PCT(o.captura*100)}</td>
     <td><span class="act ${a[1]}">${a[0]}</span></td></tr>`;}).join('');
 
@@ -936,7 +937,7 @@ function renderPipeline(){
     <td>${x.nome}</td><td>${x.vend}</td>
     <td>${x.prod}</td>
     <td class="num">${PCT(x.pen*100)}</td>
-    <td class="num">${BRL(x.recPot)}</td>
+    <td class="num">${BRL(x.recPot/12)}<div class="sub-ano">${BRL(x.recPot)}/ano</div></td>
     <td><span class="badge ${pl[1]}">${pl[0]}</span></td>
     <td><span class="act">Apresentar linha: ${x.prod}</span></td></tr>`;}).join('');
 
@@ -944,12 +945,12 @@ function renderPipeline(){
   <div class="page-intro">CRM analítico: lista priorizada de oportunidades comerciais. Cruza RFM, frequência, recência, receita e mix para indicar <b>quem trabalhar</b> e <b>qual ação executar</b>. Respeita os filtros de vendedor/cliente; o filtro de data é ignorado (usa todo o histórico, janela de 12 meses até ${fmtDate(DMAX)}).</div>
 
   <div class="kpi-grid">
-    ${kpi('Receita em risco',BRL(receitaRisco),emRisco.length+' clientes Em risco/Crítico','neg','c-red')}
-    ${kpi('Potencial de carteira',BRL(naoCapturado),'white space não capturado (12m)','neu','c-grn')}
-    ${kpi('Potencial de cross-sell',BRL(crossTotal),cross.length+' oportunidades mapeadas','neu','c-blu')}
-    ${kpi('Oportunidade total mapeada',BRL(oportTotal),'risco + carteira + cross-sell','neu','c-pur')}
+    ${kpi('Receita em risco (12m)',BRL(receitaRisco),emRisco.length+' clientes Em risco/Crítico','neg','c-red')}
+    ${kpi('Potencial de carteira / mês',BRL(naoCapturado/12),BRL(naoCapturado)+' /ano','neu','c-grn')}
+    ${kpi('Potencial de cross-sell / mês',BRL(crossTotal/12),BRL(crossTotal)+' /ano · '+cross.length+' oport.','neu','c-blu')}
+    ${kpi('Oportunidade total / ano',BRL(oportTotal),'risco + carteira + cross-sell (anual)','neu','c-pur')}
   </div>
-  <div class="page-intro" style="margin-top:-6px">A "Oportunidade total" é uma referência consolidada — soma receita histórica em risco com potenciais anuais; use cada bloco para a leitura precisa.</div>
+  <div class="page-intro" style="margin-top:-6px">Carteira e cross-sell são exibidos em <b>média mensal</b> (com o anual ao lado); recuperação e "receita em risco" ficam em base de 12 meses. A "Oportunidade total" é uma referência anual consolidada — use cada bloco para a leitura precisa.</div>
 
   <div class="pipe-hdr"><div class="num">1</div><div><h2>Priorização de recuperação</h2><p>Clientes valiosos perdendo frequência — ordenados por score de prioridade (receita, margem, RFM e atraso no ciclo).</p></div></div>
   <div class="card"><div class="card-header"><div class="card-title">Top 20 — maior risco de perda de receita</div><span class="card-sub">Receita em risco: ${BRL(receitaRisco)}</span></div>
@@ -960,30 +961,30 @@ function renderPipeline(){
 
   <div class="pipe-hdr"><div class="num">2</div><div><h2>Potencial de carteira (white space)</h2><p>Clientes que compram abaixo do benchmark de pares (mesma faixa de ticket). Gap = potencial anual − receita 12m.</p></div></div>
   <div class="kpi-grid">
-    ${kpi('Receita atual (12m)',BRL(recAtual),null,null,'c-blu')}
-    ${kpi('Receita potencial',BRL(recPot),null,null,'c-grn')}
-    ${kpi('Potencial não capturado',BRL(naoCapturado),PCT(recPot>0?naoCapturado/recPot*100:0)+' da carteira','neu','c-amb')}
+    ${kpi('Receita atual / mês',BRL(recAtual/12),BRL(recAtual)+' /ano','neu','c-blu')}
+    ${kpi('Receita potencial / mês',BRL(recPot/12),BRL(recPot)+' /ano','neu','c-grn')}
+    ${kpi('Potencial não capturado / mês',BRL(naoCapturado/12),BRL(naoCapturado)+' /ano · '+PCT(recPot>0?naoCapturado/recPot*100:0)+' da carteira','neu','c-amb')}
   </div>
-  <div class="card"><div class="card-header"><div class="card-title">Receita atual vs. potencial — top 12 por gap</div></div>
+  <div class="card"><div class="card-header"><div class="card-title">Receita atual vs. potencial (média mensal) — top 12 por gap</div></div>
     <div class="card-body"><div class="chart-wrap h300"><canvas id="ch-pipe-pot"></canvas></div></div></div>
   <div class="card"><div class="card-header"><div class="card-title">Top oportunidades de crescimento</div><span class="card-sub">ordenado por gap de receita</span></div>
     <div class="card-body"><div class="tbl-wrap"><table class="data-table">
-      <thead><tr><th>Cliente</th><th>Vendedor</th><th class="num">Receita atual</th><th class="num">Receita potencial</th><th class="num">Gap</th><th class="num">% captura</th><th>Ação recomendada</th></tr></thead>
+      <thead><tr><th>Cliente</th><th>Vendedor</th><th class="num">Receita atual / mês</th><th class="num">Potencial / mês</th><th class="num">Gap / mês</th><th class="num">% captura</th><th>Ação recomendada</th></tr></thead>
       <tbody>${linhasPot}</tbody>
     </table></div></div></div>
 
   <div class="pipe-hdr"><div class="num">3</div><div><h2>Oportunidades de cross-sell</h2><p>Produtos com alta penetração entre clientes comparáveis que o cliente ainda não compra. Receita potencial = média por comprador ajustada ao porte do cliente.</p></div></div>
-  <div class="card"><div class="card-header"><div class="card-title">Top oportunidades de cross-sell</div><span class="card-sub">Potencial estimado: ${BRL(crossTotal)}</span></div>
+  <div class="card"><div class="card-header"><div class="card-title">Top oportunidades de cross-sell</div><span class="card-sub">Potencial: ${BRL(crossTotal/12)}/mês · ${BRL(crossTotal)}/ano</span></div>
     <div class="card-body"><div class="tbl-wrap"><table class="data-table">
-      <thead><tr><th>Cliente</th><th>Vendedor</th><th>Linha sugerida</th><th class="num">Penetração no grupo</th><th class="num">Receita potencial</th><th>Prioridade</th><th>Ação recomendada</th></tr></thead>
+      <thead><tr><th>Cliente</th><th>Vendedor</th><th>Linha sugerida</th><th class="num">Penetração no grupo</th><th class="num">Receita potencial / mês</th><th>Prioridade</th><th>Ação recomendada</th></tr></thead>
       <tbody>${linhasCross}</tbody>
     </table></div></div></div>
   `;
 
   const cd=topGap.slice(0,12).reverse();
   charts.pipePot=new Chart(document.getElementById('ch-pipe-pot'),{type:'bar',data:{labels:cd.map(o=>o.nome.length>26?o.nome.slice(0,26)+'…':o.nome),datasets:[
-    {label:'Receita atual (12m)',data:cd.map(o=>Math.round(o.val12)),backgroundColor:PALETTE[1],borderRadius:4},
-    {label:'Receita potencial',data:cd.map(o=>Math.round(o.potencial)),backgroundColor:PALETTE[0],borderRadius:4}
+    {label:'Receita atual / mês',data:cd.map(o=>Math.round(o.val12/12)),backgroundColor:PALETTE[1],borderRadius:4},
+    {label:'Potencial / mês',data:cd.map(o=>Math.round(o.potencial/12)),backgroundColor:PALETTE[0],borderRadius:4}
   ]},options:baseOpts({indexAxis:'y',plugins:{legend:{labels:{color:tickColor(),font:{family:'DM Sans',size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+BRL(c.parsed.x)}}},scales:{x:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:9},callback:v=>BRLk(v)}},y:{grid:{display:false},ticks:{color:tickColor(),font:{size:9}}}}})});
 }
 </script>
