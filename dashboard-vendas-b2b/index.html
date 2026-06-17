@@ -127,6 +127,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 body.dark-mode .rfm-legend{background:rgba(29,158,117,.12)}
 body.dark-mode .rfm-legend-title{color:var(--brand)}
 
+/* PIPELINE */
+.pipe-hdr{display:flex;align-items:center;gap:11px;margin:22px 0 12px}
+.pipe-hdr .num{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.pipe-hdr h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.2}
+.pipe-hdr p{font-size:12px;color:var(--text3);margin-top:2px;line-height:1.4}
+.act{display:inline-block;padding:3px 9px;border-radius:7px;background:var(--brand-l);color:var(--brand-d);font-size:11.5px;font-weight:600;white-space:nowrap}
+.act.urgent{background:#fee2e2;color:#b91c1c}
+.act.warn{background:#fef3c7;color:#92400e}
+body.dark-mode .act{background:rgba(29,158,117,.18);color:#5fe0b0}
+body.dark-mode .act.urgent{background:rgba(220,38,38,.2);color:#fca5a5}
+body.dark-mode .act.warn{background:rgba(245,158,11,.2);color:#fcd34d}
+
 /* CHARTS */
 .chart-wrap{position:relative}
 .chart-wrap.h300{height:300px}.chart-wrap.h260{height:260px}.chart-wrap.h220{height:220px}
@@ -169,6 +181,9 @@ body.dark-mode .tb-title,body.dark-mode #page-title{color:#e2e8f0}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Mix de Produtos</div>
     <div class="sb-item" data-page="projecao" onclick="showPage('projecao',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Projeção do Mês</div>
+    <div class="sb-section">Comercial</div>
+    <div class="sb-item" data-page="pipeline" onclick="showPage('pipeline',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg>Pipeline de Crescimento</div>
   </div>
 </div>
 
@@ -258,7 +273,7 @@ function monthsRange(start,end){
 /* ============ NAV / THEME ============ */
 let charts={};
 function destroyCharts(){ Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}}); charts={}; }
-const PAGE_TITLES={visao:'Evolução das Vendas',pedidos:'Pedidos & Ticket Médio',frequencia:'Frequência de Compra',potencial:'Potencial de Clientes (RFM)',alertas:'Alertas de Clientes Inativos',produtos:'Mix de Produtos',projecao:'Projeção do Mês Corrente'};
+const PAGE_TITLES={visao:'Evolução das Vendas',pedidos:'Pedidos & Ticket Médio',frequencia:'Frequência de Compra',potencial:'Potencial de Clientes (RFM)',alertas:'Alertas de Clientes Inativos',produtos:'Mix de Produtos',projecao:'Projeção do Mês Corrente',pipeline:'Pipeline de Crescimento'};
 let CURRENT='visao';
 function showPage(p,el){
   CURRENT=p;
@@ -339,7 +354,7 @@ let pageState={visaoMetric:'val'};
 function render(){
   renderPills(); destroyCharts();
   const fr=filtered();
-  const fns={visao:renderVisao,pedidos:renderPedidos,frequencia:renderFrequencia,potencial:renderPotencial,alertas:renderAlertas,produtos:renderProdutos,projecao:renderProjecao};
+  const fns={visao:renderVisao,pedidos:renderPedidos,frequencia:renderFrequencia,potencial:renderPotencial,alertas:renderAlertas,produtos:renderProdutos,projecao:renderProjecao,pipeline:renderPipeline};
   (fns[CURRENT]||renderVisao)(fr);
 }
 </script>
@@ -771,7 +786,196 @@ function renderProjecao(rows){
     {type:'bar',label:'Realizado no mês (MTD)',data:mtdData,backgroundColor:PALETTE[1],borderRadius:4},
     {type:'line',label:'Projeção',data:projData,borderColor:PALETTE[2],borderDash:[6,4],borderWidth:2,pointRadius:4,pointBackgroundColor:PALETTE[2]}
   ]},options:baseOpts({plugins:{legend:{labels:{color:tickColor(),font:{family:'DM Sans',size:11}}},datalabels:dlBrlTop(),tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y!=null?BRL(c.parsed.y):'—')}}},scales:{y:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10},callback:v=>BRLk(v)}},x:{grid:{display:false},ticks:{color:tickColor(),font:{size:10}}}}})});
-}</script>
+}
+/* ============ PIPELINE DE CRESCIMENTO (CRM analítico) ============ */
+function addMonthsISO(iso,n){const d=new Date(iso);d.setMonth(d.getMonth()+n);return d.toISOString().slice(0,10);}
+function catProd(n){n=(n||'').toUpperCase();
+  if(n.includes('HAMBURG')||n.includes('SMASH')||n.includes('BURGUER')||n.includes('BURGER'))return 'Hambúrguer';
+  if(n.includes('BACON')||n.includes('FILE')||n.includes('FILÉ')||n.includes('ACEM')||n.includes('COSTELA')||n.includes('CARNE')||n.includes('LINGUI')||n.includes('FRANGO')||n.includes('MIGNON'))return 'Carnes & Frios';
+  if(n.includes('QUEIJO')||n.includes('CHEDDAR'))return 'Queijos';
+  if(n.includes('MAIONESE')||n.includes('MOLHO')||n.includes('RANCH')||n.includes('KETCHUP')||n.includes('BARBE')||n.includes('XAROPE'))return 'Molhos & Toppings';
+  if(n.includes('SORVETE')||n.includes('GELATO')||n.includes('BISCOFF'))return 'Sobremesas';
+  if(n.includes('FREEZER')||n.includes('CHAPA')||n.includes('EQUIP'))return 'Equipamentos';
+  if(n.includes('OLEO')||n.includes('ÓLEO')||n.includes('BATATA')||n.includes('PAO')||n.includes('PÃO'))return 'Insumos';
+  return 'Outros';}
+
+function renderPipeline(){
+  const base=ROWS.filter(r=>FILTER.vend.has(r.v)&&FILTER.cli.has(r.c));
+  const ref=DMAX, cut12=addMonthsISO(DMAX,-12);
+  const M=new Map();
+  for(const r of base){
+    let o=M.get(r.c);
+    if(!o){o={c:r.c,nome:CLIENTES[r.c],valTot:0,mbTot:0,val12:0,mb12:0,ords:new Map(),prods:new Set(),prods12:new Set(),vendVal:{}};M.set(r.c,o);}
+    o.valTot+=r.val;o.mbTot+=r.mb;o.prods.add(r.it);
+    o.vendVal[r.v]=(o.vendVal[r.v]||0)+r.val;
+    if(!o.ords.has(r.nf))o.ords.set(r.nf,r.d);
+    if(r.d>=cut12){o.val12+=r.val;o.mb12+=r.mb;o.prods12.add(r.it);}
+  }
+  const cli=[...M.values()];
+  if(!cli.length){C().innerHTML='<div class="page-intro">Nenhum cliente no recorte atual de filtros.</div>';return;}
+  cli.forEach(o=>{
+    const dates=[...new Set([...o.ords.values()])].sort();
+    o.nped=o.ords.size; o.first=dates[0]; o.last=dates[dates.length-1];
+    o.recencia=daysBetween(o.last,ref);
+    let ai=null;
+    if(dates.length>=2){let t=0;for(let i=1;i<dates.length;i++)t+=daysBetween(dates[i-1],dates[i]);ai=t/(dates.length-1);}
+    o.avgInt=ai;
+    const span=Math.max(daysBetween(o.first,o.last),30);
+    o.freqMes=o.nped/(span/30);
+    o.ticket=o.valTot/o.nped;
+    o.vendNome=VEND[Object.keys(o.vendVal).sort((a,b)=>o.vendVal[b]-o.vendVal[a])[0]];
+  });
+  // RFM
+  const recs=cli.map(o=>o.recencia),freqs=cli.map(o=>o.nped),vals=cli.map(o=>o.valTot);
+  cli.forEach(o=>{
+    o.R=scoreQuintile(recs,o.recencia,true); o.F=scoreQuintile(freqs,o.nped,false); o.Mn=scoreQuintile(vals,o.valTot,false);
+    o.score=o.R+o.F+o.Mn;
+    if(o.score>=13)o.seg=['Campeão','aaa'];
+    else if(o.score>=11)o.seg=['Fiel','aa'];
+    else if(o.F>=4&&o.R<=2)o.seg=['Em risco','crit'];
+    else if(o.R>=4&&o.F<=2)o.seg=['Novo/Promissor','b'];
+    else if(o.score>=8)o.seg=['Potencial','b'];
+    else o.seg=['Baixo engajamento','c'];
+  });
+
+  /* BLOCO 1 — recuperação */
+  const maxVal=Math.max(...vals,1), maxMB=Math.max(...cli.map(o=>o.mbTot),1);
+  cli.forEach(o=>{
+    const ratio=o.avgInt? o.recencia/o.avgInt : (o.recencia/45);
+    o.ratio=ratio;
+    if(ratio<=1)o.nivel=['Saudável','pos'];
+    else if(ratio<=2)o.nivel=['Atenção','warn'];
+    else if(ratio<=3.5)o.nivel=['Em risco','neg'];
+    else o.nivel=['Crítico','crit'];
+    const rec=o.valTot/maxVal, mar=o.mbTot/maxMB, rfm=o.score/15, atraso=Math.min(ratio/4,1);
+    o.prio=Math.round((rec*0.4+mar*0.2+rfm*0.15+atraso*0.25)*100);
+  });
+  const emRisco=cli.filter(o=>o.nivel[0]==='Em risco'||o.nivel[0]==='Crítico');
+  const receitaRisco=emRisco.reduce((s,o)=>s+o.valTot,0);
+  const top20risco=[...cli].sort((a,b)=>b.prio-a.prio).slice(0,20);
+  const acaoRisco=o=>o.nivel[0]==='Crítico'?['Recuperar cliente — contato imediato','urgent']
+    :o.nivel[0]==='Em risco'?['Ligar para o cliente','warn']
+    :o.nivel[0]==='Atenção'?['Agendar visita / follow-up','']:['Manter relacionamento',''];
+
+  /* BLOCO 2 — white space */
+  const ativos=cli.filter(o=>o.val12>0);
+  const tks=ativos.map(o=>o.ticket).sort((a,b)=>a-b);
+  const quartil=v=>{const r=tks.filter(x=>x<=v).length/(tks.length||1);return Math.min(3,Math.floor(r*4));};
+  const grupos={0:[],1:[],2:[],3:[]};
+  ativos.forEach(o=>{o.grp=quartil(o.ticket);grupos[o.grp].push(o.val12/12);});
+  const p75=arr=>{if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b);return s[Math.min(s.length-1,Math.floor(s.length*0.75))];};
+  const benchMensal={0:p75(grupos[0]),1:p75(grupos[1]),2:p75(grupos[2]),3:p75(grupos[3])};
+  ativos.forEach(o=>{o.potencial=Math.max(o.val12,benchMensal[o.grp]*12);o.gap=o.potencial-o.val12;o.captura=o.potencial>0?o.val12/o.potencial:1;});
+  const recAtual=ativos.reduce((s,o)=>s+o.val12,0);
+  const recPot=ativos.reduce((s,o)=>s+o.potencial,0);
+  const naoCapturado=ativos.reduce((s,o)=>s+o.gap,0);
+  const topGap=[...ativos].filter(o=>o.gap>0).sort((a,b)=>b.gap-a.gap).slice(0,20);
+  const acaoPot=o=>o.captura<0.5?['Negociar aumento de volume','warn']:o.freqMes<1?['Aumentar frequência de pedidos','']:['Revisar mix e ampliar pedidos',''];
+
+  /* BLOCO 3 — cross-sell por LINHA DE PRODUTO (categoria) */
+  const nAtivos=ativos.length||1;
+  const cats=[...new Set(ITEMS.map(n=>catProd(n)))];
+  const catBuyers={},catRev={};
+  cats.forEach(c=>{catBuyers[c]=0;catRev[c]=0;});
+  ativos.forEach(o=>{o.ocats=new Set([...o.prods12].map(p=>catProd(ITEMS[p])));o.ocats.forEach(c=>catBuyers[c]++);});
+  base.forEach(r=>{if(r.d>=cut12){const c=catProd(ITEMS[r.it]);catRev[c]=(catRev[c]||0)+r.val;}});
+  const catPen={},catAvgBuyer={};
+  cats.forEach(c=>{catPen[c]=catBuyers[c]/nAtivos;catAvgBuyer[c]=catBuyers[c]?catRev[c]/catBuyers[c]:0;});
+  const medVal12=(()=>{const s=ativos.map(o=>o.val12).sort((a,b)=>a-b);return s.length?(s[Math.floor(s.length/2)]||1):1;})();
+  const PEN_MIN=0.30;
+  const cross=[];
+  ativos.forEach(o=>{
+    const sizeF=Math.max(0.3,Math.min(3,o.val12/(medVal12||1)));
+    cats.forEach(c=>{
+      if(o.ocats.has(c)||catPen[c]<PEN_MIN||catAvgBuyer[c]<=0)return;
+      const recPotP=catAvgBuyer[c]*sizeF;
+      cross.push({nome:o.nome,vend:o.vendNome,prod:c,pen:catPen[c],recPot:recPotP,prio:catPen[c]*recPotP});
+    });
+  });
+  cross.sort((a,b)=>b.prio-a.prio);
+  const crossTotal=cross.reduce((s,x)=>s+x.recPot,0);
+  const maxCrossPrio=Math.max(...cross.map(x=>x.prio),1);
+  const topCross=cross.slice(0,25);
+  const prioLabel=x=>{const r=x.prio/maxCrossPrio;return r>=0.5?['Alta','crit']:r>=0.2?['Média','warn']:['Baixa','c'];};
+
+  const oportTotal=receitaRisco+naoCapturado+crossTotal;
+
+  // ====== HTML ======
+  const linhasRisco=top20risco.map(o=>{const a=acaoRisco(o);return `<tr>
+    <td>${o.nome}</td><td>${o.vendNome}</td>
+    <td><span class="badge ${o.seg[1]}">${o.seg[0]}</span></td>
+    <td class="num">${fmtDate(o.last)}</td>
+    <td class="num"><b>${o.recencia}d</b></td>
+    <td class="num">${o.avgInt!=null?'a cada '+Math.round(o.avgInt)+'d':'1 compra'}</td>
+    <td class="num">${BRL(o.val12)}</td>
+    <td class="num">${BRL(o.mb12)}</td>
+    <td><span class="badge ${o.nivel[1]}">${o.nivel[0]}</span></td>
+    <td class="num"><b>${o.prio}</b></td>
+    <td><span class="act ${a[1]}">${a[0]}</span></td></tr>`;}).join('');
+
+  const linhasPot=topGap.map(o=>{const a=acaoPot(o);return `<tr>
+    <td>${o.nome}</td><td>${o.vendNome}</td>
+    <td class="num">${BRL(o.val12)}</td>
+    <td class="num">${BRL(o.potencial)}</td>
+    <td class="num"><b>${BRL(o.gap)}</b></td>
+    <td class="num">${PCT(o.captura*100)}</td>
+    <td><span class="act ${a[1]}">${a[0]}</span></td></tr>`;}).join('');
+
+  const linhasCross=topCross.map(x=>{const pl=prioLabel(x);return `<tr>
+    <td>${x.nome}</td><td>${x.vend}</td>
+    <td>${x.prod}</td>
+    <td class="num">${PCT(x.pen*100)}</td>
+    <td class="num">${BRL(x.recPot)}</td>
+    <td><span class="badge ${pl[1]}">${pl[0]}</span></td>
+    <td><span class="act">Apresentar linha: ${x.prod}</span></td></tr>`;}).join('');
+
+  C().innerHTML=`
+  <div class="page-intro">CRM analítico: lista priorizada de oportunidades comerciais. Cruza RFM, frequência, recência, receita e mix para indicar <b>quem trabalhar</b> e <b>qual ação executar</b>. Respeita os filtros de vendedor/cliente; o filtro de data é ignorado (usa todo o histórico, janela de 12 meses até ${fmtDate(DMAX)}).</div>
+
+  <div class="kpi-grid">
+    ${kpi('Receita em risco',BRL(receitaRisco),emRisco.length+' clientes Em risco/Crítico','neg','c-red')}
+    ${kpi('Potencial de carteira',BRL(naoCapturado),'white space não capturado (12m)','neu','c-grn')}
+    ${kpi('Potencial de cross-sell',BRL(crossTotal),cross.length+' oportunidades mapeadas','neu','c-blu')}
+    ${kpi('Oportunidade total mapeada',BRL(oportTotal),'risco + carteira + cross-sell','neu','c-pur')}
+  </div>
+  <div class="page-intro" style="margin-top:-6px">A "Oportunidade total" é uma referência consolidada — soma receita histórica em risco com potenciais anuais; use cada bloco para a leitura precisa.</div>
+
+  <div class="pipe-hdr"><div class="num">1</div><div><h2>Priorização de recuperação</h2><p>Clientes valiosos perdendo frequência — ordenados por score de prioridade (receita, margem, RFM e atraso no ciclo).</p></div></div>
+  <div class="card"><div class="card-header"><div class="card-title">Top 20 — maior risco de perda de receita</div><span class="card-sub">Receita em risco: ${BRL(receitaRisco)}</span></div>
+    <div class="card-body"><div class="tbl-wrap"><table class="data-table">
+      <thead><tr><th>Cliente</th><th>Vendedor</th><th>Segmento</th><th class="num">Última compra</th><th class="num">Dias s/ comprar</th><th class="num">Freq. média</th><th class="num">Receita 12m</th><th class="num">Margem 12m</th><th>Nível</th><th class="num">Prioridade</th><th>Ação recomendada</th></tr></thead>
+      <tbody>${linhasRisco}</tbody>
+    </table></div></div></div>
+
+  <div class="pipe-hdr"><div class="num">2</div><div><h2>Potencial de carteira (white space)</h2><p>Clientes que compram abaixo do benchmark de pares (mesma faixa de ticket). Gap = potencial anual − receita 12m.</p></div></div>
+  <div class="kpi-grid">
+    ${kpi('Receita atual (12m)',BRL(recAtual),null,null,'c-blu')}
+    ${kpi('Receita potencial',BRL(recPot),null,null,'c-grn')}
+    ${kpi('Potencial não capturado',BRL(naoCapturado),PCT(recPot>0?naoCapturado/recPot*100:0)+' da carteira','neu','c-amb')}
+  </div>
+  <div class="card"><div class="card-header"><div class="card-title">Receita atual vs. potencial — top 12 por gap</div></div>
+    <div class="card-body"><div class="chart-wrap h300"><canvas id="ch-pipe-pot"></canvas></div></div></div>
+  <div class="card"><div class="card-header"><div class="card-title">Top oportunidades de crescimento</div><span class="card-sub">ordenado por gap de receita</span></div>
+    <div class="card-body"><div class="tbl-wrap"><table class="data-table">
+      <thead><tr><th>Cliente</th><th>Vendedor</th><th class="num">Receita atual</th><th class="num">Receita potencial</th><th class="num">Gap</th><th class="num">% captura</th><th>Ação recomendada</th></tr></thead>
+      <tbody>${linhasPot}</tbody>
+    </table></div></div></div>
+
+  <div class="pipe-hdr"><div class="num">3</div><div><h2>Oportunidades de cross-sell</h2><p>Produtos com alta penetração entre clientes comparáveis que o cliente ainda não compra. Receita potencial = média por comprador ajustada ao porte do cliente.</p></div></div>
+  <div class="card"><div class="card-header"><div class="card-title">Top oportunidades de cross-sell</div><span class="card-sub">Potencial estimado: ${BRL(crossTotal)}</span></div>
+    <div class="card-body"><div class="tbl-wrap"><table class="data-table">
+      <thead><tr><th>Cliente</th><th>Vendedor</th><th>Linha sugerida</th><th class="num">Penetração no grupo</th><th class="num">Receita potencial</th><th>Prioridade</th><th>Ação recomendada</th></tr></thead>
+      <tbody>${linhasCross}</tbody>
+    </table></div></div></div>
+  `;
+
+  const cd=topGap.slice(0,12).reverse();
+  charts.pipePot=new Chart(document.getElementById('ch-pipe-pot'),{type:'bar',data:{labels:cd.map(o=>o.nome.length>26?o.nome.slice(0,26)+'…':o.nome),datasets:[
+    {label:'Receita atual (12m)',data:cd.map(o=>Math.round(o.val12)),backgroundColor:PALETTE[1],borderRadius:4},
+    {label:'Receita potencial',data:cd.map(o=>Math.round(o.potencial)),backgroundColor:PALETTE[0],borderRadius:4}
+  ]},options:baseOpts({indexAxis:'y',plugins:{legend:{labels:{color:tickColor(),font:{family:'DM Sans',size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+BRL(c.parsed.x)}}},scales:{x:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:9},callback:v=>BRLk(v)}},y:{grid:{display:false},ticks:{color:tickColor(),font:{size:9}}}}})});
+}
+</script>
 <script>window.addEventListener('DOMContentLoaded',()=>render());</script>
 </body>
 </html>
