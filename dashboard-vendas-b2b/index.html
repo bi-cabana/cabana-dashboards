@@ -823,6 +823,10 @@ function renderPipeline(){
     const span=Math.max(daysBetween(o.first,o.last),30);
     o.freqMes=o.nped/(span/30);
     o.ticket=o.valTot/o.nped;
+    const o12=[...o.ords.values()].filter(d=>d>=cut12);
+    o.nped12=o12.length;
+    o.ticket12=o.nped12?o.val12/o.nped12:0;
+    o.freqMes12=o.nped12/12;
     o.vendNome=VEND[Object.keys(o.vendVal).sort((a,b)=>o.vendVal[b]-o.vendVal[a])[0]];
   });
   // RFM
@@ -857,20 +861,27 @@ function renderPipeline(){
     :o.nivel[0]==='Em risco'?['Ligar para o cliente','warn']
     :o.nivel[0]==='Atenção'?['Agendar visita / follow-up','']:['Manter relacionamento',''];
 
-  /* BLOCO 2 — white space */
+  /* BLOCO 2 — white space (potencial INDIVIDUALIZADO) */
   const ativos=cli.filter(o=>o.val12>0);
-  const tks=ativos.map(o=>o.ticket).sort((a,b)=>a-b);
+  const tks=ativos.map(o=>o.ticket12).sort((a,b)=>a-b);
   const quartil=v=>{const r=tks.filter(x=>x<=v).length/(tks.length||1);return Math.min(3,Math.floor(r*4));};
   const grupos={0:[],1:[],2:[],3:[]};
-  ativos.forEach(o=>{o.grp=quartil(o.ticket);grupos[o.grp].push(o.val12/12);});
+  ativos.forEach(o=>{o.grp=quartil(o.ticket12);grupos[o.grp].push(o.freqMes12);});
   const p75=arr=>{if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b);return s[Math.min(s.length-1,Math.floor(s.length*0.75))];};
-  const benchMensal={0:p75(grupos[0]),1:p75(grupos[1]),2:p75(grupos[2]),3:p75(grupos[3])};
-  ativos.forEach(o=>{o.potencial=Math.max(o.val12,benchMensal[o.grp]*12);o.gap=o.potencial-o.val12;o.captura=o.potencial>0?o.val12/o.potencial:1;});
+  const benchFreq={0:p75(grupos[0]),1:p75(grupos[1]),2:p75(grupos[2]),3:p75(grupos[3])};
+  const UPLIFT_CAP=3;   // potencial no máx. 3x a receita atual (crescimento realista)
+  ativos.forEach(o=>{
+    const potAnual=benchFreq[o.grp]*o.ticket12*12;        // freq típica dos pares x ticket do PRÓPRIO cliente
+    o.potencial=Math.max(o.val12, Math.min(potAnual, o.val12*UPLIFT_CAP));
+    o.gap=o.potencial-o.val12;
+    o.captura=o.potencial>0?o.val12/o.potencial:1;
+    o.benchFreq=benchFreq[o.grp];
+  });
   const recAtual=ativos.reduce((s,o)=>s+o.val12,0);
   const recPot=ativos.reduce((s,o)=>s+o.potencial,0);
   const naoCapturado=ativos.reduce((s,o)=>s+o.gap,0);
   const topGap=[...ativos].filter(o=>o.gap>0).sort((a,b)=>b.gap-a.gap).slice(0,20);
-  const acaoPot=o=>o.captura<0.5?['Negociar aumento de volume','warn']:o.freqMes<1?['Aumentar frequência de pedidos','']:['Revisar mix e ampliar pedidos',''];
+  const acaoPot=o=>o.freqMes12<o.benchFreq*0.7?['Aumentar frequência de pedidos','warn']:o.captura<0.6?['Negociar aumento de volume','']:['Revisar mix e ampliar pedidos',''];
 
   /* BLOCO 3 — cross-sell por LINHA DE PRODUTO (categoria) */
   const nAtivos=ativos.length||1;
