@@ -133,6 +133,10 @@ body.dark-mode .rfm-legend-title{color:var(--brand)}
 .pipe-hdr h2{font-size:15px;font-weight:700;color:var(--text);line-height:1.2}
 .pipe-hdr p{font-size:12px;color:var(--text3);margin-top:2px;line-height:1.4}
 .sub-ano{font-size:10.5px;color:var(--text3);font-weight:400;margin-top:1px}
+.mixchip{display:inline-block;padding:2px 7px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;white-space:nowrap;margin:1px 0}
+.mixchip.main{background:var(--brand-l);border-color:var(--brand);color:var(--brand-d)}
+.mixchip.more{color:var(--text3)}
+body.dark-mode .mixchip{background:rgba(255,255,255,.05)}
 .act{display:inline-block;padding:3px 9px;border-radius:7px;background:var(--brand-l);color:var(--brand-d);font-size:11.5px;font-weight:600;white-space:nowrap}
 .act.urgent{background:#fee2e2;color:#b91c1c}
 .act.warn{background:#fef3c7;color:#92400e}
@@ -884,24 +888,28 @@ function renderPipeline(){
   const topGap=[...ativos].filter(o=>o.gap>0).sort((a,b)=>b.gap-a.gap).slice(0,20);
   const acaoPot=o=>o.freqMes12<o.benchFreq*0.7?['Aumentar frequência de pedidos','warn']:o.captura<0.6?['Negociar aumento de volume','']:['Revisar mix e ampliar pedidos',''];
 
-  /* BLOCO 3 — cross-sell por LINHA DE PRODUTO (categoria) */
-  const nAtivos=ativos.length||1;
+  /* BLOCO 3 — cross-sell por LINHA DE PRODUTO, comparando com PARES (mesmo porte/ticket) */
   const cats=[...new Set(ITEMS.map(n=>catProd(n)))];
-  const catBuyers={},catRev={};
-  cats.forEach(c=>{catBuyers[c]=0;catRev[c]=0;});
-  ativos.forEach(o=>{o.ocats=new Set([...o.prods12].map(p=>catProd(ITEMS[p])));o.ocats.forEach(c=>catBuyers[c]++);});
-  base.forEach(r=>{if(r.d>=cut12){const c=catProd(ITEMS[r.it]);catRev[c]=(catRev[c]||0)+r.val;}});
-  const catPen={},catAvgBuyer={};
-  cats.forEach(c=>{catPen[c]=catBuyers[c]/nAtivos;catAvgBuyer[c]=catBuyers[c]?catRev[c]/catBuyers[c]:0;});
-  const medVal12=(()=>{const s=ativos.map(o=>o.val12).sort((a,b)=>a-b);return s.length?(s[Math.floor(s.length/2)]||1):1;})();
+  // mix atual (receita por linha em 12m) de cada cliente
+  ativos.forEach(o=>{o.catVal={};});
+  base.forEach(r=>{if(r.d>=cut12){const o=M.get(r.c); if(o&&o.val12>0){const c=catProd(ITEMS[r.it]); o.catVal[c]=(o.catVal[c]||0)+r.val;}}});
+  ativos.forEach(o=>{o.ocats=new Set(Object.keys(o.catVal)); o.mixSorted=Object.keys(o.catVal).sort((a,b)=>o.catVal[b]-o.catVal[a]);});
+  // grupos de pares = mesmos quartis de ticket do Bloco 2 (o.grp)
+  const gSize={0:0,1:0,2:0,3:0}, gBuyers={0:{},1:{},2:{},3:{}}, gRev={0:{},1:{},2:{},3:{}}, gMed={};
+  ativos.forEach(o=>{gSize[o.grp]++; o.ocats.forEach(c=>{gBuyers[o.grp][c]=(gBuyers[o.grp][c]||0)+1;}); Object.keys(o.catVal).forEach(c=>{gRev[o.grp][c]=(gRev[o.grp][c]||0)+o.catVal[c];});});
+  [0,1,2,3].forEach(g=>{const s=ativos.filter(o=>o.grp===g).map(o=>o.val12).sort((a,b)=>a-b);gMed[g]=s.length?(s[Math.floor(s.length/2)]||1):1;});
   const PEN_MIN=0.30;
   const cross=[];
   ativos.forEach(o=>{
-    const sizeF=Math.max(0.3,Math.min(3,o.val12/(medVal12||1)));
+    const g=o.grp, gs=gSize[g]||1, sizeF=Math.max(0.3,Math.min(3,o.val12/(gMed[g]||1)));
     cats.forEach(c=>{
-      if(o.ocats.has(c)||catPen[c]<PEN_MIN||catAvgBuyer[c]<=0)return;
-      const recPotP=catAvgBuyer[c]*sizeF;
-      cross.push({nome:o.nome,vend:o.vendNome,prod:c,pen:catPen[c],recPot:recPotP,prio:catPen[c]*recPotP});
+      if(o.ocats.has(c))return;
+      const b=gBuyers[g][c]||0, pen=b/gs;
+      if(b===0||pen<PEN_MIN)return;
+      const avgBuyer=gRev[g][c]/b;
+      if(avgBuyer<=0)return;
+      const recPotP=avgBuyer*sizeF;
+      cross.push({nome:o.nome,vend:o.vendNome,prod:c,pen:pen,recPot:recPotP,prio:pen*recPotP,mix:o.mixSorted});
     });
   });
   cross.sort((a,b)=>b.prio-a.prio);
@@ -933,8 +941,10 @@ function renderPipeline(){
     <td class="num">${PCT(o.captura*100)}</td>
     <td><span class="act ${a[1]}">${a[0]}</span></td></tr>`;}).join('');
 
+  const chipsMix=mix=>mix.slice(0,3).map((c,i)=>`<span class="mixchip${i===0?' main':''}">${c}</span>`).join(' ')+(mix.length>3?` <span class="mixchip more">+${mix.length-3}</span>`:'');
   const linhasCross=topCross.map(x=>{const pl=prioLabel(x);return `<tr>
     <td>${x.nome}</td><td>${x.vend}</td>
+    <td>${chipsMix(x.mix)}</td>
     <td>${x.prod}</td>
     <td class="num">${PCT(x.pen*100)}</td>
     <td class="num">${BRL(x.recPot/12)}<div class="sub-ano">${BRL(x.recPot)}/ano</div></td>
@@ -973,10 +983,10 @@ function renderPipeline(){
       <tbody>${linhasPot}</tbody>
     </table></div></div></div>
 
-  <div class="pipe-hdr"><div class="num">3</div><div><h2>Oportunidades de cross-sell</h2><p>Produtos com alta penetração entre clientes comparáveis que o cliente ainda não compra. Receita potencial = média por comprador ajustada ao porte do cliente.</p></div></div>
+  <div class="pipe-hdr"><div class="num">3</div><div><h2>Oportunidades de cross-sell</h2><p>Linhas com alta penetração entre <b>clientes do mesmo porte (faixa de ticket)</b> que o cliente ainda não compra. A coluna "Compra hoje" mostra o que ele já leva (principal em destaque). Receita potencial = média por comprador dos pares, ajustada ao porte do cliente.</p></div></div>
   <div class="card"><div class="card-header"><div class="card-title">Top oportunidades de cross-sell</div><span class="card-sub">Potencial: ${BRL(crossTotal/12)}/mês · ${BRL(crossTotal)}/ano</span></div>
     <div class="card-body"><div class="tbl-wrap"><table class="data-table">
-      <thead><tr><th>Cliente</th><th>Vendedor</th><th>Linha sugerida</th><th class="num">Penetração no grupo</th><th class="num">Receita potencial / mês</th><th>Prioridade</th><th>Ação recomendada</th></tr></thead>
+      <thead><tr><th>Cliente</th><th>Vendedor</th><th>Compra hoje</th><th>Linha sugerida</th><th class="num">Penetração nos pares</th><th class="num">Receita potencial / mês</th><th>Prioridade</th><th>Ação recomendada</th></tr></thead>
       <tbody>${linhasCross}</tbody>
     </table></div></div></div>
   `;
