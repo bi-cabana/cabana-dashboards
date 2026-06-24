@@ -1,0 +1,339 @@
+/* =========================================================
+   DESAFIO CABANA — style.css
+   Paleta: preto, branco, dourado e vermelho discreto.
+   Mobile-first. Variáveis CSS para fácil customização.
+   ========================================================= */
+
+:root{
+  --black:#111111;
+  --black-2:#1c1c1c;
+  --black-3:#262626;
+  --white:#ffffff;
+  --gold:#f5b324;       /* dourado principal */
+  --gold-soft:#ffd66b;  /* dourado claro */
+  --red:#d23a2e;        /* vermelho discreto (acentos) */
+  --green:#3fbf6f;      /* acerto */
+  --gray:#8a8a8a;
+  --radius:18px;
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+  --font:'Trebuchet MS','Segoe UI',system-ui,-apple-system,sans-serif;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+html,body{margin:0;padding:0;height:100%;}
+
+body{
+  font-family:var(--font);
+  /* Fundo dramático estilo hamburgueria premium */
+  background:
+    radial-gradient(circle at 50% 0%, #2a2a2a 0%, var(--black) 60%);
+  color:var(--white);
+  display:flex;
+  justify-content:center;
+  align-items:stretch;
+  overflow:hidden;
+  user-select:none;
+}
+
+/* ---------- Container formato celular ---------- */
+#app{
+  position:relative;
+  width:100%;
+  max-width:480px;
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  background:linear-gradient(180deg,#161616,#0e0e0e);
+  overflow:hidden;
+}
+
+.hidden{display:none !important;}
+
+/* =========================================================
+   HUD (topo)
+   ========================================================= */
+#hud{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 16px;
+  background:rgba(0,0,0,.55);
+  border-bottom:1px solid rgba(245,179,36,.25);
+  backdrop-filter:blur(6px);
+  z-index:5;
+}
+.hud-item{display:flex;flex-direction:column;}
+.hud-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);}
+.hud-value{font-size:20px;font-weight:800;color:var(--gold);}
+.hud-xp{flex:1;}
+.xp-bar{height:8px;border-radius:8px;background:var(--black-3);overflow:hidden;margin-top:4px;}
+.xp-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--gold-soft));transition:width .5s ease;}
+.hud-home{
+  width:38px;height:38px;border:none;border-radius:50%;
+  background:var(--black-3);color:var(--white);font-size:20px;
+  cursor:pointer;transition:.2s;
+}
+.hud-home:active{transform:scale(.9);background:var(--gold);color:var(--black);}
+
+/* =========================================================
+   Telas
+   ========================================================= */
+#screens{flex:1;position:relative;overflow:hidden;}
+.screen{
+  position:absolute;inset:0;
+  padding:20px;
+  overflow-y:auto;
+  display:none;
+  flex-direction:column;
+  animation:fadeIn .35s ease;
+}
+.screen.active{display:flex;}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+
+.screen-title{font-size:26px;margin:6px 0 4px;text-align:center;color:var(--white);}
+.screen-sub{text-align:center;color:var(--gray);font-size:13px;margin:0 0 16px;}
+
+/* =========================================================
+   Tela inicial
+   ========================================================= */
+.home-content{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:14px;
+}
+.mascot-wrap{width:170px;height:170px;}
+.mascot-wrap svg{width:100%;height:100%;}
+/* Animação do mascote "andando/flutuando" */
+.mascot-bounce{animation:bounce 2.4s ease-in-out infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-12px) rotate(2deg);}}
+
+.logo{
+  font-size:44px;line-height:.9;font-weight:900;letter-spacing:1px;margin:0;
+  color:var(--white);text-shadow:0 4px 0 rgba(0,0,0,.4);
+}
+.logo span{display:block;color:var(--gold);}
+.tagline{color:var(--gray);font-size:14px;margin:0 0 6px;max-width:280px;}
+
+.home-buttons{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%;}
+.btn-reset{
+  margin-top:18px;background:none;border:none;color:#5a5a5a;font-size:12px;
+  text-decoration:underline;cursor:pointer;
+}
+
+/* =========================================================
+   Botões
+   ========================================================= */
+.btn{
+  border:none;border-radius:var(--radius);padding:14px 22px;font-size:15px;font-weight:700;
+  cursor:pointer;font-family:var(--font);transition:transform .12s,box-shadow .2s,background .2s;
+}
+.btn:active{transform:scale(.95);}
+.btn-primary{background:linear-gradient(180deg,var(--gold),#e09b12);color:var(--black);box-shadow:var(--shadow);}
+.btn-lg{font-size:20px;padding:18px 60px;letter-spacing:1px;}
+.btn-ghost{background:var(--black-3);color:var(--white);}
+.btn-ghost:active{background:var(--gold);color:var(--black);}
+.btn-danger{background:var(--red);color:var(--white);}
+.btn-success{background:var(--green);color:var(--white);}
+
+/* =========================================================
+   Seleção de fase
+   ========================================================= */
+.progress-wrap{margin:0 0 18px;}
+.progress-bar{height:10px;border-radius:10px;background:var(--black-3);overflow:hidden;}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--gold-soft));transition:width .6s;}
+.progress-label{display:block;text-align:center;font-size:12px;color:var(--gray);margin-top:6px;}
+
+.level-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;
+}
+.level-card{
+  position:relative;aspect-ratio:1;border-radius:var(--radius);
+  background:var(--black-2);border:2px solid var(--black-3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  cursor:pointer;transition:.2s;overflow:hidden;
+}
+.level-card .lv-num{font-size:26px;font-weight:900;}
+.level-card .lv-type{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--gray);}
+.level-card.unlocked{border-color:var(--gold);}
+.level-card.unlocked:active{transform:scale(.94);}
+.level-card.done{background:linear-gradient(160deg,#1f1a0c,#241d07);border-color:var(--gold);}
+.level-card.done::after{content:"✓";position:absolute;top:6px;right:8px;color:var(--gold);font-weight:900;}
+.level-card.locked{opacity:.45;cursor:not-allowed;}
+.level-card.locked .lv-num::after{content:" 🔒";font-size:14px;}
+.level-card .lv-stars{font-size:11px;color:var(--gold);height:12px;}
+
+/* =========================================================
+   Tela de jogo
+   ========================================================= */
+.game-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.game-title{font-size:16px;font-weight:800;color:var(--gold);}
+.game-stats{display:flex;gap:10px;font-size:13px;font-weight:700;}
+.game-stats .chip{background:var(--black-3);padding:5px 10px;border-radius:20px;}
+.game-area{
+  flex:1;border-radius:var(--radius);background:var(--black-2);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  border:1px solid var(--black-3);
+}
+.game-controls{margin-top:12px;display:flex;gap:10px;}
+
+/* ---- Briefing / contagem regressiva ---- */
+.briefing{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px;
+  background:rgba(0,0,0,.85);z-index:3;
+}
+.briefing h3{font-size:20px;margin:0;color:var(--gold);}
+.countdown-num{font-size:64px;font-weight:900;color:var(--white);animation:pop .8s ease;}
+@keyframes pop{from{transform:scale(.3);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+/* =========================================================
+   Mini-game 1: Montador (memória)
+   ========================================================= */
+.order-display,.builder-tray{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:14px;}
+.order-display{align-content:center;flex:1;}
+.ingredient{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  width:74px;height:74px;border-radius:14px;background:var(--black-3);
+  font-size:30px;cursor:pointer;transition:transform .12s,background .2s;border:2px solid transparent;
+}
+.ingredient .ing-name{font-size:9px;color:var(--gray);}
+.ingredient:active{transform:scale(.9);}
+.ingredient.picked{border-color:var(--gold);background:#2b2410;}
+.ingredient.correct{border-color:var(--green);animation:flashGreen .4s;}
+.ingredient.wrong{border-color:var(--red);animation:shake .4s;}
+@keyframes flashGreen{0%{background:var(--green);}100%{background:#2b2410;}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+
+/* Pilha do hambúrguer montado (sequência escolhida) */
+.build-stack{display:flex;flex-direction:column-reverse;align-items:center;gap:2px;min-height:70px;padding:10px;}
+.stack-item{
+  background:var(--black-3);border-radius:8px;padding:4px 14px;font-size:13px;
+  border-left:3px solid var(--gold);animation:fadeIn .2s;
+}
+.builder-hint{text-align:center;font-size:12px;color:var(--gray);padding:6px;}
+
+/* =========================================================
+   Mini-game 2: Coleta (itens caindo)
+   ========================================================= */
+.catcher-stage{position:relative;flex:1;overflow:hidden;background:linear-gradient(180deg,#15130c,#0e0e0e);}
+.falling{position:absolute;font-size:34px;will-change:transform;}
+.player-basket{
+  position:absolute;bottom:8px;font-size:42px;transition:left .05s linear;
+  filter:drop-shadow(0 -2px 4px rgba(245,179,36,.5));
+}
+.lives{color:var(--red);font-weight:800;}
+
+/* Botões grandes de controle esquerda/direita */
+.ctrl-btn{
+  flex:1;font-size:34px;padding:18px;border-radius:var(--radius);
+  background:var(--black-3);color:var(--white);border:none;cursor:pointer;user-select:none;
+}
+.ctrl-btn:active{background:var(--gold);color:var(--black);}
+
+/* =========================================================
+   Mini-game 3: Cabana Rush (atendimento)
+   ========================================================= */
+.rush-clients{display:flex;gap:8px;padding:12px;overflow-x:auto;min-height:150px;}
+.client-card{
+  flex:0 0 130px;background:var(--black-3);border-radius:14px;padding:10px;
+  display:flex;flex-direction:column;gap:6px;border:2px solid transparent;animation:fadeIn .3s;
+}
+.client-card.angry{border-color:var(--red);animation:shake .5s;}
+.client-card.served{border-color:var(--green);opacity:.5;}
+.client-face{font-size:34px;text-align:center;}
+.client-order{font-size:11px;color:var(--gold-soft);line-height:1.3;}
+.patience-bar{height:6px;border-radius:6px;background:#000;overflow:hidden;}
+.patience-fill{height:100%;background:var(--green);transition:width .25s linear;}
+.rush-menu{display:flex;flex-wrap:wrap;gap:6px;padding:10px;justify-content:center;}
+.menu-btn{
+  background:var(--black-3);border:none;border-radius:12px;padding:8px 10px;font-size:11px;
+  color:var(--white);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.menu-btn .m-emoji{font-size:22px;}
+.menu-btn:active{background:var(--gold);color:var(--black);}
+.rush-tray{
+  min-height:46px;display:flex;flex-wrap:wrap;gap:6px;padding:8px;justify-content:center;
+  border-top:1px dashed var(--black-3);
+}
+.tray-chip{background:#2b2410;border:1px solid var(--gold);border-radius:18px;padding:4px 10px;font-size:11px;}
+.rush-selected{text-align:center;font-size:11px;color:var(--gray);}
+
+/* =========================================================
+   Listas (recompensas, ranking, medalhas)
+   ========================================================= */
+.reward-list,.ranking-list,.medal-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.reward-card,.rank-row,.medal-card{
+  display:flex;align-items:center;gap:12px;background:var(--black-2);
+  border-radius:14px;padding:12px 14px;border:1px solid var(--black-3);
+}
+.reward-card .r-emoji,.medal-card .m-emoji{font-size:30px;}
+.reward-card .r-info,.medal-card .m-info{flex:1;}
+.reward-card .r-title,.medal-card .m-title{font-weight:700;font-size:14px;}
+.reward-card .r-sub,.medal-card .m-sub{font-size:11px;color:var(--gray);}
+.reward-card.locked{opacity:.5;}
+.reward-card.unlocked{border-color:var(--gold);}
+.badge{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;}
+.badge-locked{background:var(--black-3);color:var(--gray);}
+.badge-unlocked{background:var(--gold);color:var(--black);}
+
+.rank-row{justify-content:space-between;}
+.rank-row .r-pos{font-weight:900;width:28px;color:var(--gold);}
+.rank-row .r-name{flex:1;}
+.rank-row .r-score{font-weight:700;color:var(--gold-soft);}
+.rank-row.me{border-color:var(--gold);background:#1f1a0c;}
+
+.medal-card.locked{opacity:.45;}
+.medal-card.locked .m-emoji{filter:grayscale(1);}
+
+/* =========================================================
+   Overlay (modal de resultado/prêmio)
+   ========================================================= */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.78);
+  display:flex;align-items:center;justify-content:center;z-index:50;
+  animation:fadeIn .25s;padding:24px;
+}
+.overlay-card{
+  width:100%;max-width:360px;background:linear-gradient(180deg,var(--black-2),#0c0c0c);
+  border:1px solid rgba(245,179,36,.4);border-radius:24px;padding:28px 22px;text-align:center;
+  box-shadow:var(--shadow);animation:popUp .35s ease;
+}
+@keyframes popUp{from{transform:scale(.85) translateY(20px);opacity:0;}to{transform:none;opacity:1;}}
+.overlay-icon{font-size:60px;margin-bottom:4px;animation:bounce 1.6s ease-in-out infinite;}
+.overlay-title{font-size:24px;margin:4px 0;}
+.overlay-text{color:var(--gray);font-size:14px;margin:0 0 14px;}
+.overlay-reward{
+  background:#1f1a0c;border:1px dashed var(--gold);border-radius:14px;padding:14px;margin-bottom:16px;
+}
+.overlay-reward .or-emoji{font-size:40px;}
+.overlay-reward .or-title{font-weight:800;color:var(--gold);margin-top:4px;}
+.overlay-reward .or-code{font-size:11px;color:var(--gray);margin-top:6px;letter-spacing:1px;}
+.overlay-buttons{display:flex;flex-direction:column;gap:10px;}
+
+/* =========================================================
+   Camada de efeitos (confete)
+   ========================================================= */
+.fx-layer{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden;}
+.confetti{position:absolute;width:10px;height:14px;top:-20px;border-radius:2px;animation:fall linear forwards;}
+@keyframes fall{
+  to{transform:translateY(110vh) rotate(720deg);opacity:.9;}
+}
+
+/* Toast de feedback rápido */
+.toast{
+  position:fixed;top:80px;left:50%;transform:translateX(-50%);
+  background:var(--black-3);color:var(--white);padding:10px 20px;border-radius:30px;
+  font-weight:700;font-size:14px;z-index:70;border:1px solid var(--gold);
+  animation:toastIn .3s, toastOut .3s 1.2s forwards;
+}
+.toast.good{border-color:var(--green);}
+.toast.bad{border-color:var(--red);}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-12px);}to{opacity:1;transform:translateX(-50%);}}
+@keyframes toastOut{to{opacity:0;transform:translate(-50%,-12px);}}
+
+/* Telas muito baixas: reduz mascote */
+@media (max-height:680px){
+  .mascot-wrap{width:120px;height:120px;}
+  .logo{font-size:36px;}
+}

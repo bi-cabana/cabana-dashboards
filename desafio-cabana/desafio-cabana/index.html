@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Viewport otimizado para mobile, impede zoom acidental durante o jogo -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <title>Desafio Cabana 🍔</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Ícone do app (data URI para não depender de arquivo externo) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%F0%9F%8D%94%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <!-- ====================================================== -->
+  <!-- CONTAINER PRINCIPAL DO JOGO (formato celular)          -->
+  <!-- ====================================================== -->
+  <div id="app">
+
+    <!-- HUD fixo no topo: pontos, XP e fase atual -->
+    <header id="hud" class="hidden">
+      <div class="hud-item">
+        <span class="hud-label">Pontos</span>
+        <span id="hudPoints" class="hud-value">0</span>
+      </div>
+      <div class="hud-item hud-xp">
+        <span class="hud-label">Nível <span id="hudLevel">1</span></span>
+        <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
+      </div>
+      <button id="btnHome" class="hud-home" title="Início">⌂</button>
+    </header>
+
+    <!-- As telas são trocadas via JS adicionando/removendo a classe .active -->
+    <main id="screens">
+
+      <!-- ============ TELA INICIAL ============ -->
+      <section id="screen-home" class="screen active">
+        <div class="home-content">
+          <div id="mascot-home" class="mascot-wrap"></div>
+          <h1 class="logo">DESAFIO<span>CABANA</span></h1>
+          <p class="tagline">10 fases. Recompensas reais. Vira lenda. 🔥</p>
+          <button class="btn btn-primary btn-lg" data-action="play">JOGAR</button>
+          <div class="home-buttons">
+            <button class="btn btn-ghost" data-action="rewards">🎁 Recompensas</button>
+            <button class="btn btn-ghost" data-action="ranking">🏆 Ranking</button>
+            <button class="btn btn-ghost" data-action="medals">🥇 Medalhas</button>
+          </div>
+          <button id="btnReset" class="btn-reset">Reiniciar progresso</button>
+        </div>
+      </section>
+
+      <!-- ============ SELEÇÃO DE FASE ============ -->
+      <section id="screen-levels" class="screen">
+        <h2 class="screen-title">Escolha a Fase</h2>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div id="globalProgress" class="progress-fill"></div></div>
+          <span id="progressLabel" class="progress-label">0 / 10 concluídas</span>
+        </div>
+        <div id="levelGrid" class="level-grid"><!-- preenchido via JS --></div>
+        <button class="btn btn-ghost" data-action="home">← Voltar</button>
+      </section>
+
+      <!-- ============ TELA DE JOGO (genérica) ============ -->
+      <section id="screen-game" class="screen">
+        <div id="gameHeader" class="game-header">
+          <span id="gameTitle" class="game-title"></span>
+          <div id="gameStats" class="game-stats"></div>
+        </div>
+        <div id="gameArea" class="game-area"><!-- cada mini-game renderiza aqui --></div>
+        <div id="gameControls" class="game-controls"></div>
+      </section>
+
+      <!-- ============ TELA DE RECOMPENSAS (catálogo) ============ -->
+      <section id="screen-rewards" class="screen">
+        <h2 class="screen-title">🎁 Recompensas</h2>
+        <p class="screen-sub">Conclua as fases e desbloqueie prêmios reais na Cabana.</p>
+        <div id="rewardList" class="reward-list"></div>
+        <button class="btn btn-ghost" data-action="home">← Voltar</button>
+      </section>
+
+      <!-- ============ TELA DE RANKING ============ -->
+      <section id="screen-ranking" class="screen">
+        <h2 class="screen-title">🏆 Ranking Cabana</h2>
+        <p class="screen-sub">Placar local (demonstração).</p>
+        <div id="rankingList" class="ranking-list"></div>
+        <button class="btn btn-ghost" data-action="home">← Voltar</button>
+      </section>
+
+      <!-- ============ TELA DE MEDALHAS ============ -->
+      <section id="screen-medals" class="screen">
+        <h2 class="screen-title">🥇 Medalhas</h2>
+        <p class="screen-sub">Conquistas especiais do Desafio Cabana.</p>
+        <div id="medalList" class="medal-list"></div>
+        <button class="btn btn-ghost" data-action="home">← Voltar</button>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============ MODAL / OVERLAY (vitória, derrota, prêmio) ============ -->
+  <div id="overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <div id="overlayIcon" class="overlay-icon"></div>
+      <h2 id="overlayTitle" class="overlay-title"></h2>
+      <p id="overlayText" class="overlay-text"></p>
+      <div id="overlayReward" class="overlay-reward hidden"></div>
+      <div id="overlayButtons" class="overlay-buttons"></div>
+    </div>
+  </div>
+
+  <!-- Camada de partículas/confete para feedback de acerto -->
+  <div id="fx" class="fx-layer"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
