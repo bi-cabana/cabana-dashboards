@@ -3,26 +3,28 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <title>Horas Operacionais — Cabana Burger</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --red:#C0392B;--red-dark:#96281B;--red-soft:#FDECEA;
+  --brand:#1D9E75;--brand-d:#158a61;--brand-l:#e8f7f2;
+  --red:#e63946;--red-dark:#c1121f;--red-soft:#fdeaec;
   --orange:#E67E22;--ora-soft:#FEF5EC;
-  --amber:#F39C12;--amb-soft:#FEF9E7;
-  --green:#27AE60;--grn-soft:#EAFAF1;
-  --blue:#2980B9;--blu-soft:#EBF5FB;
+  --amber:#f4a261;--amb-soft:#fdf1e7;
+  --green:#16a34a;--grn-soft:#e8f7f2;
+  --blue:#2563eb;--blu-soft:#EBF5FB;
   --purple:#8E44AD;--pur-soft:#F5EEF8;
   --teal:#16A085;--tea-soft:#E8F8F5;
-  --sidebar-w:220px;--bg:#F5F6FA;--card:#FFFFFF;
-  --dark:#1C2333;--mid:#6B7280;--light:#E5E7EB;
-  --radius:12px;--shadow:0 1px 4px rgba(0,0,0,.08);
-  --font:'Segoe UI',system-ui,sans-serif;
+  --sidebar-w:210px;--bg:#f4f6f8;--card:#FFFFFF;
+  --dark:#1a2236;--mid:#5a6578;--light:#e2e8f0;
+  --radius:10px;--shadow:0 2px 8px rgba(0,0,0,.08);
+  --font:'DM Sans',system-ui,sans-serif;
 }
 body{font-family:var(--font);background:var(--bg);display:flex;min-height:100vh;color:var(--dark);font-size:14px}
 
 /* ── Sidebar ── */
-aside{width:var(--sidebar-w);min-height:100vh;background:var(--dark);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:10;padding:0 0 24px}
+aside{width:var(--sidebar-w);min-height:100vh;background:#1a1d2e;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:10;padding:0 0 24px}
 .sb-logo{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sb-logo .ico{font-size:1.6rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sb-logo span{font-size:.95rem;font-weight:700;color:#fff;line-height:1.2}
@@ -30,7 +32,7 @@ aside{width:var(--sidebar-w);min-height:100vh;background:var(--dark);display:fle
 .nav-sec{padding:20px 14px 6px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.3)}
 nav a{display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.55);text-decoration:none;border-radius:8px;margin:1px 8px;font-size:.83rem;transition:all .15s;cursor:pointer}
 nav a:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
-nav a.active{background:var(--red);color:#fff;font-weight:600}
+nav a.active{background:var(--brand);color:#fff;font-weight:600}
 .sb-bottom{margin-top:auto;padding:0 8px}
 .sb-note{background:rgba(192,57,43,.2);border:1px solid rgba(192,57,43,.4);border-radius:10px;padding:12px 14px;margin:0 8px}
 .sb-note p{font-size:.75rem;color:rgba(255,255,255,.7);line-height:1.5}
@@ -45,22 +47,22 @@ nav a.active{background:var(--red);color:#fff;font-weight:600}
 .topbar-left p{font-size:.78rem;color:var(--mid);margin-top:1px}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .topbar-right select{padding:6px 26px 6px 10px;border:1.5px solid var(--light);border-radius:8px;font-size:.78rem;font-family:var(--font);color:var(--dark);background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center;appearance:none;cursor:pointer;outline:none}
-.topbar-right select:focus{border-color:var(--red)}
+.topbar-right select:focus{border-color:var(--brand)}
 .flabel{font-size:.72rem;color:var(--mid);font-weight:600;white-space:nowrap}
 .filter-group{display:flex;align-items:center;gap:5px}
-.btn-reset{padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;transition:background .15s}
-.btn-reset:hover{background:var(--red-dark)}
+.btn-reset{padding:6px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-reset:hover{background:var(--brand-d)}
 /* ── Custom Checkbox Select ── */
 .cs{position:relative;display:inline-block}
 .cs-btn{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--light);border-radius:8px;font-size:.78rem;font-family:var(--font);color:var(--dark);background:var(--bg);cursor:pointer;white-space:nowrap;user-select:none;min-width:80px;justify-content:space-between}
-.cs-btn:hover,.cs.open .cs-btn{border-color:var(--red)}
+.cs-btn:hover,.cs.open .cs-btn{border-color:var(--brand)}
 .cs-arr{font-size:.55rem;color:var(--mid);transition:transform .15s;flex-shrink:0;margin-left:4px}
 .cs.open .cs-arr{transform:rotate(180deg)}
 .cs-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:140px;background:var(--card);border:1.5px solid var(--light);border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:400;padding:6px 0;max-height:240px;overflow-y:auto}
 .cs.open .cs-menu{display:block}
 .cs-menu label{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:.78rem;color:var(--dark);transition:background .1s;white-space:nowrap}
 .cs-menu label:hover{background:var(--bg)}
-.cs-menu input[type=checkbox]{accent-color:var(--red);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.cs-menu input[type=checkbox]{accent-color:var(--brand);width:14px;height:14px;flex-shrink:0;cursor:pointer}
 
 /* ── Filter Popup ── */
 .fp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:300;align-items:flex-start;justify-content:flex-end;padding:76px 28px 0}
@@ -97,7 +99,7 @@ nav a.active{background:var(--red);color:#fff;font-weight:600}
 .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .kpi-row-3{grid-template-columns:repeat(3,1fr)}
 .kpi{background:var(--card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:0}
 .kpi.red::before{background:var(--red)}
 .kpi.orange::before{background:var(--orange)}
 .kpi.amber::before{background:var(--amber)}
@@ -108,13 +110,7 @@ nav a.active{background:var(--red);color:#fff;font-weight:600}
 .kpi-top{display:flex;align-items:center;justify-content:space-between}
 .kpi-label{font-size:.72rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:.5px}
 .kpi-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
-.kpi.red .kpi-ico{background:var(--red-soft)}
-.kpi.orange .kpi-ico{background:var(--ora-soft)}
-.kpi.amber .kpi-ico{background:var(--amb-soft)}
-.kpi.blue .kpi-ico{background:var(--blu-soft)}
-.kpi.green .kpi-ico{background:var(--grn-soft)}
-.kpi.purple .kpi-ico{background:var(--pur-soft)}
-.kpi.teal .kpi-ico{background:var(--tea-soft)}
+.kpi .kpi-ico{background:var(--brand-l)}
 .kpi-val{font-size:1.7rem;font-weight:800;line-height:1}
 .kpi-foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .delta{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:20px;font-size:.68rem;font-weight:700}
@@ -247,9 +243,9 @@ canvas{display:block;width:100%}
 
 <!--[if gte mso 9]><xml>
 <mso:CustomDocumentProperties>
-<mso:_dlc_DocId msdt:dt="string">75DVEWA554PV-1278060199-1024</mso:_dlc_DocId>
-<mso:_dlc_DocIdItemGuid msdt:dt="string">413f2c4b-1e9a-4213-bed5-c415cc970397</mso:_dlc_DocIdItemGuid>
-<mso:_dlc_DocIdUrl msdt:dt="string">https://cabanaburger.sharepoint.com/sites/documentos/_layouts/15/DocIdRedir.aspx?ID=75DVEWA554PV-1278060199-1024, 75DVEWA554PV-1278060199-1024</mso:_dlc_DocIdUrl>
+<mso:_dlc_DocId msdt:dt="string">75DVEWA554PV-1278060199-12030</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">f84bda5a-b832-439e-83db-b40725c953e5</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://cabanaburger.sharepoint.com/sites/documentos/_layouts/15/DocIdRedir.aspx?ID=75DVEWA554PV-1278060199-12030, 75DVEWA554PV-1278060199-12030</mso:_dlc_DocIdUrl>
 </mso:CustomDocumentProperties>
 </xml><![endif]-->
 </head>
@@ -443,13 +439,27 @@ canvas{display:block;width:100%}
     </div>
   </div>
   <div class="content">
-    <div class="panel" id="evol-analysis-panel">
+    <div class="panel">
       <div class="panel-head">
-        <div class="panel-title">🔍 Destaques da Análise</div>
+        <div>
+          <div class="panel-title">🚦 Alertas de Tendência — Horas Operacionais</div>
+          <div id="alert-caption" style="font-size:11px;color:var(--mid);margin-top:2px">Δ = média dos 2 meses recentes − 2 primeiros · compliance total</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="gran-toggle">
+            <button class="gran-btn active" id="alm-total" onclick="setAlertMetric('total')">Total</button>
+            <button class="gran-btn" id="alm-turno" onclick="setAlertMetric('turno')">Por turno</button>
+          </div>
+          <div class="gran-toggle" id="alert-turno-toggle" style="display:none">
+            <button class="gran-btn active" id="alt-almoco" onclick="setAlertTurno('Almoço')">Almoço</button>
+            <button class="gran-btn" id="alt-jantar" onclick="setAlertTurno('Jantar')">Jantar</button>
+          </div>
+        </div>
       </div>
-      <div id="evol-analysis-body"><p class="nodata">Carregando…</p></div>
+      <div id="evol-alerts-body" style="padding:4px 2px"><p class="nodata">Carregando…</p></div>
     </div>
   </div>
+
 </div>
 
 <!-- ══ PAGE: HORÁRIO ═════════════════════════════════════════════════ -->
@@ -593,11 +603,14 @@ canvas{display:block;width:100%}
       <div class="panel-head">
         <div class="panel-title">🌡 Heatmap — Loja × Horário</div>
         <div class="legend-row" style="margin-bottom:0">
-          <span class="leg"><span class="leg-box" style="background:#9CA3AF"></span>Não Pico</span>
-          <span class="leg"><span class="leg-box" style="background:var(--amber)"></span>Almoço</span>
-          <span class="leg"><span class="leg-box" style="background:var(--red)"></span>Jantar</span>
-          <span class="leg"><span class="leg-box" style="background:var(--purple)"></span>Madrugada</span>
-          <span class="leg"><span class="leg-box" style="background:var(--light);border:1px solid var(--light)"></span>Fora do horário</span>
+          <span class="leg" style="color:var(--mid);font-weight:600">Hora operacional (relativo a cada loja):</span>
+          <span class="leg">Menor</span>
+          <span class="leg"><span class="leg-box" style="background:rgb(211,59,44)"></span></span>
+          <span class="leg"><span class="leg-box" style="background:rgb(239,138,60)"></span></span>
+          <span class="leg"><span class="leg-box" style="background:rgb(244,196,48)"></span></span>
+          <span class="leg"><span class="leg-box" style="background:rgb(124,192,106)"></span></span>
+          <span class="leg"><span class="leg-box" style="background:rgb(21,127,60)"></span>Maior</span>
+          <span class="leg"><span class="leg-box" style="background:#F0F2F5;border:1px solid var(--light)"></span>Fora do horário</span>
         </div>
       </div>
       <div class="hw" id="hm-container"></div>
@@ -1323,6 +1336,22 @@ function setEvolGran(gran){
   ['dia','sem','mes'].forEach(g=>{const btn=document.getElementById('gran-'+g);if(btn)btn.classList.toggle('active',g===gran||(gran==='semana'&&g==='sem'));});
   renderEvolucao();
 }
+function setAlertMetric(m){
+  state.alert_metric=m;
+  const bt=document.getElementById('alm-total'),bu=document.getElementById('alm-turno');
+  if(bt)bt.classList.toggle('active',m==='total');
+  if(bu)bu.classList.toggle('active',m==='turno');
+  const sub=document.getElementById('alert-turno-toggle');
+  if(sub)sub.style.display=(m==='turno')?'inline-flex':'none';
+  renderEvolAlerts();
+}
+function setAlertTurno(t){
+  state.alert_turno=t;
+  const ba=document.getElementById('alt-almoco'),bj=document.getElementById('alt-jantar');
+  if(ba)ba.classList.toggle('active',t==='Almoço');
+  if(bj)bj.classList.toggle('active',t==='Jantar');
+  renderEvolAlerts();
+}
 const MES_PTBR={'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
 const WD_PTBR=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 function fmtDateLabel(d){
@@ -1421,10 +1450,10 @@ function svgLineEvol(id,labels,datasets,gran){
     const nDS=datasets.length;
     // Legend below chart — libera toda a largura para o gráfico
     const legH=22;
-    const mg={t:26,r:10,b:(twoLine?48:36)+legH,l:34};
+    const mg={t:26,r:30,b:(twoLine?48:36)+legH,l:30};
     const iW=W-mg.l-mg.r,iH=H-mg.t-mg.b,n=labels.length;
     if(n===0)return'<text x="50%" y="50%" text-anchor="middle" fill="#9CA3AF" font-family="sans-serif" font-size="12">Sem dados</text>';
-    let s=_yg(mg,iW,iH);
+    let s='';   // eixo Y removido
     // X-axis: step menor para mostrar todos os dias possíveis
     const minPxPerLbl=twoLine?22:28;
     const maxLbls=Math.max(1,Math.floor(iW/minPxPerLbl));
@@ -1486,10 +1515,13 @@ function renderEvolucao(){
   let labels,almV,janV,totV;
   const WD2=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   if(gran==='dia'){
-    labels=dates.map(d=>{const dt=new Date(d+'T12:00:00');return String(dt.getDate()).padStart(2,'0')+'/'+MN2[dt.getMonth()]+'|'+WD2[dt.getDay()];});
-    almV=dates.map(d=>{const r=almD[d]||[0,0];return pct(r[1],r[0])||0;});
-    janV=dates.map(d=>{const r=janD[d]||[0,0];return pct(r[1],r[0])||0;});
-    totV=dates.map(d=>{const r=totD[d]||[0,0];return pct(r[1],r[0])||0;});
+    // Padrão: últimos 30 dias quando não há filtro de período (Mês/Dia)
+    let dDates=dates;
+    if(state.mes==='all'&&state.dia==='all')dDates=dates.slice(-30);
+    labels=dDates.map(d=>{const dt=new Date(d+'T12:00:00');return String(dt.getDate()).padStart(2,'0')+'/'+MN2[dt.getMonth()]+'|'+WD2[dt.getDay()];});
+    almV=dDates.map(d=>{const r=almD[d]||[0,0];return pct(r[1],r[0])||0;});
+    janV=dDates.map(d=>{const r=janD[d]||[0,0];return pct(r[1],r[0])||0;});
+    totV=dDates.map(d=>{const r=totD[d]||[0,0];return pct(r[1],r[0])||0;});
   }else if(gran==='semana'){
     const wkMap={};
     dates.forEach(d=>{
@@ -1499,7 +1531,9 @@ function renderEvolucao(){
       const j=janD[d]||[0,0];wkMap[wk].j[0]+=j[0];wkMap[wk].j[1]+=j[1];
       const t=totD[d]||[0,0];wkMap[wk].t[0]+=t[0];wkMap[wk].t[1]+=t[1];
     });
-    const wks=Object.keys(wkMap).sort();
+    let wks=Object.keys(wkMap).sort();
+    // Padrão: últimas 12 semanas quando não há filtro de período (Mês)
+    if(state.mes==='all')wks=wks.slice(-12);
     labels=wks.map(isoWeekLabel);
     almV=wks.map(wk=>pct(wkMap[wk].a[1],wkMap[wk].a[0])||0);
     janV=wks.map(wk=>pct(wkMap[wk].j[1],wkMap[wk].j[0])||0);
@@ -1520,7 +1554,55 @@ function renderEvolucao(){
   ],gran);
   const badge=document.getElementById('evol-dia-badge');
   if(badge)badge.textContent=(state.evol_loja==='all'?'Todas as lojas':lojaName(state.evol_loja))+(state.canal==='all'?'':' · '+state.canal);
-  renderEvolAnalysis();
+  renderEvolAlerts();
+}
+// ── Card de Alertas de Tendência (próprias × franquias) ───────────────────
+function renderEvolAlerts(){
+  const body=document.getElementById('evol-alerts-body');
+  if(!body||!DASH||!DASH.tbl1)return;
+  const metric=state.alert_metric||'total';
+  const turno=state.alert_turno||'Almoço';
+  const info={};(DASH.loja_info||[]).forEach(l=>info[l.loja_norm]=l);
+  // compliance por loja por mês — total (todos turnos) ou só o turno selecionado
+  const lm={};
+  DASH.tbl1.forEach(r=>{
+    if(metric==='turno'&&r.turno!==turno)return;
+    (lm[r.loja_norm]=lm[r.loja_norm]||{});
+    (lm[r.loja_norm][r.mes]=lm[r.loja_norm][r.mes]||[0,0]);
+    lm[r.loja_norm][r.mes][0]+=r.has_sale; lm[r.loja_norm][r.mes][1]+=r.planned;
+  });
+  const cap=document.getElementById('alert-caption');
+  if(cap)cap.textContent='Δ = média dos 2 meses recentes − 2 primeiros · '+(metric==='turno'?('turno: '+turno):'compliance total');
+  const rows=[];
+  Object.keys(lm).forEach(ln=>{
+    if(typeof CLOSED_LOJAS!=='undefined'&&CLOSED_LOJAS[ln])return;   // ignora lojas fechadas
+    const meses=Object.keys(lm[ln]).sort();
+    const serie=meses.map(m=>{const a=lm[ln][m];return a[1]>0?a[0]/a[1]*100:null;}).filter(v=>v!==null);
+    if(serie.length<3)return;   // precisa de histórico mínimo (3 meses)
+    const base=(serie[0]+serie[1])/2;
+    const recent=(serie[serie.length-1]+serie[serie.length-2])/2;
+    const delta=Math.round((recent-base)*10)/10;
+    const reg=(info[ln]||{}).regional||'';
+    rows.push({nome:(info[ln]||{}).loja||ln,delta:delta,recent:Math.round(recent),fr:reg==='Franquias'});
+  });
+  const TH=3; // limiar (pp) p/ separar evolução/queda de estabilidade
+  const pick=(arr,kind)=>{
+    let f;
+    if(kind==='down')f=arr.filter(r=>r.delta<=-TH).sort((a,b)=>a.delta-b.delta);
+    else if(kind==='up')f=arr.filter(r=>r.delta>=TH).sort((a,b)=>b.delta-a.delta);
+    else f=arr.filter(r=>Math.abs(r.delta)<TH).sort((a,b)=>Math.abs(a.delta)-Math.abs(b.delta)||a.recent-b.recent);
+    return f.slice(0,4);
+  };
+  const line=r=>{
+    const c=r.delta<0?'var(--red)':r.delta>0?'var(--green)':'var(--mid)';
+    const sign=r.delta>0?'+':'';
+    const arrow=r.delta<0?'▼':r.delta>0?'▲':'■';
+    return `<li style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f1f3f6;font-size:12.5px"><span style="font-weight:600;color:var(--dark)">${r.nome}</span><span style="white-space:nowrap"><span style="color:${c};font-weight:700">${arrow} ${sign}${r.delta}pp</span> <span style="color:var(--mid);font-size:11px">· ${r.recent}%</span></span></li>`;
+  };
+  const blk=(title,color,items)=>`<div style="border:1px solid var(--light);border-radius:10px;padding:12px 14px;background:#fff"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${color};margin-bottom:6px">${title}</div>${items.length?`<ul style="list-style:none;margin:0;padding:0">${items.map(line).join('')}</ul>`:`<p style="font-size:12px;color:var(--mid);margin:4px 0">—</p>`}</div>`;
+  const group=(label,arr)=>`<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px">${label}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${blk('📉 Perdendo eficiência','var(--red)',pick(arr,'down'))}${blk('➖ Não estão evoluindo','#b5862a',pick(arr,'flat'))}${blk('📈 Em evolução','var(--green)',pick(arr,'up'))}</div></div>`;
+  const prop=rows.filter(r=>!r.fr), fran=rows.filter(r=>r.fr);
+  body.innerHTML=group('🏠 Lojas Próprias',prop)+group('🤝 Franquias',fran);
 }
 // ── Evolução Analysis Box ────────────────────────────────────────────────
 function renderEvolAnalysis(){
@@ -1752,16 +1834,35 @@ function renderHeatmap(){
     html+=`<th title="${lbl}" style="color:${TURNO_SOLID[sg.turno]||'#9CA3AF'}">${lbl.split(':')[0]}</th>`;
   });
   html+='</tr></thead><tbody>';
+  // Escala sequencial por VALOR, normalizada LINHA A LINHA:
+  // melhor hora operacional da loja = verde escuro → verde claro → amarelo → vermelho.
+  const _hmRowColor=(p,lo,hi)=>{
+    if(p===null) return '#F0F2F5';
+    let t=hi>lo?(p-lo)/(hi-lo):1; t=Math.max(0,Math.min(1,t));
+    const st=[[211,59,44],[239,138,60],[244,196,48],[124,192,106],[21,127,60]]; // vermelho→laranja→amarelo→verde claro→verde escuro
+    const sgv=t*(st.length-1), i=Math.min(st.length-2,Math.floor(sgv)), f=sgv-i;
+    const c=st[i].map((v,k)=>Math.round(v+(st[i+1][k]-v)*f));
+    return 'rgb('+c[0]+','+c[1]+','+c[2]+')';
+  };
   lojas.forEach(ln=>{
     html+=`<tr><td class="ll">${lojaName(ln)}</td>`;
+    // 1ª passada: coletar os % válidos da linha p/ normalizar
+    let _rp=[];
+    slotGroups.forEach(sg=>{
+      if(sg.sep||sg.slot<600)return;   // ignora 00h–09h na normalização
+      const dd=agg[ln+':'+sg.slot];
+      if(dd&&dd.p>0){const pv=pct(dd.h,dd.p);if(pv!==null)_rp.push(pv);}
+    });
+    const _lo=_rp.length?Math.min(..._rp):0,_hi=_rp.length?Math.max(..._rp):0;
     slotGroups.forEach(sg=>{
       if(sg.sep){html+='<td class="ht-sep"></td>';return;}
+      if(sg.slot<600){const de=agg[ln+':'+sg.slot];const pe=de&&de.p>0?pct(de.h,de.p):null;html+=`<td style="background:#F0F2F5"${pe!==null?` title="${lojaName(ln)} ${DASH.slot_labels[String(sg.slot)]} ${pe}% · fora do color code"`:''}></td>`;return;}
       const key=ln+':'+sg.slot;
       const d=agg[key];
       if(!d||d.p===0){html+='<td style="background:#F0F2F5"></td>';return;}
       const p=pct(d.h,d.p);
-      const bg=heatColor(sg.turno,p);
-      html+=`<td style="background:${bg}" title="${lojaName(ln)} ${DASH.slot_labels[String(sg.slot)]} ${p!==null?p+'%':'—'}"></td>`;
+      const bg=_hmRowColor(p,_lo,_hi);
+      html+=`<td style="background:${bg}" title="${lojaName(ln)} ${DASH.slot_labels[String(sg.slot)]} ${p!==null?p+'%':'—'} (linha: ${_lo}–${_hi}%)"></td>`;
     });
     html+='</tr>';
   });
@@ -1771,9 +1872,19 @@ function renderHeatmap(){
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────
+// Lojas fechadas: exclui dados a partir do mês de fechamento (inclusive)
+const CLOSED_LOJAS={'ribeiraopreto':'2026-06'}; // Ribeirão Preto fechou no fim de Mai/26
+function _purgeClosed(){
+  const closedM=(ln,mes)=>CLOSED_LOJAS[ln]&&mes>=CLOSED_LOJAS[ln];
+  const closedD=(ln,ds)=>CLOSED_LOJAS[ln]&&String(ds).slice(0,7)>=CLOSED_LOJAS[ln];
+  ['tbl1','tbl2','tbl4','tbl2_dow','tbl4_dow'].forEach(t=>{if(DASH[t])DASH[t]=DASH[t].filter(r=>!closedM(r.loja_norm,r.mes));});
+  if(DASH.tbl3)DASH.tbl3=DASH.tbl3.filter(r=>!closedD(r.loja_norm,r.date_str));
+  if(T5)Object.keys(CLOSED_LOJAS).forEach(ln=>{if(T5[ln])Object.keys(T5[ln]).forEach(c=>Object.keys(T5[ln][c]).forEach(t=>{T5[ln][c][t]=Object.fromEntries(Object.entries(T5[ln][c][t]).filter(([ds])=>!closedD(ln,ds)));}));});
+}
 (async function init(){
   DASH=JSON.parse(await _decompress(_DASH_GZ));
   T5=JSON.parse(await _decompress(_T5_GZ));
+  _purgeClosed();
   // Populate dropdowns
   const sortedLojas=DASH.loja_info.slice().sort((a,b)=>a.loja.localeCompare(b.loja,'pt'));
   ['f2-loja','f3-loja','f5-loja'].forEach(selId=>{
