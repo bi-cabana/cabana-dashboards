@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cabana BI — Franquias</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--brand:#1D9E75;--dark:#1a1d21;--mid:#5a6068;--light:#e2e5e9;--bg:#f7f8fa;--card:#ffffff;--font:'DM Sans',system-ui,sans-serif;}
+body{font-family:var(--font);background:var(--bg);min-height:100vh;display:flex;flex-direction:column;color:var(--dark)}
+header{background:var(--dark);padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.logo-text{color:#fff;font-weight:700;font-size:1rem;line-height:1.2}
+.logo-text small{display:block;font-size:.68rem;color:rgba(255,255,255,.4);font-weight:400}
+.header-badge{background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);font-size:.72rem;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.1)}
+main{flex:1;padding:48px 40px;max-width:960px;margin:0 auto;width:100%}
+.welcome{margin-bottom:28px}
+.welcome h1{font-size:1.6rem;font-weight:800;color:var(--dark);margin-bottom:6px}
+.welcome p{color:var(--mid);font-size:.9rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.card{background:var(--card);border-radius:14px;border:1px solid var(--light);padding:28px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:16px;transition:all .2s;cursor:pointer}
+.card:hover{border-color:var(--brand);box-shadow:0 4px 20px rgba(29,158,117,.12);transform:translateY(-2px)}
+.card-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;background:#e8f7f1}
+.card-title{font-size:1rem;font-weight:700;color:var(--dark);margin-bottom:4px}
+.card-desc{font-size:.82rem;color:var(--mid);line-height:1.5}
+.card-footer{margin-top:auto;display:flex;align-items:center;justify-content:space-between}
+.card-tag{font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:20px;background:#e8f7f1;color:var(--brand)}
+.card-arrow{color:var(--mid);font-size:.85rem;transition:transform .2s}
+.card:hover .card-arrow{transform:translateX(4px);color:var(--brand)}
+.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mid);margin:8px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--light)}
+footer{padding:24px 40px;text-align:center;color:var(--mid);font-size:.75rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><img class="logo-icon" src="data:image/png;base64,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" alt="Cabana" style="object-fit:cover"/><div class="logo-text">Cabana BI<small>Business Intelligence</small></div></div>
+  <div class="header-badge">Acesso restrito</div>
+</header>
+<main>
+  <div class="welcome"><h1>Central de Franquias</h1><p>Selecione uma franquia para visualizar o dashboard.</p></div>
+  <div class="section-label">Franquias</div>
+  <div class="grid">
+    <a class="card" href="/franquias/santos/">
+      <div class="card-icon">🏪</div>
+      <div><div class="card-title">Santos</div><div class="card-desc">Forecast, faturamento, SSS, Tempo KDS, avaliações e operação da franquia.</div></div>
+      <div class="card-footer"><span class="card-tag">Franquia</span><span class="card-arrow">Acessar →</span></div>
+    </a>
+    <a class="card" href="/franquias/mogi_das_cruzes/">
+      <div class="card-icon">🏪</div>
+      <div><div class="card-title">Mogi das Cruzes</div><div class="card-desc">Forecast, faturamento, SSS, Tempo KDS, avaliações e operação da franquia.</div></div>
+      <div class="card-footer"><span class="card-tag">Franquia</span><span class="card-arrow">Acessar →</span></div>
+    </a>
+    <a class="card" href="/franquias/jundiai/">
+      <div class="card-icon">🏪</div>
+      <div><div class="card-title">Jundiaí</div><div class="card-desc">Forecast, faturamento, SSS, Tempo KDS, avaliações e operação da franquia.</div></div>
+      <div class="card-footer"><span class="card-tag">Franquia</span><span class="card-arrow">Acessar →</span></div>
+    </a>
+    <a class="card" href="/franquias/aeroporto_t2/">
+      <div class="card-icon">🏪</div>
+      <div><div class="card-title">Aeroporto T2</div><div class="card-desc">Forecast, faturamento, SSS, Tempo KDS, avaliações e operação da franquia.</div></div>
+      <div class="card-footer"><span class="card-tag">Franquia</span><span class="card-arrow">Acessar →</span></div>
+    </a>
+    <a class="card" href="/franquias/sao_jose_dos_campos/">
+      <div class="card-icon">🏪</div>
+      <div><div class="card-title">São José dos Campos</div><div class="card-desc">Forecast, faturamento, SSS, Tempo KDS, avaliações e operação da franquia.</div></div>
+      <div class="card-footer"><span class="card-tag">Franquia</span><span class="card-arrow">Acessar →</span></div>
+    </a>
+    <a class="card" href="/franquias/sao_caetano_ps/">
+      <div class="card-icon">🏪</div>
+      <div><div class="card-title">São Caetano - PS</div><div class="card-desc">Forecast, faturamento, SSS, Tempo KDS, avaliações e operação da franquia.</div></div>
+      <div class="card-footer"><span class="card-tag">Franquia</span><span class="card-arrow">Acessar →</span></div>
+    </a>
+    <a class="card" href="/franquias/osasco_top_center_patio_paulista/">
+      <div class="card-icon">🏪</div>
+      <div><div class="card-title">Osasco + Top Center + Patio Paulista</div><div class="card-desc">Forecast, faturamento, SSS, Tempo KDS, avaliações e operação da franquia.</div></div>
+      <div class="card-footer"><span class="card-tag">Franquia</span><span class="card-arrow">Acessar →</span></div>
+    </a>
+    <a class="card" href="/franquias/santo_andre/">
+      <div class="card-icon">🏪</div>
+      <div><div class="card-title">Santo Andre</div><div class="card-desc">Forecast, faturamento, SSS, Tempo KDS, avaliações e operação da franquia.</div></div>
+      <div class="card-footer"><span class="card-tag">Franquia</span><span class="card-arrow">Acessar →</span></div>
+    </a>
+  </div>
+</main>
+<footer>Cabana Burger · BI &amp; Analytics · Acesso restrito aos franqueados autorizados</footer>
+</body>
+</html>
