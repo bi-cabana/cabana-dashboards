@@ -54,27 +54,36 @@ $htmlPath = Join-Path $PASTA_LOCAL $NOME_HTML
 Set-Content -Path $htmlPath -Value $html -Encoding UTF8
 Write-Host "[OK] HTML criado: $htmlPath (refresh $REFRESH_MIN min)" -ForegroundColor Green
 
-# ── 3) LOCALIZA O CHROME ─────────────────────────────────────────────────
-$chromeCandidatos = @(
-    "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
-    "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
-    "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
+# ── 3) LOCALIZA O NAVEGADOR (Chrome ou Edge) ─────────────────────────────
+$navegadores = @(
+    @{Nome='Chrome'; Path="$env:ProgramFiles\Google\Chrome\Application\chrome.exe"},
+    @{Nome='Chrome'; Path="${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe"},
+    @{Nome='Chrome'; Path="$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"},
+    @{Nome='Edge';   Path="$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe"},
+    @{Nome='Edge';   Path="${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"}
 )
-$chromePath = $chromeCandidatos | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $chromePath) {
-    throw "Chrome nao encontrado. Instale o Chrome antes de rodar este script."
+$navegador = $navegadores | Where-Object { Test-Path $_.Path } | Select-Object -First 1
+if (-not $navegador) {
+    throw "Nem Chrome nem Edge foram encontrados. Instale um dos dois antes de rodar."
 }
-Write-Host "[OK] Chrome encontrado: $chromePath" -ForegroundColor Green
+$chromePath  = $navegador.Path
+$navegadorNome = $navegador.Nome
+Write-Host "[OK] Navegador encontrado ($navegadorNome): $chromePath" -ForegroundColor Green
 
-# ── 4) .BAT QUE ABRE O CHROME EM KIOSQUE ─────────────────────────────────
+# ── 4) .BAT QUE ABRE O NAVEGADOR EM KIOSQUE ──────────────────────────────
+# Edge tem uma flag extra pra "fullscreen kiosk" (evita popups de reinicio).
+$edgeExtra = ""
+if ($navegadorNome -eq 'Edge') {
+    $edgeExtra = "--edge-kiosk-type=fullscreen ^`r`n    "
+}
 $bat = @"
 @echo off
 REM Abre a TV em modo kiosque. Perfil dedicado permite ao watchdog
-REM identificar exatamente este processo.
+REM identificar exatamente este processo. Navegador: $navegadorNome
 timeout /t 5 /nobreak >nul
 start "" "$chromePath" ^
     --kiosk ^
-    --user-data-dir="$PASTA_PERFIL" ^
+    $edgeExtra--user-data-dir="$PASTA_PERFIL" ^
     --disable-features=TranslateUI ^
     --autoplay-policy=no-user-gesture-required ^
     --disable-session-crashed-bubble ^
@@ -88,21 +97,23 @@ Set-Content -Path $batPath -Value $bat -Encoding ASCII
 Write-Host "[OK] .bat criado: $batPath" -ForegroundColor Green
 
 # ── 5) WATCHDOG — verifica se Chrome kiosque esta rodando ────────────────
+$exeNome = if ($navegadorNome -eq 'Edge') { 'msedge.exe' } else { 'chrome.exe' }
 $watchdog = @"
-# Watchdog TV — se o Chrome kiosque nao estiver rodando, reabre.
+# Watchdog TV — se o navegador kiosque nao estiver rodando, reabre.
 `$ErrorActionPreference = 'SilentlyContinue'
 `$perfil = '$PASTA_PERFIL'
 `$bat = '$batPath'
 
-# Procura por chrome.exe cuja linha de comando contenha o user-data-dir da TV.
-`$rodando = Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" |
+# Procura pelo processo do navegador cuja linha de comando contenha o
+# user-data-dir da TV (isso identifica exatamente o kiosque).
+`$rodando = Get-CimInstance Win32_Process -Filter "Name='$exeNome'" |
     Where-Object { `$_.CommandLine -like "*`$perfil*" }
 
 if (-not `$rodando) {
-    Write-Host "[watchdog] Chrome kiosque NAO esta rodando. Reabrindo..."
+    Write-Host "[watchdog] $navegadorNome kiosque NAO esta rodando. Reabrindo..."
     Start-Process -FilePath `$bat -WindowStyle Hidden
 } else {
-    Write-Host "[watchdog] Chrome kiosque OK (`$(`$rodando.Count) processo(s))"
+    Write-Host "[watchdog] $navegadorNome kiosque OK (`$(`$rodando.Count) processo(s))"
 }
 "@
 $watchdogPath = Join-Path $PASTA_LOCAL $NOME_WATCHDOG
