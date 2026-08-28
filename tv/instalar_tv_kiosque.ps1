@@ -162,7 +162,7 @@ $action = New-ScheduledTaskAction `
 $triggerBoot  = New-ScheduledTaskTrigger -AtLogOn
 $triggerLoop  = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
                     -RepetitionInterval (New-TimeSpan -Minutes 5) `
-                    -RepetitionDuration ([TimeSpan]::MaxValue)
+                    -RepetitionDuration (New-TimeSpan -Days 9999)
 
 $user = "$env:USERDOMAIN\$env:USERNAME"
 $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
