@@ -15,7 +15,10 @@ $ErrorActionPreference = 'Stop'
 
 # ── CONFIGURACAO ─────────────────────────────────────────────────────────
 $URL_DASHBOARD   = "https://cabana-dashboards.bi-253.workers.dev/"
-$REFRESH_MIN     = 5
+# Horarios fixos de refresh (formato HH:MM, 24h). Ao atingir cada horario,
+# a pagina recarrega. Use este formato pra suportar TVs que ficam
+# ligadas o dia todo sem depender de intervalo em minutos.
+$REFRESH_HORARIOS = @("08:30", "15:00")
 $PASTA_LOCAL     = "C:\CabanaTV"
 $PASTA_PERFIL    = "$PASTA_LOCAL\perfil"
 $NOME_HTML       = "refresh_dashboards.html"
@@ -32,14 +35,14 @@ foreach ($p in @($PASTA_LOCAL, $PASTA_PERFIL)) {
 }
 
 # ── 2) HTML WRAPPER COM AUTO-REFRESH ─────────────────────────────────────
-$refreshSeg = $REFRESH_MIN * 60
+# Converte a lista PowerShell pra array JS: ["08:30","15:00"]
+$horariosJs = ($REFRESH_HORARIOS | ForEach-Object { "`"$_`"" }) -join ","
 $html = @"
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Cabana TV</title>
-  <meta http-equiv="refresh" content="$refreshSeg; url=$URL_DASHBOARD">
   <style>
     html, body { margin:0; padding:0; height:100%; overflow:hidden; background:#000; }
     iframe { border:0; width:100vw; height:100vh; display:block; }
@@ -47,12 +50,37 @@ $html = @"
 </head>
 <body>
   <iframe src="$URL_DASHBOARD"></iframe>
+  <script>
+    // Recarrega a pagina nos horarios fixos abaixo.
+    var HORARIOS = [$horariosJs];
+
+    function proximoDisparoMs() {
+      var agora = new Date();
+      var candidatos = HORARIOS.map(function(h) {
+        var partes = h.split(':');
+        var d = new Date(agora);
+        d.setHours(parseInt(partes[0],10), parseInt(partes[1],10), 0, 0);
+        if (d <= agora) d.setDate(d.getDate() + 1); // ja passou hoje, vai pra amanha
+        return d;
+      });
+      var proximo = candidatos.reduce(function(a,b){ return a<b?a:b; });
+      return proximo.getTime() - agora.getTime();
+    }
+
+    function agendar() {
+      var ms = proximoDisparoMs();
+      console.log('[TV] Proximo refresh em ' + Math.round(ms/60000) + ' minutos');
+      setTimeout(function() { location.reload(); }, ms);
+    }
+
+    agendar();
+  </script>
 </body>
 </html>
 "@
 $htmlPath = Join-Path $PASTA_LOCAL $NOME_HTML
 Set-Content -Path $htmlPath -Value $html -Encoding UTF8
-Write-Host "[OK] HTML criado: $htmlPath (refresh $REFRESH_MIN min)" -ForegroundColor Green
+Write-Host "[OK] HTML criado: $htmlPath (refresh nos horarios: $($REFRESH_HORARIOS -join ', '))" -ForegroundColor Green
 
 # ── 3) LOCALIZA O NAVEGADOR (Chrome ou Edge) ─────────────────────────────
 $navegadores = @(
@@ -187,7 +215,7 @@ Write-Host "Camadas de robustez:"
 Write-Host "  - .bat inicia Chrome kiosque no login"
 Write-Host "  - Watchdog a cada 5 min: se Chrome cair, reabre"
 Write-Host "  - powercfg: PC nunca dorme"
-Write-Host "  - HTML: refresh a cada $REFRESH_MIN min"
+Write-Host "  - HTML: refresh nos horarios $($REFRESH_HORARIOS -join ' e ')"
 Write-Host ""
 Write-Host "URL: $URL_DASHBOARD"
 Write-Host ""
