@@ -1,10 +1,10 @@
 {
- "atualizado_em": "03/09/2026 23:30",
- "data_referencia": "2026-09-03",
- "horario_referencia": "23:30",
- "colaboradores": 339,
+ "atualizado_em": "04/09/2026 00:00",
+ "data_referencia": "2026-09-04",
+ "horario_referencia": "00:00",
+ "colaboradores": 338,
  "lojas": 20,
- "ife_rede": 25.9,
+ "ife_rede": 25.7,
  "defasagem_ponto_min": 0,
  "alerta_dado_velho": false,
  "url_dashboard": "https://cabana-dashboards.bi-253.workers.dev/aderencia-escala/"
