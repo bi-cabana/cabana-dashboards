@@ -1,0 +1,5 @@
+# Cabana Dashboards - politica de cache
+# Sem ETag/Last-Modified na origem, o Chrome servia HTML antigo do cache local.
+# no-store obriga o navegador a sempre buscar a versao publicada mais recente.
+/*
+  Cache-Control: no-store
