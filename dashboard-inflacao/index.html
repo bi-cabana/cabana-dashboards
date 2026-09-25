@@ -89,6 +89,16 @@
   .toggle{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
   .toggle button{background:transparent;border:0;padding:6px 14px;font-size:12.5px;color:var(--ink2);cursor:pointer}
   .toggle button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
+  .cmpbusca{position:relative}
+  .cmpbusca input[type=search]{flex:0 1 560px;min-width:0;width:min(560px,100%)}
+  #cmp_conta{margin-left:auto;white-space:nowrap}
+  @media(max-width:700px){#cmp_conta{margin-left:0;white-space:normal}}
+  #cmp_lista{position:absolute;z-index:40;top:calc(100% + 4px);left:0;width:min(560px,100%);
+    max-height:290px;overflow:auto;margin:0;padding:4px;list-style:none;background:var(--plane);
+    border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.16)}
+  #cmp_lista li{padding:7px 10px;border-radius:6px;font-size:12.5px;color:var(--ink);cursor:pointer}
+  #cmp_lista li.on,#cmp_lista li:hover{background:var(--wash)}
+  #cmp_lista li.vazio{color:var(--muted);cursor:default}
   .chips{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px}
   .chips button{background:var(--plane);border:1px solid var(--border);border-radius:999px;
     padding:5px 12px;font:12.5px system-ui,sans-serif;color:var(--ink2);cursor:pointer;
@@ -192,9 +202,9 @@
 
 <!--[if gte mso 9]><xml>
 <mso:CustomDocumentProperties>
-<mso:_dlc_DocId msdt:dt="string">75DVEWA554PV-1278060199-44610</mso:_dlc_DocId>
-<mso:_dlc_DocIdItemGuid msdt:dt="string">9393a2f5-bf6c-4e19-bb59-96674d128c7c</mso:_dlc_DocIdItemGuid>
-<mso:_dlc_DocIdUrl msdt:dt="string">https://cabanaburger.sharepoint.com/sites/documentos/_layouts/15/DocIdRedir.aspx?ID=75DVEWA554PV-1278060199-44610, 75DVEWA554PV-1278060199-44610</mso:_dlc_DocIdUrl>
+<mso:_dlc_DocId msdt:dt="string">75DVEWA554PV-1278060199-44592</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">367231e2-fab9-4e66-a28b-d13f18f1c828</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://cabanaburger.sharepoint.com/sites/documentos/_layouts/15/DocIdRedir.aspx?ID=75DVEWA554PV-1278060199-44592, 75DVEWA554PV-1278060199-44592</mso:_dlc_DocIdUrl>
 </mso:CustomDocumentProperties>
 </xml><![endif]-->
 </head>
@@ -320,20 +330,8 @@
 <section>
   <h2><span class="num">Análise 2</span>Preço de compra Cabana vs. preço de mercado</h2>
   <p class="lede">Três insumos têm índice público de referência. Onde a unidade é a mesma comparamos o
-    nível — o que revela o prêmio pago sobre a commodity. Onde ela difere, comparamos a trajetória em base 100.</p>
-
-  <div class="card">
-    <h3>Prêmio pago sobre a referência de mercado</h3>
-    <p class="cap">Quanto o preço pago fica acima (ou abaixo) da cotação de referência, mês a mês.
-      Um prêmio estável é custo de qualidade, lavagem e logística; um prêmio que <i>abre</i> quando a
-      commodity cai é negociação a recuperar.</p>
-    <div class="kpis" id="kpis_premio" style="margin-top:0"></div>
-    <div class="controls" style="margin:16px 0 4px">
-      <select id="premio_sel" aria-label="Insumo"></select>
-    </div>
-    <div id="c_premio"></div>
-    <p class="callout" id="call_premio"></p>
-  </div>
+    nível em R$; onde ela difere, comparamos a trajetória em base 100. Em todos os casos o que
+    interessa é a distância entre as duas curvas ao longo do tempo.</p>
 
   <div class="card">
     <h3>Batata — R$ por saco de 25 kg, pago vs. atacado São Paulo</h3>
@@ -358,26 +356,6 @@
     </div>
     <div id="c_carne"></div>
     <p class="callout" id="call_carne"></p>
-  </div>
-
-  <div class="card">
-    <h3>Repasse — quanto do movimento do mercado chega ao nosso preço</h3>
-    <p class="cap">Cada ponto é um mês: no eixo horizontal a variação da referência de mercado, no
-      vertical a do preço que pagamos. Na diagonal, o fornecedor repassou exatamente o movimento.
-      Acima dela, amplificou; abaixo, absorveu. A reta azul é o ajuste dos últimos 12 meses.</p>
-    <div class="controls">
-      <select id="rep_sel" aria-label="Insumo"></select>
-    </div>
-    <div class="grid2">
-      <div>
-        <div id="c_repasse"></div>
-        <div class="legend" style="margin:10px 0 0;font-size:12px">
-          <span><i class="sw" style="background:var(--crit);height:9px;width:9px;border-radius:50%"></i>mês em que amplificou</span>
-          <span><i class="sw" style="background:var(--good);height:9px;width:9px;border-radius:50%"></i>mês em que absorveu</span>
-        </div>
-      </div>
-      <div id="rep_leitura"></div>
-    </div>
   </div>
 
   <div class="card">
@@ -439,8 +417,13 @@
     <h3>Mesmo item, fornecedores diferentes</h3>
     <p class="cap">Aqui a comparação é limpa: mesmo produto, mesma unidade, faturado por mais de um
       CNPJ. A diferença de R$ por unidade é diferença de preço de fato.</p>
-    <div class="controls">
-      <select id="cmp_item" aria-label="Produto a comparar"></select>
+    <div class="controls cmpbusca">
+      <input type="search" id="cmp_busca" autocomplete="off" spellcheck="false"
+             placeholder="Digite para buscar o produto — ex.: batata, pão, cheddar"
+             aria-label="Buscar produto" role="combobox" aria-expanded="false" aria-controls="cmp_lista">
+      <span class="count" id="cmp_conta"></span>
+      <ul id="cmp_lista" role="listbox" hidden></ul>
+      <select id="cmp_item" aria-label="Produto a comparar" hidden></select>
     </div>
     <div class="chips" id="cmp_chips"></div>
     <div id="c_cmp"></div>
@@ -674,56 +657,6 @@ function barsV(host,pts,opt={}){
       tip.style.left=Math.min(innerWidth-tip.offsetWidth-10,Math.max(8,ev.clientX+14))+'px';
       tip.style.top=Math.max(8,ev.clientY-tip.offsetHeight-12)+'px';});
     rc.addEventListener('pointerleave',()=>tip.style.opacity=0);});
-  host.appendChild(svg);
-}
-
-/* ---------------- dispersão de repasse ---------------- */
-function scatter(host,pts,opt={}){
-  host.innerHTML='';
-  const W=opt.w||460,H=opt.h||330,Mg={t:16,r:16,b:40,l:48};
-  if(!pts.length){host.innerHTML='<p class="cap">Sem meses suficientes.</p>';return;}
-  const lim=Math.max(3,...pts.map(p=>Math.max(Math.abs(p.x),Math.abs(p.y))))*1.15;
-  const X=x=>Mg.l+((x+lim)/(2*lim))*(W-Mg.l-Mg.r);
-  const Y=y=>Mg.t+(1-(y+lim)/(2*lim))*(H-Mg.t-Mg.b);
-  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':opt.title||''});
-  const bruto=lim/3, mg=Math.pow(10,Math.floor(Math.log10(bruto))), rr=bruto/mg;
-  const step=(rr<=1?1:rr<=2?2:rr<=2.5?2.5:rr<=5?5:10)*mg;
-  for(let t=-Math.floor(lim/step)*step;t<=lim;t+=step){
-    svg.appendChild(el('line',{x1:Mg.l,x2:W-Mg.r,y1:Y(t),y2:Y(t),class:t===0?'ax':'gl'}));
-    svg.appendChild(el('line',{x1:X(t),x2:X(t),y1:Mg.t,y2:H-Mg.b,class:t===0?'ax':'gl'}));
-    if(t!==0){
-      const ty=el('text',{x:Mg.l-7,y:Y(t)+4,class:'tick','text-anchor':'end'});
-      ty.textContent=t+'%';svg.appendChild(ty);
-      const tx=el('text',{x:X(t),y:H-Mg.b+15,class:'tick','text-anchor':'middle'});
-      tx.textContent=t+'%';svg.appendChild(tx);}}
-  // reta 45 graus = repasse integral
-  svg.appendChild(el('line',{x1:X(-lim),y1:Y(-lim),x2:X(lim),y2:Y(lim),
-    stroke:cs('--muted'),'stroke-width':1.5,'stroke-dasharray':'5 4'}));
-  const l45=el('text',{x:X(lim)-4,y:Y(lim)+14,class:'tick','text-anchor':'end'});
-  l45.textContent='repasse integral';svg.appendChild(l45);
-  // reta ajustada
-  if(opt.beta!=null){
-    svg.appendChild(el('line',{x1:X(-lim),y1:Y(-lim*opt.beta),x2:X(lim),y2:Y(lim*opt.beta),
-      stroke:S(1),'stroke-width':2}));}
-  const tip=$('#tip');
-  pts.forEach(p=>{
-    const c=el('circle',{cx:X(p.x),cy:Y(p.y),r:5,class:'dot',
-      fill:p.y>p.x?cs('--crit'):cs('--good'),'fill-opacity':.85});
-    c.style.cursor='crosshair';
-    c.addEventListener('pointerenter',ev=>{
-      tip.innerHTML=`<b>${fMes(p.d)}</b>
-        <div class="r"><i>${opt.eixo||'mercado'}</i><span>${pct(p.x)}</span></div>
-        <div class="r"><i>Cabana</i><span>${pct(p.y)}</span></div>`;
-      tip.style.opacity=1;
-      tip.style.left=Math.min(innerWidth-tip.offsetWidth-10,Math.max(8,ev.clientX+14))+'px';
-      tip.style.top=Math.max(8,ev.clientY-tip.offsetHeight-12)+'px';});
-    c.addEventListener('pointerleave',()=>tip.style.opacity=0);
-    svg.appendChild(c);});
-  const ex=el('text',{x:(Mg.l+W-Mg.r)/2,y:H-6,class:'tick','text-anchor':'middle'});
-  ex.textContent='variação mensal · '+(opt.eixo||'mercado');svg.appendChild(ex);
-  const ey=el('text',{x:12,y:(Mg.t+H-Mg.b)/2,class:'tick','text-anchor':'middle',
-    transform:`rotate(-90 12 ${(Mg.t+H-Mg.b)/2})`});
-  ey.textContent='variação mensal · preço pago';svg.appendChild(ey);
   host.appendChild(svg);
 }
 
@@ -1006,67 +939,13 @@ function desenhaSaz(){
 }
 
 /* ================= 2. mercado ================= */
-/* ---- prêmio vs mercado (item 2) ---- */
-function desenhaPremio(){
-  const P=D.premios, k=$('#premio_sel').value, p=P[k];
-  if(!p)return;
-  barsV($('#c_premio'),p.serie,{media:p.medio_12m,h:210,
-    fmtY:v=>nf(v,0)+'%',fmtL:v=>nf(v,1)+'%',rotulo:'prêmio'});
-  const s=p.serie.map(x=>x.v), rec=s.slice(-6), ant=s.slice(-12,-6);
-  const mr=rec.reduce((a,b)=>a+b,0)/rec.length, ma=ant.length?ant.reduce((a,b)=>a+b,0)/ant.length:null;
-  const abriu=ma!=null&&mr-ma>2;
-  $('#call_premio').innerHTML=`<b>${p.titulo}</b> — referência: ${p.referencia}.
-    ${p.comparavel?'':'<b>Proxy: </b>'}${p.nota}
-    ${ma!=null?` Nos últimos 6 meses o prêmio médio foi <b>${nf(mr,1)}%</b> contra ${nf(ma,1)}% nos 6
-    anteriores — ${abriu?'<b>abriu</b>, e é exatamente o padrão de deterioração de negociação que vale investigar'
-    :(mr-ma<-2?'<b>fechou</b>, sinal de que o repasse da queda chegou':'estável, o que sugere prêmio estrutural e não negociação')}.`:''}`;
-}
-
-/* ---- repasse (item 4) ---- */
-function desenhaRepasse(){
-  const k=$('#rep_sel').value, r=D.repasse[k];
-  if(!r)return;
-  scatter($('#c_repasse'),r.pontos,{beta:r.beta,eixo:r.eixo,h:330});
-  const acima=r.pontos.filter(p=>p.y>p.x).length;
-  const b=r.beta;
-  let leitura, cor;
-  if(b==null){leitura='Não há variação suficiente para estimar.';cor='--muted';}
-  else if(b<0.15){leitura='O preço praticamente não se move com o mercado — é contrato travado. Ótimo enquanto a commodity sobe, ruim quando ela cai e a queda não chega.';cor='--s1';}
-  else if(b<0.85){leitura='O fornecedor <b>absorve</b> parte do movimento: quando o mercado sobe 10%, repassa menos que isso. Também costuma segurar quando cai.';cor='--good';}
-  else if(b<=1.15){leitura='Repasse praticamente <b>integral</b>: o preço acompanha o mercado quase um a um, nas duas direções.';cor='--ink2';}
-  else {leitura='O fornecedor <b>amplifica</b> o movimento: repassa a alta com folga e devolve pouco na baixa. É a assimetria que vale levar para a mesa.';cor='--crit';}
-  $('#rep_leitura').innerHTML=`
-    <div class="kpi" style="margin-bottom:12px">
-      <div class="lab">Elasticidade (β) · 12 meses</div>
-      <div class="val">${b!=null?nf(b,2):'—'}</div>
-      <div class="note">${b!=null?`cada 1% de variação em ${r.eixo} vira ${nf(b,2)}% no nosso preço`:'sem base'}
-        ${r.r2!=null?` · aderência R² ${nf(r.r2,2)}`:''}</div>
-    </div>
-    <p class="cap" style="margin-bottom:10px">${leitura}</p>
-    <p class="cap"><b>${acima}</b> dos ${r.pontos.length} meses ficaram acima da diagonal —
-      meses em que o preço pago subiu mais (ou caiu menos) que a referência.
-      ${r.r2!=null&&r.r2<0.3?'<br><br>A aderência é baixa: o preço deste item responde a outras coisas além do mercado (contrato, mix de corte, câmbio), então o β é indicativo, não uma lei.':''}</p>`;
-}
-
 function secao2(){
   const C=D.comparativos;
   if(!wired){
-    $('#premio_sel').innerHTML=Object.entries(D.premios)
-      .map(([k,v])=>`<option value="${k}">${v.titulo}${v.comparavel?'':' (proxy)'}</option>`).join('');
-    $('#premio_sel').addEventListener('change',desenhaPremio);
-    $('#rep_sel').innerHTML=Object.entries(D.repasse)
-      .map(([k,v])=>`<option value="${k}">${v.titulo}</option>`).join('');
-    $('#rep_sel').addEventListener('change',desenhaRepasse);
     $$('[data-qj]').forEach(b=>b.addEventListener('click',()=>{
       $$('[data-qj]').forEach(x=>x.setAttribute('aria-pressed',x===b));
       qjVis=b.dataset.qj;desenhaQueijo();}));
   }
-  const P=D.premios;
-  $('#kpis_premio').innerHTML=Object.entries(P).map(([k,v])=>`<div class="kpi">
-    <div class="lab">${v.titulo}${v.comparavel?'':' <span class="tag">proxy</span>'}</div>
-    <div class="val" style="font-size:26px">${v.medio_12m!=null?pct(v.medio_12m,0):'—'}</div>
-    <div class="note">média de 12 meses acima da referência · hoje ${pct(v.atual,0)}</div></div>`).join('');
-  desenhaPremio(); desenhaRepasse();
   // batata: mesma unidade (saco 25 kg)
   const cb=C.batata.cabana, mk=C.batata.mercado_asterix.length?C.batata.mercado_asterix:C.batata.mercado;
   const mkMap=Object.fromEntries(mk.map(p=>[p.d,p.v]));
@@ -1074,12 +953,23 @@ function secao2(){
     {name:'Cabana (NF-e)',color:S(1),pts:cb},
     {name:'Asterix atacado SP',color:S(2),pts:mk.filter(p=>p.d>=cb[0].d)}],
     {h:300,fmtL:v=>'R$ '+nf(v,0),fmtT:v=>'R$ '+nf(v,2)+'/saco',nx:10,mr:74});
-  const sp=cb.filter(p=>mkMap[p.d]).map(p=>({d:p.d,v:100*(p.v/mkMap[p.d]-1)}));
-  const spU=sp.at(-1), spMed=sp.reduce((a,x)=>a+x.v,0)/sp.length;
-  $('#call_batata').innerHTML=`A Cabana paga hoje <b>${brl(cb.at(-1).v)}</b> por saco contra
-    <b>${brl(mkMap[cb.at(-1).d]||mk.at(-1).v)}</b> no atacado — prêmio de <b>${pct(spU.v,0)}</b>,
-    contra ${pct(spMed,0)} de média no período. Esse prêmio é o custo de lavar, classificar e entregar;
-    o que importa acompanhar é se ele abre quando a commodity cai.`;
+  const mkC=mk.filter(p=>p.d>=cb[0].d);
+  const varTot=a=>{const x=a.filter(p=>p.v!=null);return x.length>1?100*(x.at(-1).v/x[0].v-1):null;};
+  const var12s=a=>{const x=a.filter(p=>p.v!=null);return x.length>12?100*(x.at(-1).v/x.at(-13).v-1):null;};
+  const bc=varTot(cb), bm=varTot(mkC), bc12=var12s(cb), bm12=var12s(mkC);
+  const leitura=(bc12==null||bm12==null)
+    ? 'A janela de 12 meses ainda não está completa nas duas séries.'
+    : (bm12<-2&&bc12>bm12+5
+        ? 'A referência recuou e o preço pago não acompanhou na mesma medida — é essa distância que vale levar para a negociação.'
+        : (bc12>bm12+5
+            ? 'Nosso preço subiu mais que a referência no período — vale entender o que explica o descolamento.'
+            : (bc12<bm12-5
+                ? 'Nosso preço subiu menos que a referência — a negociação segurou parte do movimento do mercado.'
+                : 'As duas trajetórias andaram juntas: o preço pago está acompanhando o movimento do mercado.')));
+  $('#call_batata').innerHTML=`De ${fMes(cb[0].d)} a ${fMes(cb.at(-1).d)} o saco pago pela Cabana saiu de
+    ${brl(cb[0].v)} para <b>${brl(cb.at(-1).v)}</b> — <b>${pct(bc)}</b> — enquanto o Asterix no atacado SP
+    fez <b>${pct(bm)}</b> no mesmo intervalo. Nos últimos 12 meses, <b>${pct(bc12)}</b> contra
+    ${pct(bm12)} da referência. ${leitura}`;
 
   // carne base 100
   const b100=pts=>{const b=pts.find(p=>p.v!=null);return b?pts.map(p=>({d:p.d,v:p.v==null?null:100*p.v/b.v})):[];};
@@ -1171,6 +1061,50 @@ function ranking(){
     ||'<tr><td colspan="7" style="color:var(--muted)">Nada com esses filtros.</td></tr>';
 }
 let cmpOn=new Set();
+/* ---- busca por digitacao do comparador de item ---- */
+function cmpBusca(){
+  const inp=$('#cmp_busca'), lst=$('#cmp_lista'), sel=$('#cmp_item'), cnt=$('#cmp_conta');
+  const chaves=[...sel.options].map(o=>o.value);
+  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const NORM=chaves.map(norm);
+  let marca=-1;
+  cnt.textContent=chaves.length+' produtos com mais de um fornecedor';
+  function fecha(){lst.hidden=true;inp.setAttribute('aria-expanded','false');marca=-1;}
+  function abre(termo){
+    const t=norm(termo||'').split(/\s+/).filter(Boolean);
+    const hits=chaves.filter((k,i)=>t.every(p=>NORM[i].includes(p))).slice(0,60);
+    lst.innerHTML='';
+    if(!hits.length){const li=document.createElement('li');li.className='vazio';
+      li.textContent='nenhum produto com esse termo';lst.appendChild(li);marca=-1;}
+    else{if(marca>=hits.length)marca=0;
+      hits.forEach((k,i)=>{const li=document.createElement('li');li.setAttribute('role','option');
+        li.dataset.k=k;li.textContent=k;if(i===marca)li.className='on';lst.appendChild(li);});}
+    lst.hidden=false;inp.setAttribute('aria-expanded','true');
+  }
+  function escolhe(k){sel.value=k;inp.value=k;fecha();comparador(true);}
+  function restaura(){if(inp.value!==sel.value)inp.value=sel.value;}
+  inp.addEventListener('input',()=>{marca=0;abre(inp.value);});
+  inp.addEventListener('focus',()=>{marca=-1;abre('');inp.select();});
+  inp.addEventListener('mouseup',e=>{if(inp.value===sel.value){e.preventDefault();inp.select();}});
+  inp.addEventListener('blur',()=>setTimeout(()=>{
+    if(document.activeElement!==inp){fecha();restaura();}},180));
+  inp.addEventListener('keydown',e=>{
+    const its=[...lst.querySelectorAll('li[data-k]')];
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();
+      if(lst.hidden){abre(inp.value===sel.value?'':inp.value);return;}
+      marca=Math.max(0,Math.min(its.length-1,(marca<0?-1:marca)+(e.key==='ArrowDown'?1:-1)));
+      its.forEach((li,i)=>li.classList.toggle('on',i===marca));
+      if(its[marca])its[marca].scrollIntoView({block:'nearest'});
+    }else if(e.key==='Enter'){
+      if(!lst.hidden&&its.length){e.preventDefault();escolhe(its[marca>=0?marca:0].dataset.k);}
+    }else if(e.key==='Escape'){fecha();restaura();inp.blur();}
+  });
+  lst.addEventListener('mousedown',e=>{const li=e.target.closest('li[data-k]');
+    if(li){e.preventDefault();escolhe(li.dataset.k);}});
+  document.addEventListener('click',e=>{if(!e.target.closest('.cmpbusca')){fecha();restaura();}});
+  inp.value=sel.value;
+}
+
 function comparador(reset){
   const chave=$('#cmp_item').value, info=D.comparador_item[chave];
   if(!info){$('#c_cmp').innerHTML='';return;}
@@ -1221,6 +1155,7 @@ function secao3(){
     const ch=Object.keys(D.comparador_item);
     $('#cmp_item').innerHTML=ch.map(k=>`<option value="${k}">${k}</option>`).join('');
     $('#cmp_item').addEventListener('change',()=>comparador(true));
+    cmpBusca();
   }
   ranking();
   if($('#cmp_item').value) comparador(!cmpOn.size);
