@@ -261,6 +261,23 @@
   .linha-adm .q b{display:block; font-weight:600}
   .linha-adm .q small{color:var(--fraco); font-size:12px}
 
+  /* Os três números de uso. Largura fixa para alinharem em coluna de cima a
+     baixo: a tela de acessos é lida varrendo a coluna, não linha a linha. */
+  .uso{display:flex; gap:4px; flex:none}
+  .uso div{width:62px; text-align:center}
+  .uso b{display:block; font-size:15px; font-weight:800; line-height:1.2;
+         font-variant-numeric:tabular-nums}
+  .uso i{display:block; font-style:normal; font-size:9.5px; color:var(--fraco);
+         letter-spacing:.03em; text-transform:uppercase; margin-top:1px}
+  .uso .sumido b{color:var(--fraco); font-weight:600}
+  .uso .hoje b{color:var(--limonada)}
+  .uso .serie b{color:var(--esquilo)}
+  @media (max-width:420px){
+    .uso div{width:50px}
+    .uso b{font-size:14px}
+    .uso i{font-size:9px}
+  }
+
   /* ------------------------------------------------------------------ NAV */
   nav{position:fixed; left:0; right:0; bottom:0; z-index:10;
       background:rgba(14,18,12,.96); border-top:1px solid var(--linha);
@@ -1572,7 +1589,7 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
         <div id="admFila"></div>
       </div>
       <div class="cartao">
-        <h2>Acesso das 27 lojas</h2>
+        <h2 id="tituloAcessos">Acesso das lojas</h2>
         <div id="admAcessos"></div>
         <p class="nota">Criar conta nova é pelo Python
           (<code>cabanao_db.py usuarios</code>) — exige a chave de serviço, que
@@ -1719,6 +1736,11 @@ async function abrir() {
     : esc((eu.time || eu.loja || "C").trim()[0]);
   $("nomeTime").value = eu.time || "";
 
+  // Marca presença. Sem `await`: se a rede estiver ruim ou a função ainda não
+  // existir no banco, o app abre do mesmo jeito — registro de acesso não pode
+  // ser motivo para o gerente ficar olhando tela branca.
+  if (!window.__SB_FAKE__) sb.rpc("registrar_acesso").then(() => {}, () => {});
+
   assinar($("app"));
   montarNav();
   await carregarRodadas();
@@ -1762,6 +1784,11 @@ async function mostrar(p) {
 // e `assinar()` troca pelo link real quando ele chega.
 const PIXEL = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 
+// Quando a assinatura falha, a imagem fica num quadrado vazio e o app não diz
+// nada — foi exatamente assim que um erro de permissão passou despercebido por
+// um dia inteiro. Agora o motivo fica guardado aqui e a tela mostra.
+let ERRO_MIDIA = "";
+
 async function assinar(raiz) {
   const els = [...(raiz || document).querySelectorAll("img[data-caminho]")]
     .filter(e => !e.dataset.pronto);
@@ -1771,14 +1798,37 @@ async function assinar(raiz) {
     els.forEach(e => { e.src = e.dataset.caminho; e.dataset.pronto = "1"; });
     return;
   }
-  const { data } = await sb.storage.from(BUCKET)
+  const { data, error } = await sb.storage.from(BUCKET)
     .createSignedUrls(caminhos, 3600);
+  ERRO_MIDIA = error ? (error.message || String(error)) : "";
   const mapa = Object.fromEntries((data || [])
     .filter(d => d.signedUrl).map(d => [d.path, d.signedUrl]));
+  // O Storage também responde "ok" com erro POR CAMINHO: a chamada dá certo e
+  // um arquivo específico volta sem link. Sem olhar isso, o motivo some.
+  if (!ERRO_MIDIA) {
+    const faltou = caminhos.filter(c => !mapa[c]);
+    if (faltou.length) {
+      const porque = (data || []).filter(d => !d.signedUrl && d.error)
+        .map(d => d.error).filter(Boolean);
+      ERRO_MIDIA = `sem link para ${faltou.length} arquivo(s)`
+        + (porque.length ? ` — ${porque[0]}` : " — o Storage não explicou")
+        + ` · ${faltou[0]}`;
+    }
+  }
   els.forEach(e => {
     const u = mapa[e.dataset.caminho];
     if (u) { e.src = u; e.dataset.pronto = "1"; }
   });
+}
+
+function avisoMidia(alvo) {
+  if (!ERRO_MIDIA) return;
+  $(alvo).insertAdjacentHTML("afterbegin",
+    `<div class="aviso erro" style="margin:0 0 10px">
+       A imagem não carregou — o problema é na LEITURA, não no arquivo que a
+       pessoa enviou. Recusar e pedir de novo não resolve.
+       <br><span style="opacity:.75;font-size:12.5px">${esc(ERRO_MIDIA)}</span>
+     </div>`);
 }
 
 // ------------------------------------------------------------------ TABELA
@@ -2041,10 +2091,18 @@ async function pgAdmin() {
       .eq("status", "pendente").order("enviado_em"),
   ]);
   const a = acessos || [];
+  const comConta = a.filter(x => x.user_id);
+  const hoje     = comConta.filter(x => diasAtras(x.ultimo_acesso) === 0);
+  // "Sumido" junta quem nunca entrou com quem entrou e parou: para a cobrança
+  // os dois são a mesma conversa, e separar em dois KPIs só gasta espaço.
+  const sumidos  = comConta.filter(x => {
+    const d = diasAtras(x.ultimo_acesso);
+    return d === null || d > 3;
+  });
   $("admKpis").innerHTML = [
-    ["Com conta", a.filter(x => x.user_id).length, `de ${a.length} lojas`],
-    ["Nunca entrou", a.filter(x => x.user_id && x.nunca_entrou).length, "cobrar acesso"],
-    ["Com escudo", a.filter(x => x.tem_escudo).length, "aprovado"],
+    ["Com conta", comConta.length, `de ${a.length} lojas`],
+    ["Entraram hoje", hoje.length, comConta.length ? `de ${comConta.length} contas` : "—"],
+    ["Sumidos", sumidos.length, "+3 dias sem abrir"],
     ["Na fila", (fila || []).length, "esperando você"],
   ].map(([t, v, s]) =>
     `<div class="kpi"><small>${t}</small><b>${v}</b><i>${esc(s)}</i></div>`).join("");
@@ -2062,22 +2120,66 @@ async function pgAdmin() {
         data-nao="${m.id}">Recusar</button>
     </div>`; }).join("")
     : `<p class="vazio">Nada esperando aprovação.</p>`;
-  assinar($("admFila"));
+  await assinar($("admFila"));
+  avisoMidia("admFila");
   $("admFila").querySelectorAll("[data-sim]").forEach(b =>
     b.addEventListener("click", () => decidir(+b.dataset.sim, true)));
   $("admFila").querySelectorAll("[data-nao]").forEach(b =>
     b.addEventListener("click", () => decidir(+b.dataset.nao, false)));
 
-  $("admAcessos").innerHTML = a.map(x => `
+  // Ordem: quem está sumido primeiro. A tela existe para cobrar, e o que
+  // precisa de ação tem de aparecer sem rolar. Dentro de cada grupo, por loja.
+  const ordenado = [...a].sort((p, q) =>
+    (faltam(p) - faltam(q)) || String(p.loja).localeCompare(String(q.loja), "pt"));
+
+  $("tituloAcessos").textContent = `Acesso das ${a.length} lojas`;
+  $("admAcessos").innerHTML = ordenado.map(x => {
+    const sem   = !x.user_id;
+    const dias  = x.dias_acesso || 0;
+    const serie = x.dias_seguidos || 0;
+    const d     = diasAtras(x.ultimo_acesso);
+    return `
     <div class="linha-adm">
       <div class="q"><b>${esc(x.loja)}</b>
-        <small>${x.user_id
-          ? esc(x.email || "") + (x.nunca_entrou ? " · nunca entrou" : "")
-          : "sem conta"}</small></div>
-      <span class="st ${x.user_id ? (x.nunca_entrou ? "st-pendente" : "st-aprovado")
-                                  : "st-vazio"}">${
-        x.user_id ? (x.nunca_entrou ? "não entrou" : "ativo") : "sem conta"}</span>
-    </div>`).join("");
+        <small>${sem ? "sem conta criada" : esc(x.email || "")}${
+          x.tem_escudo ? "" : " · sem escudo"}</small></div>
+      <div class="uso">
+        <div class="${d === 0 ? "hoje" : (d === null || d > 3 ? "sumido" : "")}">
+          <b>${esc(quandoTxt(x.ultimo_acesso))}</b><i>último</i></div>
+        <div class="${dias ? "" : "sumido"}">
+          <b>${dias}</b><i>${dias === 1 ? "dia" : "dias"}</i></div>
+        <div class="${serie >= 3 ? "serie" : (serie ? "" : "sumido")}">
+          <b>${serie || "—"}</b><i>seguidos</i></div>
+      </div>
+    </div>`; }).join("");
+}
+
+// Quantos dias se passaram desde o último acesso. null = nunca entrou.
+// Comparado por DIA, não por hora: quem entrou às 23h de ontem está "há 1 dia",
+// não "há 10 horas".
+function diasAtras(ts) {
+  if (!ts) return null;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const dia = new Date(ts); dia.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.round((hoje - dia) / 86400000));
+}
+
+function quandoTxt(ts) {
+  const d = diasAtras(ts);
+  if (d === null) return "nunca";
+  if (d === 0) return "hoje";
+  if (d === 1) return "ontem";
+  if (d < 30) return d + "d";
+  return new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+
+// O critério de "precisa de ação", do mais urgente para o menos: sem conta,
+// conta criada e nunca usada, sumido há mais de 3 dias, e o resto.
+function faltam(x) {
+  if (!x.user_id) return 0;
+  if (!x.ultimo_acesso) return 1;
+  const d = diasAtras(x.ultimo_acesso);
+  return d > 3 ? 2 : 3;
 }
 
 async function decidir(id, aprovar) {
