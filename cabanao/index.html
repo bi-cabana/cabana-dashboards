@@ -254,6 +254,49 @@
   .st-recusado{background:rgba(255,93,49,.2); color:#ffb9a3}
   .st-vazio{background:var(--vidro); color:var(--fraco)}
 
+  /* --------------------------------------------------------------- REGRAS */
+  .texto{font-size:14.5px; line-height:1.5; margin:0 0 10px; color:#dfe4da}
+  .texto:last-child{margin-bottom:0}
+  .cartao.destaque{border-color:rgba(255,93,49,.5);
+                   background:linear-gradient(180deg,rgba(255,93,49,.1),var(--cartao))}
+  .cartao.destaque h2{color:var(--esquilo)}
+
+  .fatos{display:grid; grid-template-columns:repeat(4,1fr); gap:6px;
+         margin:12px 0 10px}
+  .fatos div{text-align:center; background:var(--vidro); border-radius:9px;
+             padding:9px 2px}
+  .fatos b{display:block; font-size:19px; font-weight:800; color:var(--limonada);
+           font-variant-numeric:tabular-nums}
+  .fatos i{display:block; font-style:normal; font-size:10px; color:var(--fraco);
+           text-transform:uppercase; letter-spacing:.04em; margin-top:2px}
+
+  /* O número do gol à esquerda, a explicação à direita. Deixa a página ser
+     varrida pela coluna de números antes de ser lida. */
+  .gols div{display:grid; grid-template-columns:44px 1fr; gap:11px;
+            align-items:start; padding:11px 0; border-top:1px solid var(--linha)}
+  .gols div:first-child{border-top:0; padding-top:2px}
+  .gols b{font-size:25px; font-weight:800; line-height:1; text-align:center;
+          color:var(--limonada); font-variant-numeric:tabular-nums}
+  .gols .zero b{color:var(--fraco)}
+  .gols span{font-size:13.5px; line-height:1.45; color:#cfd5ca}
+  .gols strong{color:var(--maionese); font-weight:700}
+
+  table.faixas, table.exemplo{width:100%; border-collapse:collapse;
+                              margin:10px 0 8px; font-size:13.5px}
+  table.faixas th, table.exemplo th{font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--fraco); font-weight:700;
+    padding:0 4px 7px; text-align:center}
+  table.faixas td, table.exemplo td{padding:7px 4px; text-align:center;
+    border-top:1px solid var(--linha); font-variant-numeric:tabular-nums}
+  table.faixas .l, table.exemplo .l{text-align:left}
+  table.faixas tr.limpa td{color:var(--picles)}
+  table.faixas tr.grave td{color:#ffb9a3}
+  table.exemplo td.g{font-weight:800; color:var(--limonada); font-size:16px}
+  table.exemplo td.g.zero{color:var(--fraco)}
+
+  ol.criterios{margin:6px 0 0; padding-left:20px; font-size:14px;
+               line-height:1.7; color:#dfe4da}
+
   /* ---------------------------------------------------------------- ADMIN */
   .linha-adm{display:flex; align-items:center; gap:10px; padding:10px 2px;
              border-top:1px solid var(--linha); font-size:14px}
@@ -1581,6 +1624,14 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
       </div>
     </section>
 
+    <!-- ---------------------------------------------------------- REGRAS -->
+    <!-- Quase tudo aqui é montado pelo JS a partir das views v_app_regras,
+         v_app_faixas e v_app_formato. Nenhum número da mecânica é digitado
+         neste HTML: se a regra mudar no banco, esta página muda junto. -->
+    <section id="pg-regras" class="pagina oculto">
+      <div id="regrasCorpo"></div>
+    </section>
+
     <!-- ----------------------------------------------------------- ADMIN -->
     <section id="pg-admin" class="pagina oculto">
       <div class="kpis" id="admKpis"></div>
@@ -1621,10 +1672,15 @@ const ICONES = {
   jogos:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/>',
   loja:   '<path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/>',
   time:   '<path d="M12 3l7 3v5c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6z"/>',
+  regras: '<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v14H6.5A1.5 1.5 0 0 0 5 18.5z"/>'
+        + '<path d="M5 18.5A1.5 1.5 0 0 0 6.5 20H19"/><path d="M8.5 7.5h7M8.5 11h5"/>',
   admin:  '<circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',
 };
-const ROTULOS = {tabela:"Tabela", jogos:"Jogos", loja:"Minha loja",
-                 time:"Meu time", admin:"Acessos"};
+// "Restaurante" e não "Meu restaurante": a frase inteira não cabe numa linha
+// na barra de baixo do celular e quebraria em duas, desalinhando os outros
+// rótulos. O "Meu" fica implícito — a aba só mostra a loja da própria pessoa.
+const ROTULOS = {tabela:"Tabela", jogos:"Jogos", loja:"Restaurante",
+                 time:"Meu time", regras:"Regras", admin:"Acessos"};
 
 // O escudo de uma loja, ou a inicial dela quando ainda não há escudo
 // aprovado. Nunca uma imagem quebrada: no celular isso vira um quadrado cinza
@@ -1748,8 +1804,12 @@ async function abrir() {
 }
 
 function montarNav() {
+  // Regras entra para todo mundo — é o objetivo da aba. Com isso o técnico
+  // fica com 5 botões e o admin com 4; mais do que 5 não cabe na barra de um
+  // celular estreito sem o rótulo quebrar em duas linhas.
   const abas = ["tabela", "jogos"];
   if (EU.loja_id != null) abas.push("loja", "time");
+  abas.push("regras");
   if (EU.admin) abas.push("admin");
   $("nav").style.gridTemplateColumns = `repeat(${abas.length},1fr)`;
   $("nav").innerHTML = abas.map(a =>
@@ -1768,6 +1828,7 @@ async function mostrar(p) {
   window.scrollTo(0, 0);
   if (p === "tabela") await pgTabela();
   if (p === "jogos")  await pgJogos();
+  if (p === "regras") await pgRegras();
   if (p === "loja")   await pgLoja();
   if (p === "time")   await pgTime();
   if (p === "admin")  await pgAdmin();
@@ -2084,6 +2145,164 @@ async function enviar(tipo, arquivo, aviso) {
 }
 
 // ------------------------------------------------------------------ ADMIN
+// ------------------------------------------------------------------ REGRAS
+// Todos os números desta página vêm do banco. Se uma faixa do guard rail ou o
+// teto dos 15 minutos mudar, a página muda sozinha — ela não pode descrever
+// uma regra diferente da que o motor aplica.
+function mmss(seg) {
+  const s = Math.round(Number(seg) || 0);
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+}
+const minutos = seg => `${+(Number(seg) / 60).toFixed(1).replace(/\.0$/, "")} min`;
+const pct = v => `${+(Number(v).toFixed(1))}%`.replace(".", ",");
+
+async function pgRegras() {
+  const [reg, fx, fm] = await Promise.all([
+    ler("v_app_regras",  q => q.eq("temporada_id", 1)),
+    ler("v_app_faixas",  q => q.eq("temporada_id", 1)),
+    ler("v_app_formato", q => q.eq("temporada_id", 1)),
+  ]);
+  const erro = reg.erro || fx.erro || fm.erro;
+  if (erro) { $("regrasCorpo").innerHTML = falhou(erro); return; }
+
+  const R = Object.fromEntries(reg.linhas.map(r => [r.chave, Number(r.valor)]));
+  const F = fx.linhas.slice().sort((a, b) => b.piso - a.piso);
+  const f = fm.linhas[0] || {};
+
+  // As faixas que só punem e as que também premiam o adversário: separar as
+  // duas deixa claro que existe um degrau a partir do qual o problema de uma
+  // loja vira gol da outra.
+  const linhasFaixa = F.map((x, i) => {
+    // O topo de cada faixa é o piso da faixa de cima menos 1 ponto. Escrever
+    // "95% a 98%" com a faixa de cima começando em 98% faria as duas linhas
+    // parecerem se sobrepor, e o gerente não saberia em qual ele está.
+    const acima = F[i - 1];
+    const faixa = i === 0        ? `${pct(x.piso)} ou mais`
+                : Number(x.piso) === 0 ? `abaixo de ${pct(acima.piso)}`
+                : `${pct(x.piso)} a ${pct(acima.piso - 1)}`;
+    const nada = !x.perde && !x.adversario;
+    return `<tr class="${x.adversario ? "grave" : (nada ? "limpa" : "")}">
+      <td class="l">${faixa}</td>
+      <td>${nada ? "—" : `−${x.perde}`}</td>
+      <td>${x.adversario ? `+${x.adversario}` : "—"}</td></tr>`;
+  }).join("");
+
+  $("regrasCorpo").innerHTML = `
+  <div class="cartao">
+    <h2>O jogo</h2>
+    <p class="texto">De quarta a domingo, a sua loja enfrenta outra loja.
+      <b>Vence quem fizer o menor tempo médio de preparo no iFood naquele dia.</b>
+      São ${f.jogos_por_dia} jogos por dia e uma loja de folga.</p>
+    <div class="fatos">
+      <div><b>${f.lojas}</b><i>lojas</i></div>
+      <div><b>${f.rodadas}</b><i>rodadas</i></div>
+      <div><b>${f.jogos_por_loja}</b><i>jogos seus</i></div>
+      <div><b>${f.rodadas_mata_mata}</b><i>mata-mata</i></div>
+    </div>
+    <p class="nota">Turno e returno: você joga duas vezes contra cada loja.
+      Depois das ${f.rodadas} rodadas vem o mata-mata, que não conta na tabela.</p>
+  </div>
+
+  <div class="cartao">
+    <h2>Como se marca gol</h2>
+    <div class="gols">
+      <div><b>${R.vitoria}</b>
+        <span><strong>Melhor tempo do confronto.</strong>
+          Você fez menos tempo que o adversário.</span></div>
+      <div><b>+${R.placa}</b>
+        <span><strong>Gol de Placa.</strong>
+          Tempo até ${mmss(R.meta_seg)}. Vale mesmo se você perder o confronto.</span></div>
+      <div><b>+${R.online}</b>
+        <span><strong>Tempo online cheio.</strong>
+          Loja aberta ${pct(R.online_cheio)} do dia — e só conta se o seu tempo
+          ficar até ${mmss(R.teto_seg)}.</span></div>
+      <div class="zero"><b>0</b>
+        <span><strong>Empate técnico.</strong>
+          Diferença menor que ${R.tolerancia_seg} segundos: ninguém leva os
+          ${R.vitoria} gols da vitória. O Gol de Placa e o online continuam valendo.</span></div>
+    </div>
+    <p class="nota">Somando tudo, o máximo por mérito próprio num jogo é
+      ${R.vitoria + R.placa + R.online} gols.</p>
+  </div>
+
+  <div class="cartao destaque">
+    <h2>A regra dos ${minutos(R.teto_seg)}</h2>
+    <p class="texto"><b>Acima de ${mmss(R.teto_seg)} a loja não marca nada.</b>
+      Sem gol de online, sem Gol de Placa. E se as <b>duas</b> lojas passarem de
+      ${mmss(R.teto_seg)}, ninguém leva os gols da vitória — o jogo termina 0×0.</p>
+    <p class="nota">É de propósito: o campeonato não premia quem ganhou de um
+      adversário ruim fazendo um tempo ruim.</p>
+  </div>
+
+  <div class="cartao">
+    <h2>Tempo online — o guard rail</h2>
+    <p class="texto">Tempo online é o quanto a loja ficou aberta no app em
+      relação ao planejado. <b>Fechar a loja para ganhar tempo de preparo
+      desconta gols</b> — e, nas duas piores faixas, ainda entrega gols ao
+      adversário.</p>
+    <table class="faixas">
+      <thead><tr><th class="l">Tempo online no dia</th><th>Você perde</th>
+        <th>Adversário ganha</th></tr></thead>
+      <tbody>${linhasFaixa}</tbody>
+    </table>
+    <p class="nota">O desconto nunca deixa o seu placar negativo: o piso é 0.
+      O gol que vai para o adversário é somado depois, então ele pode sair do
+      zero por causa do seu tempo online.</p>
+  </div>
+
+  <div class="cartao">
+    <h2>Dia sem pedido</h2>
+    <p class="texto">Loja que não vendeu no dia fica com <b>0 no placar</b> —
+      não marca por mérito próprio <b>nem recebe o gol</b> que o guard rail do
+      adversário entregaria.</p>
+    <p class="nota">Não entrar em campo não pode valer mais do que jogar mal.</p>
+  </div>
+
+  <div class="cartao">
+    <h2>A tabela</h2>
+    <p class="texto">Vitória <b>${R.pts_vitoria} pontos</b>,
+      empate <b>${R.pts_empate} ponto</b>, derrota 0.</p>
+    <p class="texto">Dois times com os mesmos pontos são separados nesta ordem:</p>
+    <ol class="criterios">
+      <li>mais vitórias</li>
+      <li>melhor saldo de gols</li>
+      <li>mais Gols de Placa</li>
+      <li>menor tempo médio de preparo</li>
+      <li>menos gols perdidos no guard rail</li>
+    </ol>
+  </div>
+
+  <div class="cartao">
+    <h2>O que não mexe no placar</h2>
+    <p class="texto">Avaliação, cancelamento, espera do entregador e pedidos
+      atrasados <b>não entram no placar do jogo</b>. Eles vão para a pauta do
+      VAR, que pode tirar ponto ou gol <b>na tabela</b>.</p>
+    <p class="nota">O placar do jogo fica como o cronômetro marcou. O que o VAR
+      faz é descontar da soma da temporada — nunca reescrever um resultado.</p>
+  </div>
+
+  <div class="cartao">
+    <h2>Um exemplo</h2>
+    <table class="exemplo">
+      <tr><th class="l">&nbsp;</th><th>Tempo</th><th>Online</th><th>Gols</th></tr>
+      <tr><td class="l">Loja A</td><td>13:40</td><td>${pct(R.online_cheio)}</td>
+          <td class="g">${R.vitoria + R.online}</td></tr>
+      <tr><td class="l">Loja B</td><td>16:10</td><td>96%</td>
+          <td class="g">0</td></tr>
+    </table>
+    <p class="nota"><b>Loja A:</b> ${R.vitoria} pelo melhor tempo
+      + ${R.online} pelo online cheio. Não pegou o Gol de Placa porque passou
+      de ${mmss(R.meta_seg)}.<br>
+      <b>Loja B:</b> perdeu o confronto, passou de ${mmss(R.teto_seg)} (então
+      nem o gol de online valeria) e ainda levou −1 pela faixa de tempo online.
+      Como o piso é 0, fica em 0 — não em −1.</p>
+  </div>
+
+  <p class="nota" style="text-align:center;margin:14px 2px 0">
+    Estes números vêm do próprio banco do campeonato, na versão que vale hoje.
+    Mudou a regra, muda esta página.</p>`;
+}
+
 async function pgAdmin() {
   const [{ data: acessos }, { data: fila }] = await Promise.all([
     sb.from("v_app_admin_acessos").select("*").order("loja"),
