@@ -304,7 +304,27 @@
              border-top:1px solid var(--linha); font-size:14px}
   .linha-adm .q{flex:1; min-width:0}
   .linha-adm .q b{display:block; font-weight:600}
-  .linha-adm .q small{color:var(--fraco); font-size:12px}
+  /* O e-mail é uma palavra só: sem um ponto de quebra ele não encolhe, vaza
+     por cima dos números e some o alinhamento. Corta com reticências. */
+  .linha-adm .q small{display:block; color:var(--fraco); font-size:12px;
+                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+  /* Escudo e foto do técnico na frente do nome. Dois formatos diferentes de
+     propósito: escudo é brasão (canto arredondado), foto é pessoa (redonda).
+     Quem ainda não mandou fica com o espaço marcado, não com um buraco — é
+     assim que a tela mostra o que falta sem precisar de texto. */
+  .elenco{display:flex; align-items:center; gap:5px; flex:none}
+  .elenco .esc, .elenco .fot{width:30px; height:30px; object-fit:cover;
+    display:grid; place-items:center; flex:none; background:var(--vidro);
+    border:1px solid var(--linha)}
+  .elenco .esc{border-radius:8px}
+  .elenco .fot{border-radius:50%}
+  .elenco .vaga{color:var(--fraco); font-size:13px; font-weight:800}
+  .elenco .fot.vaga svg{width:19px; height:19px}
+  @media (max-width:420px){
+    .elenco .esc, .elenco .fot{width:26px; height:26px}
+    .elenco .fot.vaga svg{width:16px; height:16px}
+  }
 
   /* Os três números de uso. Largura fixa para alinharem em coluna de cima a
      baixo: a tela de acessos é lida varrendo a coluna, não linha a linha. */
@@ -2353,6 +2373,8 @@ async function pgAdmin() {
   const ordenado = [...a].sort((p, q) =>
     (faltam(p) - faltam(q)) || String(p.loja).localeCompare(String(q.loja), "pt"));
 
+  // O escudo e a foto são mídia privada: o caminho vem na view, mas o link tem
+  // de ser assinado — por isso `assinar()` depois de montar a lista.
   $("tituloAcessos").textContent = `Acesso das ${a.length} lojas`;
   $("admAcessos").innerHTML = ordenado.map(x => {
     const sem   = !x.user_id;
@@ -2361,9 +2383,16 @@ async function pgAdmin() {
     const d     = diasAtras(x.ultimo_acesso);
     return `
     <div class="linha-adm">
+      <div class="elenco">
+        ${x.escudo
+          ? `<img class="esc" src="${PIXEL}" data-caminho="${esc(x.escudo)}" alt="">`
+          : `<span class="esc vaga">${esc((x.loja || "?").trim()[0])}</span>`}
+        ${x.foto
+          ? `<img class="fot" src="${PIXEL}" data-caminho="${esc(x.foto)}" alt="">`
+          : `<span class="fot vaga">${PESSOA}</span>`}
+      </div>
       <div class="q"><b>${esc(x.loja)}</b>
-        <small>${sem ? "sem conta criada" : esc(x.email || "")}${
-          x.tem_escudo ? "" : " · sem escudo"}</small></div>
+        <small>${sem ? "sem conta" : esc(x.email || "")}</small></div>
       <div class="uso">
         <div class="${d === 0 ? "hoje" : (d === null || d > 3 ? "sumido" : "")}">
           <b>${esc(quandoTxt(x.ultimo_acesso))}</b><i>último</i></div>
@@ -2373,7 +2402,13 @@ async function pgAdmin() {
           <b>${serie || "—"}</b><i>seguidos</i></div>
       </div>
     </div>`; }).join("");
+  await assinar($("admAcessos"));
 }
+
+// O boneco que fica no lugar da foto quando o gerente ainda não mandou a dele.
+const PESSOA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+  + 'stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.4"/>'
+  + '<path d="M5.5 20c0-3.4 2.9-5.8 6.5-5.8s6.5 2.4 6.5 5.8"/></svg>';
 
 // Quantos dias se passaram desde o último acesso. null = nunca entrou.
 // Comparado por DIA, não por hora: quem entrou às 23h de ontem está "há 1 dia",
