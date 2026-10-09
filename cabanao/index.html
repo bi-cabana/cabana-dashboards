@@ -1615,7 +1615,7 @@ const ROTULOS = {tabela:"Tabela", jogos:"Jogos", loja:"Minha loja",
 function fig(caminho, nome, classe) {
   const c = "fig " + (classe || "");
   return caminho
-    ? `<img class="${c}" src="${esc(urlMidia(caminho))}" alt="">`
+    ? `<img class="${c}" src="${PIXEL}" data-caminho="${esc(caminho)}" alt="">`
     : `<span class="${c}">${esc((nome || "?").trim()[0] || "?")}</span>`;
 }
 
@@ -1715,10 +1715,11 @@ async function abrir() {
   $("minhaLoja").textContent = eu.admin ? "Administração"
     : (eu.time ? eu.loja : (eu.loja ? "defina o nome do time" : ""));
   $("meuEscudo").innerHTML = eu.escudo
-    ? `<img src="${esc(urlMidia(eu.escudo))}" alt="" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${PIXEL}" data-caminho="${esc(eu.escudo)}" alt="" style="width:100%;height:100%;object-fit:cover">`
     : esc((eu.time || eu.loja || "C").trim()[0]);
   $("nomeTime").value = eu.time || "";
 
+  assinar($("app"));
   montarNav();
   await carregarRodadas();
   await mostrar(EU.loja_id == null ? "tabela" : "tabela");
@@ -1750,10 +1751,34 @@ async function mostrar(p) {
   if (p === "admin")  await pgAdmin();
 }
 
-function urlMidia(caminho) {
-  if (!caminho) return "";
-  if (window.__SB_FAKE__) return caminho;
-  return sb.storage.from(BUCKET).getPublicUrl(caminho).data.publicUrl;
+// O bucket da mídia é PRIVADO de propósito: foto de gerente e escudo não
+// aprovado não devem ficar acessíveis a quem descobrir o endereço. Por isso
+// `getPublicUrl` não serve — ele devolve um link que o Storage recusa, e a
+// imagem aparece quebrada.
+//
+// O caminho certo é pedir um link assinado, que vale por uma hora. Como isso
+// é uma chamada de rede, a imagem não pode ser montada de uma vez: o HTML sai
+// com o caminho guardado em `data-caminho` e um pixel transparente no lugar,
+// e `assinar()` troca pelo link real quando ele chega.
+const PIXEL = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+
+async function assinar(raiz) {
+  const els = [...(raiz || document).querySelectorAll("img[data-caminho]")]
+    .filter(e => !e.dataset.pronto);
+  const caminhos = [...new Set(els.map(e => e.dataset.caminho))].filter(Boolean);
+  if (!caminhos.length) return;
+  if (window.__SB_FAKE__) {
+    els.forEach(e => { e.src = e.dataset.caminho; e.dataset.pronto = "1"; });
+    return;
+  }
+  const { data } = await sb.storage.from(BUCKET)
+    .createSignedUrls(caminhos, 3600);
+  const mapa = Object.fromEntries((data || [])
+    .filter(d => d.signedUrl).map(d => [d.path, d.signedUrl]));
+  els.forEach(e => {
+    const u = mapa[e.dataset.caminho];
+    if (u) { e.src = u; e.dataset.pronto = "1"; }
+  });
 }
 
 // ------------------------------------------------------------------ TABELA
@@ -1799,6 +1824,7 @@ async function pgTabela() {
          : `O campeonato ainda não começou — a classificação aparece depois da
             primeira rodada apurada. A tabela de jogos já está em <b>Jogos</b>.`
        }</p></td></tr>`;
+  assinar($("pg-tabela"));
   const ir = $("irParaMim");
   if (ir) ir.addEventListener("click", () => {
     const l = $("corpoTabela").querySelector("tr.eu");
@@ -1890,6 +1916,7 @@ async function pgLoja() {
     </div>`).join("")
     : `<p class="vazio">Sua loja ainda não jogou.</p>`;
 
+  assinar($("pg-loja"));
   $("minhaAgenda").innerHTML = (agenda || []).length
     ? agenda.slice(0, 6).map(a => a.minha_folga ? `
       <div class="prox folga"><span class="fig">—</span>
@@ -1903,6 +1930,7 @@ async function pgLoja() {
         <div class="d"><b>${esc(a.data_txt)}</b><small>${esc(a.dia)}</small></div>
       </div>`).join("")
     : `<p class="vazio">Sem jogo marcado à frente.</p>`;
+  assinar($("pg-loja"));
 }
 
 function grafico(c) {
@@ -1959,17 +1987,22 @@ async function pgTime() {
     .select("id, tipo, status, caminho, motivo, enviado_em")
     .order("enviado_em", { ascending: false });
   const ultima = t => (data || []).find(m => m.tipo === t);
+  // ATENÇÃO ao nome: o TIPO da mídia é 'foto_tecnico' (é assim que o banco
+  // valida), mas a COLUNA da loja onde ela é aplicada é `tecnico_foto`. Já
+  // inverti essas duas palavras uma vez e o envio da foto quebrava com
+  // "violates check constraint midia_tipo_check".
   for (const [tipo, elSt, elImg] of [["escudo", "stEscudo", "previaEscudo"],
-                                     ["tecnico_foto", "stFoto", "previaFoto"]]) {
+                                     ["foto_tecnico", "stFoto", "previaFoto"]]) {
     const m = ultima(tipo);
     const st = $(elSt);
     const txt = { pendente: "em análise", aprovado: "aprovado",
                   recusado: "recusado" }[m?.status] || "não enviado";
     st.className = "st st-" + (m?.status || "vazio");
     st.textContent = txt;
-    const caminho = tipo === "escudo" ? EU.escudo : EU.tecnico_foto;
-    if (caminho) $(elImg).src = urlMidia(caminho);
+    const caminho = tipo === "escudo" ? EU.escudo : EU.tecnico_foto;  // coluna, não tipo
+    if (caminho) { $(elImg).dataset.caminho = caminho; $(elImg).src = PIXEL; }
   }
+  assinar($("pg-time"));
 }
 
 async function salvarNome() {
@@ -2019,7 +2052,7 @@ async function pgAdmin() {
   $("admFila").innerHTML = (fila || []).length ? fila.map(m => {
     const loja = a.find(x => x.loja_id === m.loja_id);
     return `<div class="linha-adm">
-      <img src="${esc(urlMidia(m.caminho))}" alt=""
+      <img src="${PIXEL}" data-caminho="${esc(m.caminho)}" alt=""
            style="width:42px;height:42px;border-radius:9px;object-fit:cover">
       <div class="q"><b>${esc(loja ? loja.loja : "Loja " + m.loja_id)}</b>
         <small>${m.tipo === "escudo" ? "escudo" : "foto do técnico"}</small></div>
@@ -2029,6 +2062,7 @@ async function pgAdmin() {
         data-nao="${m.id}">Recusar</button>
     </div>`; }).join("")
     : `<p class="vazio">Nada esperando aprovação.</p>`;
+  assinar($("admFila"));
   $("admFila").querySelectorAll("[data-sim]").forEach(b =>
     b.addEventListener("click", () => decidir(+b.dataset.sim, true)));
   $("admFila").querySelectorAll("[data-nao]").forEach(b =>
@@ -2068,7 +2102,7 @@ $("selRodada").addEventListener("change", e => {
   RODADA = +e.target.value; pgJogos(); });
 for (const [alvo, arq, tipo, aviso] of [
      ["alvoEscudo", "arqEscudo", "escudo", "avisoEscudo"],
-     ["alvoFoto", "arqFoto", "tecnico_foto", "avisoFoto"]]) {
+     ["alvoFoto", "arqFoto", "foto_tecnico", "avisoFoto"]]) {
   $(arq).addEventListener("change", e => enviar(tipo, e.target.files[0], aviso));
   $(alvo).addEventListener("dragover", e => {
     e.preventDefault(); $(alvo).classList.add("quente"); });
