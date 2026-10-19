@@ -1134,9 +1134,14 @@ async function submitForm() {
         body: JSON.stringify({
           access_key: WEB3FORMS_KEY,
           subject:   (faltam.length ? '⚠️ Cadastro PJ com pendência — ' : '🆕 Novo cadastro PJ — ')
-                     + 'protocolo ' + row.protocolo,
+                     + v('f-nome') + ' — protocolo ' + row.protocolo,
           from_name: 'Portal de Cadastro PJ',
+          replyto:   v('f-email'),          // responder vai direto ao candidato
+          'Nome':       v('f-nome') + (v('f-nome-social') && v('f-nome-social') !== v('f-nome')
+                          ? ' (nome social: ' + v('f-nome-social') + ')' : ''),
           'Protocolo':  row.protocolo,
+          'Empresa':    (v('f-razao') || '—') + ' · CNPJ ' + (v('f-cnpj') || '—'),
+          'Contato':    v('f-telefone') + ' · ' + v('f-email'),
           'Recebido em': new Date().toLocaleString('pt-BR'),
           'Documentos': arquivos.length + ' arquivo(s) anexado(s)',
           'PENDENCIA':  faltam.length
