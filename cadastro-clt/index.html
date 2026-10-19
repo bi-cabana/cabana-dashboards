@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cabana Burger · Cadastro de Admissão CLT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#54a045; --green-dark:#3a7a2e; --green-pale:#f0f7ee; --green-light:#a8d5a2;
+    --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb; --gray-400:#9ca3af;
+    --gray-500:#6b7280; --gray-700:#374151; --gray-800:#1f2937; --gray-900:#111827;
+    --danger:#dc2626; --warn:#d97706;
+    --shadow:0 4px 24px rgba(0,0,0,.08); --radius:12px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:#f0f4ed;min-height:100vh;color:var(--gray-900)}
+
+  /* ── HERO ── */
+  .hero{background:var(--green-dark);padding:40px 24px 56px;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;
+    background:repeating-linear-gradient(-45deg,transparent,transparent 20px,
+      rgba(255,255,255,.03) 20px,rgba(255,255,255,.03) 40px)}
+  .hero-logo{width:56px;height:56px;background:#fff;border-radius:16px;display:inline-flex;
+    align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+  .hero h1{font-family:'Syne',sans-serif;font-size:clamp(22px,5vw,32px);font-weight:800;
+    color:#fff;line-height:1.2;position:relative}
+  .hero p{margin-top:10px;font-size:15px;color:rgba(255,255,255,.72);max-width:520px;
+    margin-inline:auto;position:relative;line-height:1.5}
+  .hero-badge{display:inline-block;margin-top:14px;background:rgba(255,255,255,.15);
+    border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.9);font-size:12px;
+    font-weight:600;padding:4px 14px;border-radius:20px;letter-spacing:.04em;position:relative}
+
+  /* ── PROGRESSO ── */
+  .progress-wrap{background:#fff;padding:0 16px;position:sticky;top:0;z-index:50;
+    box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .progress-inner{max-width:860px;margin:0 auto;display:flex;align-items:center;padding:13px 0}
+  .step-item{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+  .step-item:not(:last-child)::after{content:'';position:absolute;top:13px;left:50%;right:-50%;
+    height:2px;background:var(--gray-200);transition:background .3s}
+  .step-item.done:not(:last-child)::after{background:var(--green)}
+  .step-num{width:26px;height:26px;border-radius:50%;border:2px solid var(--gray-200);
+    background:#fff;display:flex;align-items:center;justify-content:center;font-size:11.5px;
+    font-weight:700;color:var(--gray-400);transition:.3s;z-index:1}
+  .step-item.active .step-num{border-color:var(--green);color:var(--green);background:var(--green-pale)}
+  .step-item.done .step-num{border-color:var(--green);background:var(--green);color:#fff}
+  .step-label{font-size:9.5px;font-weight:600;color:var(--gray-400);margin-top:5px;
+    text-align:center;white-space:nowrap}
+  .step-item.active .step-label{color:var(--green-dark)}
+  .step-item.done .step-label{color:var(--green)}
+
+  /* ── LAYOUT ── */
+  .container{max-width:860px;margin:0 auto;padding:30px 16px 64px}
+  .section{display:none;animation:fadeUp .35s ease}
+  .section.active{display:block}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:26px 28px;margin-bottom:18px}
+  .card-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:6px;
+    display:flex;align-items:center;gap:9px}
+  .card-subtitle{font-size:13px;color:var(--gray-500);margin-bottom:22px;line-height:1.55}
+  .required-note{font-size:12px;color:var(--gray-400);margin-bottom:16px}
+
+  .grp{margin-bottom:22px}
+  .grp:last-child{margin-bottom:0}
+  .grp-tit{font-size:11.5px;font-weight:800;color:var(--gray-500);text-transform:uppercase;
+    letter-spacing:.07em;margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid var(--gray-100)}
+  .grp-nota{font-size:11.5px;color:var(--gray-400);margin:-2px 0 12px;font-style:italic}
+  .grp-tit + .form-grid{margin-top:14px}
+
+  /* ── CAMPOS ── */
+  .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}
+  @media(max-width:700px){.form-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:460px){.form-grid{grid-template-columns:1fr}}
+  .fg{display:flex;flex-direction:column;grid-column:span 2}
+  .fg.wide{grid-column:span 4}
+  @media(max-width:700px){.fg,.fg.wide{grid-column:span 2}}
+  @media(max-width:460px){.fg,.fg.wide{grid-column:span 1}}
+  .fg.hide{display:none}
+  .form-label{font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:6px;letter-spacing:.02em}
+  .form-label .req{color:var(--danger)}
+  .form-input,.form-select{padding:10px 13px;border:1.5px solid var(--gray-200);border-radius:8px;
+    font-family:'DM Sans',sans-serif;font-size:14px;color:var(--gray-900);background:#fff;
+    outline:none;transition:.2s;width:100%}
+  .form-input:focus,.form-select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(84,160,69,.12)}
+  .form-input.erro,.form-select.erro{border-color:var(--danger);background:#fef7f7}
+  .form-hint{font-size:11px;color:var(--gray-400);margin-top:4px;line-height:1.4}
+  .com-botao{display:flex;gap:7px}
+  .com-botao .form-input{flex:1}
+  .bt-lado{padding:10px 13px;background:var(--gray-100);border:1.5px solid var(--gray-200);
+    border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;color:var(--gray-700);
+    cursor:pointer;white-space:nowrap;transition:.2s}
+  .bt-lado:hover{background:var(--green-pale);border-color:var(--green);color:var(--green-dark)}
+
+  .radios{display:flex;gap:8px;flex-wrap:wrap}
+  .radios label{display:flex;align-items:center;gap:7px;padding:9px 15px;border:1.5px solid var(--gray-200);
+    border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--gray-700);transition:.2s;background:#fff}
+  .radios label:hover{border-color:var(--green-light)}
+  .radios label.on{border-color:var(--green);background:var(--green-pale);color:var(--green-dark)}
+  .radios input{accent-color:var(--green);width:15px;height:15px}
+  .chk{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;
+    font-weight:600;color:var(--gray-700);padding:10px 0}
+  .chk input{accent-color:var(--green);width:16px;height:16px}
+
+  /* ── LINHAS DINAMICAS ── */
+  .lin-cab{display:grid;gap:8px;margin-bottom:6px;padding:0 4px}
+  .lin-cab div{font-size:10.5px;font-weight:700;color:var(--gray-500);
+    text-transform:uppercase;letter-spacing:.05em}
+  .lin{display:grid;gap:8px;margin-bottom:8px;align-items:center}
+  .lin .form-input{padding:9px 11px;font-size:13px}
+  .bt-rm{width:32px;height:32px;border:none;background:#fde8e8;color:var(--danger);
+    border-radius:7px;cursor:pointer;font-size:16px;display:flex;align-items:center;
+    justify-content:center;flex-shrink:0}
+  .bt-add{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:9px 16px;
+    background:var(--green-pale);border:1.5px dashed var(--green);border-radius:8px;
+    color:var(--green-dark);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+  .bt-add:hover{background:var(--green-light)}
+  @media(max-width:620px){
+    .lin-cab{display:none}
+    .lin{grid-template-columns:1fr !important;border:1.5px solid var(--gray-200);
+      border-radius:9px;padding:12px;gap:9px}
+  }
+
+  /* ── ANEXOS ── */
+  .doc-card{border:1.5px solid var(--gray-200);border-radius:10px;padding:14px 16px;
+    transition:.2s;background:#fff;margin-bottom:10px}
+  .doc-card.ok{border-color:var(--green);background:var(--green-pale)}
+  .doc-card.falta{border-style:dashed}
+  .doc-head{display:flex;align-items:center;gap:12px}
+  .doc-ico{font-size:22px;flex-shrink:0;width:28px;text-align:center}
+  .doc-txt{flex:1;min-width:0}
+  .doc-nome{font-size:13px;font-weight:700;color:var(--gray-800)}
+  .doc-hint{font-size:11.5px;color:var(--gray-500);margin-top:2px;line-height:1.4}
+  .doc-btn{position:relative;overflow:hidden;flex-shrink:0;padding:9px 16px;border-radius:8px;
+    border:1.5px solid var(--green);background:#fff;color:var(--green-dark);font-family:inherit;
+    font-size:12.5px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+  .doc-btn:hover{background:var(--green);color:#fff}
+  .doc-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+  .doc-check{font-size:18px;color:var(--green);flex-shrink:0;display:none}
+  .doc-card.ok .doc-check{display:block}
+  .doc-files{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+  .doc-files:empty{display:none}
+  .up-item{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--green-light);
+    border-radius:7px;padding:8px 12px;font-size:12px}
+  .up-item .fn{flex:1;color:var(--green-dark);font-weight:600;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .up-item .fs{color:var(--gray-400);flex-shrink:0}
+  .up-item .rm{cursor:pointer;color:var(--gray-400);font-size:16px;line-height:1;
+    background:none;border:none;padding:0 2px}
+  .up-item .rm:hover{color:var(--danger)}
+
+  /* ── PENDENCIA ── */
+  .pend{display:none;margin-top:16px;border-radius:10px;border:1.5px solid #f0b429;
+    background:#fffaf0;padding:15px 18px}
+  .pend.show{display:block}
+  .pend-tit{font-size:13px;font-weight:800;color:#92400e;margin-bottom:7px}
+  .pend-txt{font-size:12.5px;color:#78350f;line-height:1.65}
+  .pend-txt ul{margin:8px 0 8px 20px}
+  .pend-txt li{font-weight:700;padding:1px 0}
+  .pend-ok{display:flex;gap:10px;align-items:flex-start;cursor:pointer;margin-top:12px;
+    padding-top:11px;border-top:1px solid #fde68a;font-size:12.5px;color:#78350f;
+    font-weight:600;line-height:1.45}
+  .pend-ok input{margin-top:2px;flex-shrink:0;accent-color:#b45309;width:16px;height:16px}
+
+  /* ── BOTOES ── */
+  .btn-row{display:flex;gap:12px;justify-content:space-between;margin-top:26px;flex-wrap:wrap}
+  .btn{padding:13px 28px;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;
+    font-weight:600;cursor:pointer;border:none;transition:.2s;display:inline-flex;align-items:center;gap:7px}
+  .btn-primary{background:var(--green);color:#fff;box-shadow:0 4px 12px rgba(84,160,69,.3)}
+  .btn-primary:hover{background:var(--green-dark);transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .btn-ghost{background:var(--gray-100);color:var(--gray-700)}
+  .btn-ghost:hover{background:var(--gray-200)}
+
+  .alert{padding:12px 16px;border-radius:8px;font-size:13px;font-weight:500;
+    margin-bottom:16px;display:none;line-height:1.5}
+  .alert.erro{background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5}
+  .alert.show{display:block}
+  .spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;
+    border-radius:50%;animation:spin .7s linear infinite;display:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .envio{display:none;margin-top:18px;background:var(--gray-50);border:1px solid var(--gray-200);
+    border-radius:10px;padding:16px 18px}
+  .envio.show{display:block}
+  .envio-txt{font-size:12.5px;font-weight:600;color:var(--gray-700);margin-bottom:8px}
+  .barra{height:4px;background:var(--gray-100);border-radius:3px;overflow:hidden}
+  .barra i{display:block;height:100%;background:var(--green);border-radius:3px;
+    transition:width .3s;width:0}
+
+  /* ── SUCESSO ── */
+  #sucesso{display:none;text-align:center;padding:30px 0}
+  .ok-ico{width:72px;height:72px;background:var(--green-pale);border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:18px}
+  .ok-tit{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;
+    color:var(--green-dark);margin-bottom:10px}
+  .ok-txt{font-size:14px;color:var(--gray-500);max-width:440px;margin:0 auto;line-height:1.6}
+  .protocolo{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;
+    color:var(--green-dark);letter-spacing:.04em;margin:6px 0 2px}
+  .ok-lista{margin:22px auto;max-width:360px;background:var(--gray-50);border-radius:10px;
+    padding:16px 20px;text-align:left;font-size:13px;line-height:2;color:var(--gray-700)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+<script src="campos.js"></script>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-logo">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#54a045" stroke-width="2.5">
+      <path d="M3 12h18M3 6h18M3 18h18"/>
+    </svg>
+  </div>
+  <h1>Cadastro de Admissão</h1>
+  <p>Preencha as informações abaixo e anexe seus documentos para concluir sua
+     admissão no Cabana Burger.</p>
+  <span class="hero-badge">🔒 Dados protegidos · Uso interno</span>
+</div>
+
+<div class="progress-wrap"><div class="progress-inner" id="passos"></div></div>
+
+<div class="container">
+  <div class="alert erro" id="alerta"></div>
+  <div id="etapas"></div>
+
+  <div id="sucesso">
+    <div class="card">
+      <div class="ok-ico">✅</div>
+      <div class="ok-tit">Cadastro enviado!</div>
+      <div class="ok-txt">Obrigado! Suas informações foram recebidas com sucesso
+        pelo time de RH do Cabana Burger.</div>
+      <div style="margin:22px auto 6px;max-width:360px">
+        <div style="font-size:11px;font-weight:700;color:var(--gray-500);
+             text-transform:uppercase;letter-spacing:.08em">Seu protocolo</div>
+        <div class="protocolo" id="out-protocolo">—</div>
+        <div style="font-size:11.5px;color:var(--gray-400)">Guarde este número.
+          É por ele que o RH localiza seu cadastro.</div>
+      </div>
+      <div class="ok-lista" id="out-resumo"></div>
+      <div id="out-pendencia" style="display:none;max-width:440px;margin:0 auto 20px;
+           background:#fffaf0;border:1.5px solid #f0b429;border-radius:10px;padding:14px 18px;
+           text-align:left;font-size:12.5px;color:#78350f;line-height:1.6">
+        <strong>Ainda faltam documentos.</strong>
+        <div id="out-faltantes" style="margin:6px 0 8px 18px;font-weight:700"></div>
+        Envie para <strong>alodp@cabanaburger.com.br</strong> citando o protocolo acima.
+        A admissão só prossegue depois que eles chegarem.
+      </div>
+      <div class="ok-txt">Em breve você receberá um contato pelo e-mail ou WhatsApp
+        informado para os próximos passos.</div>
+    </div>
+  </div>
+</div>
+
+<datalist id="bancos"></datalist>
+<datalist id="paises"></datalist>
+
+<script>
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  CONFIGURAÇÃO                                                        ║
+   ║  Mesmo projeto Supabase do cadastro PJ, tabela e bucket próprios.    ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const SUPABASE_URL  = 'https://cdlttflshgmwvvsreygc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbHR0ZmxzaGdtd3Z2c3JleWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTY2MzksImV4cCI6MjEwNzk5MjYzOX0.gOuY2MAROUWNuMbmlHq_thkRJYwr2clmn5pNRF6uIoI';
+const TABELA   = 'cadastros_clt';
+const BUCKET   = 'documentos-clt';
+const EMAIL_RH = 'alodp@cabanaburger.com.br';
+const WEB3FORMS_KEY = 'e73ff3c6-17a1-4bfe-ba9e-ffc7f0fea661';
+const MAX_MB   = 10;
+const TIPOS_OK = ['application/pdf','image/jpeg','image/png','image/heic','image/heif','image/webp'];
+const EXT_OK   = ['pdf','jpg','jpeg','png','heic','heif','webp'];
+
+const PAISES = ['BRASIL','ARGENTINA','BOLÍVIA','CHILE','COLÔMBIA','CUBA','EQUADOR',
+  'ESPANHA','ESTADOS UNIDOS','FRANÇA','HAITI','ITÁLIA','JAPÃO','PARAGUAI','PERU',
+  'PORTUGAL','SENEGAL','URUGUAI','VENEZUELA'];
+
+/* ── ESTADO ── */
+let etapa = 1;
+let sb = null;
+const D = {};                 // valores dos campos
+const anexos = {};            // { chave: [File] }
+let nDep = 0, nVT = 0;
+
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const es = t => String(t ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ══════════════════ MÁSCARAS ══════════════════ */
+const MASCARAS = {
+  cpf:  v => v.replace(/\D/g,'').slice(0,11)
+              .replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2')
+              .replace(/(\d{3})(\d{1,2})$/,'$1-$2'),
+  cep:  v => v.replace(/\D/g,'').slice(0,8).replace(/(\d{5})(\d)/,'$1-$2'),
+  data: v => v.replace(/\D/g,'').slice(0,8)
+              .replace(/(\d{2})(\d)/,'$1/$2').replace(/(\d{2})(\d)/,'$1/$2'),
+  fone: v => { v = v.replace(/\D/g,'').slice(0,11);
+    return v.length <= 10
+      ? v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3').replace(/[-\s()]*$/,'')
+      : v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3').replace(/-$/,''); },
+  pis:  v => v.replace(/\D/g,'').slice(0,11)
+              .replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{5})(\d)/,'$1.$2')
+              .replace(/(\d{2})(\d{1})$/,'$1-$2'),
+  titulo: v => v.replace(/\D/g,'').slice(0,12).replace(/(\d{4})(?=\d)/g,'$1 ').trim(),
+  sus:  v => v.replace(/\D/g,'').slice(0,15).replace(/(\d{3})(?=\d)/,'$1 ')
+              .replace(/(\d{3}) (\d{4})(?=\d)/,'$1 $2 ')
+              .replace(/(\d{3}) (\d{4}) (\d{4})(?=\d)/,'$1 $2 $3 '),
+  matricula: v => v.replace(/\D/g,'').slice(0,32),
+  num:  v => v.replace(/\D/g,''),
+};
+
+/* ══════════════════ MONTAGEM DA TELA ══════════════════ */
+function montar() {
+  $('#bancos').innerHTML = BANCOS.map(b => `<option>${es(b)}</option>`).join('');
+  $('#paises').innerHTML = PAISES.map(p => `<option>${es(p)}</option>`).join('');
+
+  $('#passos').innerHTML = ETAPAS.map(e => `
+    <div class="step-item${e.n === 1 ? ' active' : ''}" id="passo-${e.n}">
+      <div class="step-num">${e.n}</div>
+      <div class="step-label">${es(e.aba)}</div>
+    </div>`).join('');
+
+  $('#etapas').innerHTML = ETAPAS.map(e => `
+    <div class="section${e.n === 1 ? ' active' : ''}" id="etapa-${e.n}">
+      <div class="card">
+        <div class="card-title">${e.ico} ${es(e.titulo)}</div>
+        <div class="card-subtitle">${es(e.sub)}</div>
+        ${e.n === 1 ? '<div class="required-note">Campos com <span style="color:var(--danger)">*</span> são obrigatórios.</div>' : ''}
+        ${(e.grupos || []).map(grupo).join('')}
+        ${e.extra === 'transporte_dependentes' ? blocoTransporte() + blocoDependentes() : ''}
+        ${e.extra === 'anexos' ? blocoAnexos() : ''}
+      </div>
+      ${e.extra === 'anexos' ? blocoTermos() : ''}
+      <div class="btn-row">
+        ${e.n > 1
+          ? `<button class="btn btn-ghost" onclick="irPara(${e.n - 1})">← Voltar</button>`
+          : '<span></span>'}
+        ${e.n < ETAPAS.length
+          ? `<button class="btn btn-primary" onclick="irPara(${e.n + 1})">Próximo →</button>`
+          : `<button class="btn btn-primary" id="btn-enviar" onclick="enviar()">
+               <div class="spinner" id="spinner"></div>
+               <span id="txt-enviar">✅ Enviar Cadastro</span></button>`}
+      </div>
+    </div>`).join('');
+
+  $$('.form-input, .form-select').forEach(el => {
+    el.addEventListener('input', aoDigitar);
+    el.addEventListener('change', aoDigitar);
+  });
+  // valores iniciais — nos radios, só o que está marcado conta
+  $$('[data-campo]').forEach(el => {
+    if (el.type === 'radio')         { if (el.checked) D[el.dataset.campo] = el.value; }
+    else if (el.type === 'checkbox') { if (el.checked) D[el.dataset.campo] = 'Sim'; }
+    else if (el.value)               { D[el.dataset.campo] = el.value; }
+  });
+  aplicarCondicoes();
+  montarAnexos();
+}
+
+function grupo(g, i) {
+  const id = 'g-' + (g.titulo || 'x').replace(/\W+/g, '') + i;
+  return `<div class="grp" id="${id}" ${g.ver ? 'data-vergrupo="1"' : ''}>
+    ${g.titulo ? `<div class="grp-tit">${es(g.titulo)}</div>` : ''}
+    ${g.nota ? `<div class="grp-nota">${es(g.nota)}</div>` : ''}
+    <div class="form-grid">${g.campos.map(campo).join('')}</div>
+  </div>`;
+}
+
+function campo(c) {
+  const req = c.req ? ' <span class="req">*</span>' : '';
+  const cls = 'fg' + (c.span ? ' wide' : '');
+  let ctrl;
+
+  if (c.t === 'select') {
+    ctrl = `<select class="form-select" id="f-${c.k}" data-campo="${c.k}">
+      <option value="">Selecione…</option>
+      ${c.opts.map(o => `<option${c.valor === o ? ' selected' : ''}>${es(o)}</option>`).join('')}
+    </select>`;
+  } else if (c.t === 'radio') {
+    ctrl = `<div class="radios" id="r-${c.k}">${c.opts.map((o, i) => `
+      <label class="${(c.valor || c.opts[0]) === o ? 'on' : ''}">
+        <input type="radio" name="${c.k}" value="${es(o)}" data-campo="${c.k}"
+               ${(c.valor || c.opts[0]) === o ? 'checked' : ''}>${es(o)}</label>`).join('')}</div>`;
+  } else if (c.t === 'check') {
+    ctrl = `<label class="chk"><input type="checkbox" id="f-${c.k}" data-campo="${c.k}"
+      value="Sim">${es(c.r)}</label>`;
+  } else {
+    const inp = `<input class="form-input" id="f-${c.k}" data-campo="${c.k}"
+      type="${c.t === 'email' ? 'email' : c.t === 'tel' ? 'tel' : 'text'}"
+      ${c.valor ? `value="${es(c.valor)}"` : ''}
+      ${c.ph ? `placeholder="${es(c.ph)}"` : ''}
+      ${c.lista ? `list="${c.lista}"` : ''}
+      ${c.auto ? `autocomplete="${c.auto}"` : ''}
+      ${c.mask ? `data-mask="${c.mask}"` : ''}>`;
+    ctrl = c.botao
+      ? `<div class="com-botao">${inp}<button type="button" class="bt-lado"
+           onclick="${c.acao}()">${es(c.botao)}</button></div>`
+      : inp;
+  }
+
+  return `<div class="${cls}" id="w-${c.k}">
+    ${c.t === 'check' ? '' : `<label class="form-label" for="f-${c.k}">${es(c.r)}${req}</label>`}
+    ${ctrl}
+    ${c.hint ? `<span class="form-hint">${es(c.hint)}</span>` : ''}
+  </div>`;
+}
+
+/* ══════════════════ REAÇÃO AO PREENCHIMENTO ══════════════════ */
+function aoDigitar(ev) {
+  const el = ev.target;
+  const m = el.dataset.mask;
+  if (m && MASCARAS[m]) el.value = MASCARAS[m](el.value);
+  const k = el.dataset.campo;
+  if (!k) return;
+  D[k] = el.type === 'checkbox' ? (el.checked ? 'Sim' : '') : el.value;
+  if (el.type === 'radio') {
+    $$(`#r-${k} label`).forEach(l => l.classList.toggle('on',
+      l.querySelector('input').checked));
+  }
+  el.classList.remove('erro');
+  esconderAlerta();
+  aplicarCondicoes();
+}
+
+/* Mostra e esconde campos e grupos conforme o que já foi preenchido. */
+function aplicarCondicoes() {
+  const todos = ETAPAS.flatMap(e => (e.grupos || []).flatMap(g =>
+    g.campos.map(c => [c, g])));
+  todos.forEach(([c, g]) => {
+    const w = document.getElementById('w-' + c.k);
+    if (!w) return;
+    const visivel = (!c.ver || c.ver(D)) && (!g.ver || g.ver(D));
+    w.classList.toggle('hide', !visivel);
+    if (!visivel && D[c.k]) {              // some da tela, some do cadastro
+      D[c.k] = '';
+      const el = document.getElementById('f-' + c.k);
+      if (el) el.value = '';
+    }
+  });
+  ETAPAS.forEach(e => (e.grupos || []).forEach((g, i) => {
+    if (!g.ver) return;
+    const id = 'g-' + (g.titulo || 'x').replace(/\W+/g, '') + i;
+    const el = document.getElementById(id);
+    if (el) el.style.display = g.ver(D) ? '' : 'none';
+  }));
+  montarAnexos();
+}
+
+/* ══════════════════ NAVEGAÇÃO ══════════════════ */
+function irPara(n) {
+  if (n > etapa && !validar(etapa)) return;
+  $('#etapa-' + etapa).classList.remove('active');
+  $('#etapa-' + n).classList.add('active');
+  ETAPAS.forEach(e => {
+    const p = $('#passo-' + e.n);
+    p.classList.remove('active', 'done');
+    if (e.n < n) p.classList.add('done');
+    if (e.n === n) p.classList.add('active');
+  });
+  etapa = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  esconderAlerta();
+}
+
+function validar(n) {
+  esconderAlerta();
+  const e = ETAPAS.find(x => x.n === n);
+  for (const g of (e.grupos || [])) {
+    if (g.ver && !g.ver(D)) continue;
+    for (const c of g.campos) {
+      if (!c.req) continue;
+      if (c.ver && !c.ver(D)) continue;
+      if (!String(D[c.k] || '').trim()) {
+        const el = document.getElementById('f-' + c.k);
+        if (el) { el.classList.add('erro'); el.focus(); }
+        return erro('Preencha o campo "' + c.r + '".');
+      }
+    }
+  }
+  if (n === 1) {
+    if (!cpfValido(D.cpf)) {
+      document.getElementById('f-cpf').classList.add('erro');
+      return erro('O CPF informado não é válido. Confira os números.');
+    }
+    if (idadeDe(D) === null) {
+      document.getElementById('f-nascimento').classList.add('erro');
+      return erro('Data de nascimento inválida. Use o formato DD/MM/AAAA.');
+    }
+    if (idadeDe(D) < 14) return erro('A data de nascimento parece incorreta.');
+  }
+  if (n === 2 && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(D.email || ''))
+    return erro('O e-mail informado não parece válido.');
+  if (n === 5) {
+    for (const l of linhasVT()) {
+      if (!l.empresa) return erro('Informe a empresa em todas as linhas de transporte.');
+      if (!l.valor)   return erro('Informe o valor unitário em todas as linhas.');
+      if (!l.qtd)     return erro('Informe a quantidade por dia em todas as linhas.');
+    }
+    for (const d of dependentes()) {
+      if (!d.nome) return erro('Informe o nome de todos os dependentes.');
+      if (!d.nascimento) return erro('Informe a data de nascimento de todos os dependentes.');
+    }
+  }
+  return true;
+}
+
+function cpfValido(v) {
+  const c = String(v || '').replace(/\D/g, '');
+  if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+  let s = 0;
+  for (let i = 0; i < 9; i++) s += +c[i] * (10 - i);
+  let r = (s * 10) % 11; if (r === 10) r = 0;
+  if (r !== +c[9]) return false;
+  s = 0;
+  for (let i = 0; i < 10; i++) s += +c[i] * (11 - i);
+  r = (s * 10) % 11; if (r === 10) r = 0;
+  return r === +c[10];
+}
+
+function erro(msg) {
+  const el = $('#alerta');
+  el.textContent = '⚠️ ' + msg;
+  el.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  return false;
+}
+function esconderAlerta() { $('#alerta').classList.remove('show'); }
+
+/* ══════════════════ CEP ══════════════════ */
+async function buscarCEP() {
+  const cep = String(D.cep || '').replace(/\D/g, '');
+  if (cep.length !== 8) return erro('Informe um CEP com 8 dígitos.');
+  const bt = $('#w-cep .bt-lado');
+  const orig = bt.textContent; bt.textContent = '⏳'; bt.disabled = true;
+  try {
+    const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const d = await r.json();
+    if (d.erro) throw new Error('CEP não encontrado.');
+    const por = (k, v) => {
+      if (!v) return;
+      const el = document.getElementById('f-' + k);
+      if (el) { el.value = v; D[k] = v; }
+    };
+    const partes = String(d.logradouro || '').split(' ');
+    const tipo = LOGRADOURO.find(t => t.toLowerCase() === (partes[0] || '').toLowerCase());
+    por('end_uf', d.uf);
+    por('end_cidade', d.localidade);
+    por('bairro', d.bairro);
+    por('end_logradouro', tipo || '');
+    por('endereco', tipo ? partes.slice(1).join(' ') : d.logradouro);
+    aplicarCondicoes();
+    document.getElementById('f-numero')?.focus();
+  } catch (e) {
+    erro('Não consegui buscar o CEP: ' + e.message + ' Preencha à mão.');
+  } finally {
+    bt.textContent = orig; bt.disabled = false;
+  }
+}
+
+/* ══════════════════ TRANSPORTE ══════════════════ */
+function blocoTransporte() {
+  return `<div class="grp">
+    <div class="grp-tit">Benefício de transporte</div>
+    <div class="radios" style="margin:12px 0 14px" id="r-transporte">
+      ${[['combustivel','⛽ Auxílio Combustível','veículo próprio'],
+         ['vt','🚌 Vale Transporte','transporte público'],
+         ['nenhum','🚶 Não desejo','vou por conta própria']].map(([v, t, s]) => `
+        <label onclick="escolherTransporte('${v}')" style="flex:1;min-width:180px">
+          <input type="radio" name="transporte_tipo" value="${v}">
+          <span><b style="display:block;font-size:13.5px">${t}</b>
+            <span style="font-size:11.5px;color:var(--gray-500);font-weight:400">${s}</span></span>
+        </label>`).join('')}
+    </div>
+    <div id="vt-campos" style="display:none">
+      <div class="lin-cab" style="grid-template-columns:2fr 1fr 1fr 2fr 34px">
+        <div>Empresa *</div><div>Valor unit. *</div><div>Qtd/dia *</div><div>Código / linha</div><div></div>
+      </div>
+      <div id="vt-linhas"></div>
+      <button type="button" class="bt-add" onclick="addVT()">+ Adicionar linha</button>
+    </div>
+  </div>`;
+}
+
+function escolherTransporte(v) {
+  D.transporte_tipo = v;
+  $$('#r-transporte label').forEach(l => {
+    const i = l.querySelector('input');
+    i.checked = i.value === v;
+    l.classList.toggle('on', i.checked);
+  });
+  $('#vt-campos').style.display = v === 'vt' ? '' : 'none';
+  if (v === 'vt' && !$('#vt-linhas').children.length) addVT();
+}
+
+function addVT() {
+  const id = ++nVT;
+  const d = document.createElement('div');
+  d.className = 'lin'; d.id = 'vt-' + id;
+  d.style.gridTemplateColumns = '2fr 1fr 1fr 2fr 34px';
+  d.innerHTML = `
+    <input class="form-input" id="vt-emp-${id}" placeholder="Ex: SPTrans, Metrô…">
+    <input class="form-input" id="vt-val-${id}" placeholder="0,00"
+           oninput="this.value=this.value.replace(/[^0-9,]/g,'')">
+    <input class="form-input" id="vt-qtd-${id}" type="number" min="1" max="10" placeholder="2">
+    <input class="form-input" id="vt-cod-${id}" placeholder="Código ou nome da linha">
+    <button type="button" class="bt-rm" onclick="document.getElementById('vt-${id}').remove()"
+            title="Remover">&times;</button>`;
+  $('#vt-linhas').appendChild(d);
+}
+
+function linhasVT() {
+  if (D.transporte_tipo !== 'vt') return [];
+  return $$('#vt-linhas .lin').map(l => {
+    const id = l.id.replace('vt-', '');
+    const v = s => (document.getElementById(`vt-${s}-${id}`)?.value || '').trim();
+    return { empresa: v('emp'), valor: v('val'), qtd: v('qtd'), codigo: v('cod') };
+  });
+}
+
+/* ══════════════════ DEPENDENTES ══════════════════ */
+function blocoDependentes() {
+  return `<div class="grp">
+    <div class="grp-tit">Dependentes</div>
+    <div class="grp-nota">Para imposto de renda e salário-família. Deixe em branco se não tiver.</div>
+    <div class="lin-cab" style="grid-template-columns:2.4fr 1.2fr 1.4fr 1.6fr 34px">
+      <div>Nome completo *</div><div>Nascimento *</div><div>Parentesco *</div><div>CPF</div><div></div>
+    </div>
+    <div id="dep-linhas"></div>
+    <button type="button" class="bt-add" onclick="addDep()">+ Adicionar dependente</button>
+  </div>`;
+}
+
+function addDep() {
+  const id = ++nDep;
+  const d = document.createElement('div');
+  d.className = 'lin'; d.id = 'dep-' + id;
+  d.style.gridTemplateColumns = '2.4fr 1.2fr 1.4fr 1.6fr 34px';
+  d.innerHTML = `
+    <input class="form-input" id="dep-nome-${id}" placeholder="Nome do dependente">
+    <input class="form-input" id="dep-nasc-${id}" placeholder="DD/MM/AAAA" maxlength="10"
+           oninput="this.value=MASCARAS.data(this.value)">
+    <select class="form-select" id="dep-par-${id}" style="padding:9px 11px;font-size:13px">
+      <option value="">Selecione…</option>
+      ${PARENTESCO.map(p => `<option>${es(p)}</option>`).join('')}
+    </select>
+    <input class="form-input" id="dep-cpf-${id}" placeholder="000.000.000-00" maxlength="14"
+           oninput="this.value=MASCARAS.cpf(this.value)">
+    <button type="button" class="bt-rm" onclick="document.getElementById('dep-${id}').remove()"
+            title="Remover">&times;</button>`;
+  $('#dep-linhas').appendChild(d);
+}
+
+function dependentes() {
+  return $$('#dep-linhas .lin').map(l => {
+    const id = l.id.replace('dep-', '');
+    const v = s => (document.getElementById(`dep-${s}-${id}`)?.value || '').trim();
+    return { nome: v('nome'), nascimento: v('nasc'), parentesco: v('par'), cpf: v('cpf') };
+  }).filter(d => d.nome || d.nascimento || d.cpf);
+}
+
+/* ══════════════════ ANEXOS ══════════════════ */
+function blocoAnexos() {
+  return `<div id="docs"></div>
+  <div class="pend" id="pend">
+    <div class="pend-tit">⚠️ Faltam documentos</div>
+    <div class="pend-txt">
+      Você pode enviar o cadastro assim mesmo, mas
+      <strong>a admissão não prossegue enquanto estes documentos não chegarem</strong>:
+      <ul id="pend-lista"></ul>
+      Envie o que falta para <strong>${EMAIL_RH}</strong> assim que possível,
+      informando seu protocolo. O time de RH será avisado da pendência.
+    </div>
+    <label class="pend-ok">
+      <input type="checkbox" id="f-ciente">
+      <span>Estou ciente e me comprometo a enviar os documentos que faltam para o RH.</span>
+    </label>
+  </div>
+  <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;
+       padding:14px 18px;margin-top:16px;font-size:12px;color:#78350f;line-height:1.7">
+    <strong>PDF, JPG, PNG ou HEIC · até ${MAX_MB} MB por arquivo.</strong><br>
+    Foto de celular serve, desde que o documento esteja inteiro no enquadramento e
+    dê para ler. Se tiver qualquer dificuldade, escreva para <strong>${EMAIL_RH}</strong>.
+  </div>
+  <div class="envio" id="envio">
+    <div class="envio-txt" id="envio-txt">Preparando o envio…</div>
+    <div class="barra"><i id="envio-bar"></i></div>
+  </div>`;
+}
+
+function blocoTermos() {
+  return `<div class="card" style="padding:20px 28px">
+    <label style="display:flex;gap:12px;cursor:pointer;align-items:flex-start">
+      <input type="checkbox" id="f-termos" style="margin-top:3px;flex-shrink:0;
+             accent-color:var(--green);width:16px;height:16px">
+      <span style="font-size:13px;color:var(--gray-700);line-height:1.5">
+        Declaro que as informações fornecidas são verdadeiras e autorizo o uso dos
+        dados pessoais e dos documentos enviados para fins de admissão e registro
+        de empregado pelo <strong>Cabana Burger</strong>, conforme a LGPD.
+      </span>
+    </label>
+  </div>`;
+}
+
+function montarAnexos() {
+  const box = document.getElementById('docs');
+  if (!box) return;
+  const exigidos = docsExigidos(D);
+  const chaves = exigidos.map(d => d.k).join('|');
+  if (box.dataset.chaves !== chaves) {
+    box.dataset.chaves = chaves;
+    box.innerHTML = exigidos.map(d => `
+      <div class="doc-card" id="doc-${d.k}">
+        <div class="doc-head">
+          <span class="doc-ico">${d.ico}</span>
+          <div class="doc-txt">
+            <div class="doc-nome" id="dn-${d.k}">${es(nomeDoc(d, D))}</div>
+            <div class="doc-hint">${es(d.hint)}</div>
+          </div>
+          <span class="doc-check">✓</span>
+          <button type="button" class="doc-btn">Anexar
+            <input type="file" ${d.multi ? 'multiple' : ''}
+                   accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,application/pdf,image/*"
+                   onchange="addArquivo('${d.k}', this)">
+          </button>
+        </div>
+        <div class="doc-files" id="fl-${d.k}"></div>
+      </div>`).join('');
+    exigidos.forEach(d => renderArquivos(d.k));
+    // o que deixou de ser exigido não fica guardado
+    Object.keys(anexos).forEach(k => {
+      if (!exigidos.some(d => d.k === k)) delete anexos[k];
+    });
+  } else {
+    exigidos.forEach(d => {
+      const el = document.getElementById('dn-' + d.k);
+      if (el) el.textContent = nomeDoc(d, D);
+    });
+  }
+  atualizarPendencia();
+}
+
+function addArquivo(k, input) {
+  const doc = DOCS.find(d => d.k === k);
+  const novos = Array.from(input.files || []);
+  input.value = '';
+  if (!novos.length) return;
+  for (const f of novos) {
+    if (f.size > MAX_MB * 1024 * 1024)
+      return erro(`"${f.name}" tem ${(f.size / 1048576).toFixed(1)} MB. O limite é ${MAX_MB} MB.`);
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (!TIPOS_OK.includes(f.type) && !EXT_OK.includes(ext))
+      return erro(`"${f.name}" não é um formato aceito. Envie PDF, JPG, PNG ou HEIC.`);
+  }
+  anexos[k] = doc && doc.multi
+    ? (anexos[k] || []).concat(novos).slice(0, 2)
+    : [novos[0]];
+  esconderAlerta();
+  renderArquivos(k);
+}
+
+function removeArquivo(k, i) {
+  if (!anexos[k]) return;
+  anexos[k].splice(i, 1);
+  if (!anexos[k].length) delete anexos[k];
+  renderArquivos(k);
+}
+
+function renderArquivos(k) {
+  const lista = document.getElementById('fl-' + k);
+  const card = document.getElementById('doc-' + k);
+  if (!lista || !card) return;
+  const fs = anexos[k] || [];
+  lista.innerHTML = fs.map((f, i) => `
+    <div class="up-item">
+      <span>${f.type === 'application/pdf' ? '📄' : '🖼️'}</span>
+      <span class="fn">${es(f.name)}</span>
+      <span class="fs">${(f.size / 1024).toFixed(0)} KB</span>
+      <button type="button" class="rm" title="Remover"
+              onclick="removeArquivo('${k}', ${i})">&times;</button>
+    </div>`).join('');
+  card.classList.toggle('ok', fs.length > 0);
+  card.classList.toggle('falta', fs.length === 0);
+  atualizarPendencia();
+}
+
+function faltando() {
+  return docsExigidos(D).filter(d => !(anexos[d.k] || []).length);
+}
+
+function atualizarPendencia() {
+  const faltam = faltando();
+  const box = document.getElementById('pend');
+  const lista = document.getElementById('pend-lista');
+  if (!box || !lista) return;
+  box.classList.toggle('show', faltam.length > 0);
+  lista.innerHTML = faltam.map(d => `<li>${es(nomeDoc(d, D))}</li>`).join('');
+  if (!faltam.length) {
+    const c = document.getElementById('f-ciente');
+    if (c) c.checked = false;
+  }
+}
+
+/* ══════════════════ ENVIO ══════════════════ */
+function cliente() {
+  if (sb) return sb;
+  if (!window.supabase?.createClient)
+    throw new Error('a biblioteca do Supabase não carregou — verifique a conexão.');
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON,
+    { auth: { persistSession: false, autoRefreshToken: false } });
+  return sb;
+}
+
+const paraISO = t => {
+  const p = String(t || '').split('/');
+  if (p.length !== 3 || p[2].length !== 4) return null;
+  const d = new Date(+p[2], +p[1] - 1, +p[0]);
+  if (isNaN(d) || d.getDate() !== +p[0]) return null;
+  return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+};
+
+const DATAS = ['nascimento','data_migracao','rg_emissao','pis_data_cadastro',
+               'ctps_emissao','cnh_validade','visto_validade_rne','visto_validade_prof',
+               'conselho_vencimento'];
+const BOOLS = ['naturalizado','pcd','sem_numero'];
+
+function progresso(txt, pct) {
+  $('#envio').classList.add('show');
+  $('#envio-txt').textContent = txt;
+  $('#envio-bar').style.width = Math.max(0, Math.min(100, pct)) + '%';
+}
+
+async function enviar() {
+  esconderAlerta();
+  if (location.protocol === 'file:')
+    return erro('Esta página precisa estar publicada na web para enviar os documentos. '
+              + 'Abra pelo link oficial do portal.');
+
+  for (let n = 1; n <= 5; n++) if (!validar(n)) { irPara(n); return; }
+
+  const faltam = faltando();
+  if (faltam.length && !$('#f-ciente').checked) {
+    $('#pend').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return erro('Faltam ' + faltam.length + ' documento(s). Anexe agora, ou marque que '
+              + 'está ciente de que precisa enviá-los ao RH para a admissão prosseguir.');
+  }
+  if (!$('#f-termos').checked)
+    return erro('Você precisa aceitar os termos para continuar.');
+
+  const bt = $('#btn-enviar');
+  $('#spinner').style.display = 'block';
+  $('#txt-enviar').textContent = 'Enviando...';
+  bt.disabled = true;
+
+  try {
+    const db = cliente();
+
+    progresso('Abrindo conexão segura…', 4);
+    const { data: auth, error: eAuth } = await db.auth.signInAnonymously();
+    if (eAuth) throw new Error('não foi possível abrir a sessão: ' + eAuth.message);
+    const uid = auth.user.id;
+
+    // documentos
+    const fila = [];
+    docsExigidos(D).forEach(d => (anexos[d.k] || []).forEach((f, i) => fila.push({ d, f, i })));
+    const arquivos = [];
+    for (let n = 0; n < fila.length; n++) {
+      const { d, f, i } = fila[n];
+      progresso(`Enviando ${nomeDoc(d, D)} — ${n + 1} de ${fila.length}`,
+                6 + (n / Math.max(fila.length, 1)) * 82);
+      const ext = (f.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const path = `${uid}/${d.k}${i ? '-' + (i + 1) : ''}.${ext}`;
+      const { error: eUp } = await db.storage.from(BUCKET)
+        .upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: false });
+      if (eUp) throw new Error(`falha ao enviar "${f.name}": ${eUp.message}`);
+      arquivos.push({ tipo: d.k, rotulo: nomeDoc(d, D), nome: f.name,
+                      caminho: path, bytes: f.size, mime: f.type || null });
+    }
+
+    // cadastro
+    progresso('Gravando o cadastro…', 90);
+    const linha = { user_id: uid, arquivos, termos_aceite: true,
+      documentos_faltantes: faltam.map(d => nomeDoc(d, D)),
+      transporte_tipo: D.transporte_tipo || null,
+      vt_linhas: linhasVT(), dependentes: dependentes() };
+    ETAPAS.forEach(e => (e.grupos || []).forEach(g => g.campos.forEach(c => {
+      const v = String(D[c.k] ?? '').trim();
+      if (DATAS.includes(c.k))      linha[c.k] = paraISO(v);
+      else if (BOOLS.includes(c.k)) linha[c.k] = v === 'Sim';
+      else                          linha[c.k] = v || null;
+    })));
+
+    const { data: row, error: eIns } = await db.from(TABELA)
+      .insert(linha).select('protocolo').single();
+    if (eIns) throw new Error('falha ao gravar o cadastro: ' + eIns.message);
+
+    // aviso ao RH
+    progresso('Avisando o time de RH…', 96);
+    try {
+      await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          subject: (faltam.length ? '⚠️ Admissão CLT com pendência — ' : '🆕 Nova admissão CLT — ')
+                   + D.nome + ' — protocolo ' + row.protocolo,
+          from_name: 'Portal de Admissão CLT',
+          replyto: D.email,
+          'Tipo': 'CLT',
+          'Nome': D.nome + (D.nome_social ? ' (nome social: ' + D.nome_social + ')' : ''),
+          'Protocolo': row.protocolo,
+          'CPF': D.cpf,
+          'Contato': D.tel_celular + ' · ' + D.email,
+          'Recebido em': new Date().toLocaleString('pt-BR'),
+          'Documentos': arquivos.length + ' arquivo(s) anexado(s)',
+          'PENDENCIA': faltam.length
+            ? '⚠️ FALTAM ' + faltam.length + ': ' + faltam.map(d => nomeDoc(d, D)).join(' · ')
+              + ' — o candidato foi avisado de que a admissão não prossegue sem eles.'
+            : 'Nenhuma — todos os documentos exigidos foram anexados.',
+          'Onde ver': 'Abra o painel de RH e busque pelo protocolo. Os dados e os '
+                    + 'documentos não são enviados por e-mail.',
+        })
+      });
+    } catch (_) { /* o cadastro já está salvo; o aviso é secundário */ }
+
+    progresso('Concluído.', 100);
+    $('#out-protocolo').textContent = row.protocolo;
+    $('#out-resumo').innerHTML =
+      ['Identificação','Endereço e contato','Documentos','Dados bancários','Benefícios']
+        .map(t => '✅ ' + t).join('<br>') +
+      `<br>${faltam.length ? '⚠️' : '✅'} ${arquivos.length} documento(s) anexado(s)`;
+    if (faltam.length) {
+      $('#out-pendencia').style.display = 'block';
+      $('#out-faltantes').innerHTML = faltam.map(d => '• ' + es(nomeDoc(d, D))).join('<br>');
+    }
+    $('#etapa-6').style.display = 'none';
+    $('#sucesso').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch (e) {
+    $('#envio').classList.remove('show');
+    erro('Não conseguimos concluir o envio: ' + e.message
+       + ' — se persistir, escreva para ' + EMAIL_RH + '.');
+    $('#spinner').style.display = 'none';
+    $('#txt-enviar').textContent = '✅ Enviar Cadastro';
+    bt.disabled = false;
+  }
+}
+
+montar();
+</script>
+</body>
+</html>
