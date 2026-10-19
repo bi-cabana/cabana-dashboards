@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cabana Burger · Cadastro de Prestador PJ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:      #54a045;
+    --green-dark: #3a7a2e;
+    --green-pale: #f0f7ee;
+    --green-light:#a8d5a2;
+    --gray-50:  #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --danger:   #dc2626;
+    --shadow:   0 4px 24px rgba(0,0,0,.08);
+    --radius:   12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f0f4ed;
+    min-height: 100vh;
+    color: var(--gray-900);
+  }
+
+  /* ── HERO HEADER ── */
+  .hero {
+    background: var(--green-dark);
+    padding: 40px 24px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      -45deg, transparent, transparent 20px,
+      rgba(255,255,255,.03) 20px, rgba(255,255,255,.03) 40px
+    );
+  }
+  .hero-logo {
+    width: 56px; height: 56px;
+    background: white;
+    border-radius: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  }
+  .hero-logo img { height: 36px; }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(22px, 5vw, 32px);
+    font-weight: 800;
+    color: white;
+    line-height: 1.2;
+    position: relative;
+  }
+  .hero p {
+    margin-top: 10px;
+    font-size: 15px;
+    color: rgba(255,255,255,.7);
+    max-width: 480px;
+    margin-inline: auto;
+    position: relative;
+  }
+  .hero-badge {
+    display: inline-block;
+    margin-top: 14px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    color: rgba(255,255,255,.9);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 20px;
+    letter-spacing: .04em;
+    position: relative;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    background: white;
+    padding: 0 24px;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  .progress-inner {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 14px 0;
+  }
+  .step-item {
+    display: flex; flex-direction: column; align-items: center;
+    flex: 1; position: relative; cursor: default;
+  }
+  .step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 14px; left: 50%; right: -50%;
+    height: 2px;
+    background: var(--gray-200);
+    transition: background .3s;
+  }
+  .step-item.done:not(:last-child)::after { background: var(--green); }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-200);
+    background: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    color: var(--gray-400);
+    transition: .3s; z-index: 1;
+  }
+  .step-item.active .step-num  { border-color: var(--green); color: var(--green); background: var(--green-pale); }
+  .step-item.done .step-num    { border-color: var(--green); background: var(--green); color: white; }
+  .step-label {
+    font-size: 10px; font-weight: 600; color: var(--gray-400);
+    margin-top: 5px; text-align: center; white-space: nowrap;
+  }
+  .step-item.active .step-label { color: var(--green-dark); }
+  .step-item.done .step-label   { color: var(--green); }
+
+  /* ── MAIN LAYOUT ── */
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 32px 16px 64px;
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    display: none;
+    animation: fadeUp .35s ease;
+  }
+  .section.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(14px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px; font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-subtitle {
+    font-size: 13px; color: var(--gray-500);
+    margin-bottom: 24px; line-height: 1.5;
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+  .span2 { grid-column: span 2; }
+  @media (max-width: 560px) { .span2 { grid-column: span 1; } }
+
+  .form-group { display: flex; flex-direction: column; }
+  .form-label {
+    font-size: 12px; font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 6px;
+    letter-spacing: .02em;
+  }
+  .form-label .req { color: var(--danger); }
+
+  .form-input, .form-select {
+    padding: 11px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: var(--gray-900);
+    background: white;
+    outline: none; transition: .2s;
+    width: 100%;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(84,160,69,.12);
+  }
+  .form-input.error { border-color: var(--danger); }
+  .form-hint { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+
+  /* ── FILE UPLOAD ── */
+  .upload-zone {
+    border: 2px dashed var(--gray-200);
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: .2s;
+    position: relative;
+  }
+  .upload-zone:hover { border-color: var(--green); background: var(--green-pale); }
+  .upload-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-label {
+    font-size: 13px; font-weight: 600; color: var(--gray-700);
+    display: block; margin-bottom: 4px;
+  }
+  .upload-hint { font-size: 11px; color: var(--gray-400); }
+  .upload-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .upload-item {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--green-pale); border-radius: 7px;
+    padding: 8px 12px; font-size: 12px;
+  }
+  .upload-item .fname { flex:1; color: var(--green-dark); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .upload-item .fsize { color: var(--gray-400); flex-shrink:0; }
+  .upload-item .rm-btn { cursor:pointer; color:var(--gray-400); font-size:16px; line-height:1; background:none; border:none; padding:0 2px; }
+  .upload-item .rm-btn:hover { color: var(--danger); }
+  .upload-progress { height: 3px; background: var(--gray-100); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .upload-progress-bar { height: 100%; background: var(--green); border-radius: 3px; transition: width .3s; }
+
+  /* ── BUTTONS ── */
+  .btn-row {
+    display: flex; gap: 12px; justify-content: space-between;
+    margin-top: 28px; flex-wrap: wrap;
+  }
+  .btn {
+    padding: 13px 28px; border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; transition: .2s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn-primary {
+    background: var(--green); color: white;
+    box-shadow: 0 4px 12px rgba(84,160,69,.3);
+  }
+  .btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+  .btn-ghost { background: var(--gray-100); color: var(--gray-700); }
+  .btn-ghost:hover { background: var(--gray-200); }
+
+  /* ── CPNJF LOOKUP ── */
+  .cnpj-wrap { display: flex; gap: 8px; }
+  .cnpj-wrap .form-input { flex: 1; }
+  .btn-lookup {
+    padding: 11px 14px; background: var(--gray-100);
+    border: 1.5px solid var(--gray-200); border-radius: 8px;
+    font-size: 12px; font-weight: 600; color: var(--gray-700);
+    cursor: pointer; white-space: nowrap; transition: .2s;
+  }
+  .btn-lookup:hover { background: var(--green-pale); border-color: var(--green); color: var(--green-dark); }
+
+  /* ── SUCCESS SCREEN ── */
+  #screen-success {
+    text-align: center; padding: 40px 0;
+  }
+  .success-icon {
+    width: 72px; height: 72px;
+    background: var(--green-pale);
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 34px; margin-bottom: 20px;
+  }
+  .success-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px; font-weight: 800;
+    color: var(--green-dark); margin-bottom: 10px;
+  }
+  .success-text {
+    font-size: 14px; color: var(--gray-500);
+    max-width: 420px; margin: 0 auto; line-height: 1.6;
+  }
+  .success-list {
+    margin: 24px auto; max-width: 340px;
+    background: var(--gray-50); border-radius: 10px; padding: 16px 20px;
+    text-align: left; font-size: 13px; line-height: 2; color: var(--gray-700);
+  }
+
+  /* ── ALERTS ── */
+  .alert {
+    padding: 12px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    margin-bottom: 16px; display: none;
+  }
+  .alert.error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+  .alert.success { background: var(--green-pale); color: var(--green-dark); border: 1px solid var(--green-light); }
+  .alert.show { display: block; }
+
+  /* ── SUBMITTING ── */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MISC ── */
+  .divider {
+    height: 1px; background: var(--gray-100);
+    margin: 20px 0;
+  }
+  .required-note {
+    font-size: 12px; color: var(--gray-400);
+    margin-bottom: 16px;
+  }
+
+  /* ── DOCUMENTOS (upload) ── */
+  .doc-card {
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: .2s;
+    background: white;
+  }
+  .doc-card.ok    { border-color: var(--green); background: var(--green-pale); }
+  .doc-card.erro  { border-color: var(--danger); }
+  .doc-head { display: flex; align-items: center; gap: 12px; }
+  .doc-ico  { font-size: 22px; flex-shrink: 0; width: 28px; text-align: center; }
+  .doc-txt  { flex: 1; min-width: 0; }
+  .doc-nome { font-size: 13px; font-weight: 700; color: var(--gray-800, #1f2937); }
+  .doc-hint { font-size: 11.5px; color: var(--gray-500); margin-top: 2px; line-height: 1.4; }
+  .doc-btn {
+    position: relative; overflow: hidden; flex-shrink: 0;
+    padding: 9px 16px; border-radius: 8px; border: 1.5px solid var(--green);
+    background: white; color: var(--green-dark);
+    font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    transition: .2s; white-space: nowrap;
+  }
+  .doc-btn:hover { background: var(--green); color: white; }
+  .doc-btn input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+  .doc-check { font-size: 18px; color: var(--green); flex-shrink: 0; display: none; }
+  .doc-card.ok .doc-check { display: block; }
+  .doc-files { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .doc-files:empty { display: none; }
+
+  /* ── PROGRESSO DO ENVIO ── */
+  .envio-box {
+    display: none; margin-top: 18px;
+    background: var(--gray-50); border: 1px solid var(--gray-200);
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .envio-box.show { display: block; }
+  .envio-txt { font-size: 12.5px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; }
+  .protocolo {
+    font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800;
+    color: var(--green-dark); letter-spacing: .04em; margin: 6px 0 2px;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-logo">
+    <!-- Substitua pelo logo real: <img src="logo.png" alt="Cabana Burger"> -->
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#54a045" stroke-width="2.5">
+      <path d="M3 12h18M3 6h18M3 18h18"/>
+    </svg>
+  </div>
+  <h1>Cadastro de Prestador PJ</h1>
+  <p>Preencha as informações abaixo para concluir seu cadastro na Cabana Burger.</p>
+  <span class="hero-badge">🔒 Dados protegidos · Uso interno</span>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <div class="step-item active" id="step-1">
+      <div class="step-num">1</div>
+      <div class="step-label">Pessoal</div>
+    </div>
+    <div class="step-item" id="step-2">
+      <div class="step-num">2</div>
+      <div class="step-label">Transporte</div>
+    </div>
+    <div class="step-item" id="step-3">
+      <div class="step-num">3</div>
+      <div class="step-label">Empresa PJ</div>
+    </div>
+    <div class="step-item" id="step-4">
+      <div class="step-num">4</div>
+      <div class="step-label">Bancário</div>
+    </div>
+    <div class="step-item" id="step-5">
+      <div class="step-num">5</div>
+      <div class="step-label">Documentos</div>
+    </div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div class="container">
+  <div class="alert error" id="alert-error"></div>
+
+  <!-- ── SEÇÃO 1: DADOS PESSOAIS ── -->
+  <div class="section active" id="section-1">
+    <div class="card">
+      <div class="card-title">👤 Dados Pessoais</div>
+      <div class="card-subtitle">Informações pessoais do prestador de serviço.</div>
+      <div class="required-note">Campos com <span style="color:var(--danger)">*</span> são obrigatórios.</div>
+
+      <div class="form-grid">
+        <div class="form-group span2">
+          <label class="form-label">Nome Completo <span class="req">*</span></label>
+          <input class="form-input" id="f-nome" type="text" placeholder="Seu nome completo" autocomplete="name">
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Nome Social <span style="font-size:11px;color:var(--gray-400);font-weight:400;">(opcional — como prefere ser chamado(a))</span></label>
+          <input class="form-input" id="f-nome-social" type="text" placeholder="Preencha se diferente do nome completo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CPF <span class="req">*</span></label>
+          <input class="form-input" id="f-cpf" type="text" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de Nascimento <span class="req">*</span></label>
+          <input class="form-input" id="f-nascimento" type="text" placeholder="DD/MM/AAAA" maxlength="10" oninput="maskDate(this)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sexo / Gênero <span class="req">*</span></label>
+          <select class="form-select" id="f-sexo">
+            <option value="">Selecione...</option>
+            <option>Cisgênero Masculino</option>
+            <option>Cisgênero Feminino</option>
+            <option>Transgênero Masculino</option>
+            <option>Transgênero Feminino</option>
+            <option>Não-binário</option>
+            <option>Gênero Fluido</option>
+            <option>Agênero</option>
+            <option>Outro</option>
+            <option>Prefiro não informar</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cor / Raça <span class="req">*</span></label>
+          <select class="form-select" id="f-cor">
+            <option value="">Selecione...</option>
+            <option>Branca</option>
+            <option>Preta</option>
+            <option>Parda</option>
+            <option>Amarela</option>
+            <option>Indígena</option>
+            <option>Prefiro não informar</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado Civil <span class="req">*</span></label>
+          <select class="form-select" id="f-estado-civil">
+            <option value="">Selecione...</option>
+            <option>Solteiro(a)</option>
+            <option>Casado(a)</option>
+            <option>União Estável</option>
+            <option>Divorciado(a)</option>
+            <option>Separado(a)</option>
+            <option>Viúvo(a)</option>
+          </select>
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Nome da Mãe <span class="req">*</span></label>
+          <input class="form-input" id="f-nome-mae" type="text" placeholder="Nome completo da mãe">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefone / WhatsApp <span class="req">*</span></label>
+          <input class="form-input" id="f-telefone" type="tel" placeholder="(11) 99999-9999" maxlength="15" oninput="maskPhone(this)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail Pessoal <span class="req">*</span></label>
+          <input class="form-input" id="f-email" type="email" placeholder="seuemail@gmail.com" autocomplete="email">
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Endereço Completo <span class="req">*</span></label>
+          <input class="form-input" id="f-endereco" type="text" placeholder="Rua, número, bairro, cidade – UF">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tamanho da Camiseta <span class="req">*</span></label>
+          <select class="form-select" id="f-camiseta">
+            <option value="">Selecione...</option>
+            <option>P</option>
+            <option>M</option>
+            <option>G</option>
+            <option>GG</option>
+            <option>XGG</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">CEP</label>
+          <input class="form-input" id="f-cep" type="text" placeholder="00000-000" maxlength="9" oninput="maskCEP(this)">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <span></span>
+      <button class="btn btn-primary" onclick="goToSection(2)">
+        Próximo <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ── SEÇÃO 2: TRANSPORTE ── -->
+  <div class="section" id="section-2">
+    <div class="card">
+      <div class="card-title">🚌 Benefício de Transporte</div>
+      <div class="card-subtitle">Selecione o tipo de benefício de transporte que deseja utilizar.</div>
+
+      <!-- Escolha do tipo -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+        <label id="label-combustivel" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:2px solid var(--gray-200);border-radius:10px;cursor:pointer;transition:.2s;" onclick="selectTransporte('combustivel')">
+          <input type="radio" name="f-transporte-tipo" id="f-transporte-combustivel" value="combustivel" style="accent-color:var(--green);width:18px;height:18px;flex-shrink:0;">
+          <span style="font-size:22px;">⛽</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--gray-800);">Auxílio Combustível</div>
+            <div style="font-size:12px;color:var(--gray-500);margin-top:2px;">Para quem utiliza veículo próprio</div>
+          </div>
+        </label>
+        <label id="label-vt" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:2px solid var(--gray-200);border-radius:10px;cursor:pointer;transition:.2s;" onclick="selectTransporte('vt')">
+          <input type="radio" name="f-transporte-tipo" id="f-transporte-vt" value="vt" style="accent-color:var(--green);width:18px;height:18px;flex-shrink:0;">
+          <span style="font-size:22px;">🚌</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--gray-800);">Vale Transporte</div>
+            <div style="font-size:12px;color:var(--gray-500);margin-top:2px;">Para quem utiliza transporte público</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Campos Vale Transporte (linhas) -->
+      <div id="vt-fields" style="display:none;">
+        <div style="font-size:13px;font-weight:700;color:var(--gray-800);margin-bottom:12px;">🗺️ Linhas utilizadas</div>
+
+        <!-- Header das colunas -->
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 2fr 36px;gap:8px;margin-bottom:6px;padding:0 4px;">
+          <div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;">Empresa <span style="color:var(--danger)">*</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;">Valor Unit. <span style="color:var(--danger)">*</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;">Qtd/dia <span style="color:var(--danger)">*</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;">Código / Linha</div>
+          <div></div>
+        </div>
+
+        <div id="vt-linhas-container">
+          <!-- Linhas dinâmicas -->
+        </div>
+
+        <button type="button" onclick="addLinhaVT()"
+          style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:var(--green-pale);border:1.5px dashed var(--green);border-radius:8px;color:var(--green-dark);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;"
+          onmouseover="this.style.background='var(--green-light)'" onmouseout="this.style.background='var(--green-pale)'">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar linha
+        </button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToSection(1)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Voltar
+      </button>
+      <button class="btn btn-primary" onclick="goToSection(3)">
+        Próximo <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO 3: EMPRESA PJ ── -->
+  <div class="section" id="section-3">
+    <div class="card">
+      <div class="card-title">🏢 Dados da Empresa PJ</div>
+      <div class="card-subtitle">Informações da sua pessoa jurídica para emissão de notas fiscais e contrato.</div>
+
+      <div class="form-grid">
+        <div class="form-group span2">
+          <label class="form-label">CNPJ <span class="req">*</span></label>
+          <div class="cnpj-wrap">
+            <input class="form-input" id="f-cnpj" type="text" placeholder="00.000.000/0001-00" maxlength="18" oninput="maskCNPJ(this)">
+            <button class="btn-lookup" type="button" onclick="buscarCNPJ()">🔍 Consultar</button>
+          </div>
+          <span class="form-hint">Clique em Consultar para preencher automaticamente pelo CNPJ.</span>
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Razão Social <span class="req">*</span></label>
+          <input class="form-input" id="f-razao" type="text" placeholder="Nome da empresa conforme cartão CNPJ">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de Abertura <span class="req">*</span></label>
+          <input class="form-input" id="f-abertura" type="text" placeholder="DD/MM/AAAA" maxlength="10" oninput="maskDate(this)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CNPJ completa 6 meses em</label>
+          <input class="form-input" id="f-seis-meses" type="text" placeholder="DD/MM/AAAA" maxlength="10" oninput="maskDate(this)" readonly style="background:var(--gray-50)">
+          <span class="form-hint">Calculado automaticamente.</span>
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Endereço da Empresa</label>
+          <input class="form-input" id="f-endereco-pj" type="text" placeholder="Endereço conforme cartão CNPJ">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToSection(2)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Voltar
+      </button>
+      <button class="btn btn-primary" onclick="goToSection(4)">
+        Próximo <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO 4: DADOS BANCÁRIOS ── -->
+  <div class="section" id="section-4">
+    <div class="card">
+      <div class="card-title">🏦 Dados Bancários</div>
+      <div class="card-subtitle">Para recebimento das notas fiscais. Utilize preferencialmente a conta PJ.</div>
+
+      <div class="form-grid">
+        <div class="form-group span2">
+          <label class="form-label">Chave PIX <span class="req">*</span> <span style="color:var(--danger);font-weight:700;">(Obrigatório chave CNPJ)</span></label>
+          <input class="form-input" id="f-pix" type="text" placeholder="00.000.000/0001-00">
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Banco <span class="req">*</span></label>
+          <input class="form-input" id="f-banco" type="text" list="banco-list" placeholder="Ex: Nubank, Itaú, Bradesco...">
+          <datalist id="banco-list">
+            <option>Nubank</option><option>Itaú</option><option>Bradesco</option>
+            <option>Santander</option><option>Banco do Brasil</option><option>Caixa</option>
+            <option>C6 Bank</option><option>Inter</option><option>BTG Pactual</option>
+            <option>Sicoob</option><option>XP Investimentos</option><option>Neon</option>
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Agência</label>
+          <input class="form-input" id="f-agencia" type="text" placeholder="0000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Conta <span class="req">*</span></label>
+          <input class="form-input" id="f-conta" type="text" placeholder="00000000-0">
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Tipo de Conta</label>
+          <select class="form-select" id="f-tipo-conta">
+            <option>Conta Corrente PJ</option>
+            <option>Conta Corrente PF</option>
+            <option>Conta Pagamento (Nubank, C6, etc.)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToSection(3)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Voltar
+      </button>
+      <button class="btn btn-primary" onclick="goToSection(5)">
+        Próximo <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO 5: DOCUMENTOS ── -->
+  <div class="section" id="section-5">
+
+    <div class="card">
+      <div class="card-title">📎 Envio de Documentos</div>
+      <div class="card-subtitle">Anexe os documentos abaixo. Eles vão direto e em sigilo para o time de RH da Cabana Burger — não é preciso enviar nada por e-mail.</div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;" id="docs-container"><!-- montado via JS --></div>
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin-top:18px;">
+        <div style="font-size:12px;color:#78350f;line-height:1.7;">
+          <strong>PDF, JPG, PNG ou HEIC · até 10 MB por arquivo.</strong><br>
+          Foto de celular serve, desde que o documento esteja inteiro no enquadramento e dê para ler.
+          Se tiver qualquer dificuldade, escreva para <strong>alodp@cabanaburger.com.br</strong>.
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMOS -->
+    <div class="card" style="padding:20px 28px;">
+      <label style="display:flex;gap:12px;cursor:pointer;align-items:flex-start;">
+        <input type="checkbox" id="f-termos" style="margin-top:3px;flex-shrink:0;accent-color:var(--green);width:16px;height:16px;">
+        <span style="font-size:13px;color:var(--gray-700);line-height:1.5;">
+          Declaro que as informações fornecidas são verdadeiras e autorizo o uso dos dados pessoais e dos documentos enviados para fins de cadastro e contratação pela <strong>Cabana Burger</strong>, conforme a LGPD.
+        </span>
+      </label>
+      <div class="envio-box" id="envio-box">
+        <div class="envio-txt" id="envio-txt">Preparando o envio…</div>
+        <div class="upload-progress"><div class="upload-progress-bar" id="envio-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToSection(4)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Voltar
+      </button>
+      <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">
+        <div class="spinner" id="spinner"></div>
+        <span id="submit-text">✅ Enviar Cadastro</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SUCESSO ── -->
+  <div id="screen-success" style="display:none;">
+    <div class="card">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Cadastro enviado!</div>
+      <div class="success-text">
+        Obrigado! Suas informações foram recebidas com sucesso pelo time de RH da Cabana Burger.
+      </div>
+      <div style="margin:22px auto 6px;max-width:340px;">
+        <div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.08em;">Seu protocolo</div>
+        <div class="protocolo" id="out-protocolo">—</div>
+        <div style="font-size:11.5px;color:var(--gray-400);">Guarde este número. É por ele que o RH localiza seu cadastro.</div>
+      </div>
+      <div class="success-list">
+        ✅ Dados pessoais<br>
+        ✅ Empresa PJ<br>
+        ✅ Dados bancários<br>
+        ✅ <span id="out-ndocs">5</span> documentos anexados
+      </div>
+      <div class="success-text">
+        Em breve você receberá um contato pelo e-mail ou WhatsApp informado para os próximos passos.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════════╗
+// ║  CONFIGURAÇÃO — preencher as duas linhas abaixo                      ║
+// ║                                                                      ║
+// ║  No Supabase: Project Settings → API                                 ║
+// ║    SUPABASE_URL  = "Project URL"                                     ║
+// ║    SUPABASE_ANON = chave "anon / public"  (NUNCA a service_role)     ║
+// ║                                                                      ║
+// ║  Esta chave é pública de propósito. Quem a copiar consegue apenas    ║
+// ║  GRAVAR um cadastro novo — não consegue ler, listar nem apagar nada. ║
+// ║  Quem garante isso são as políticas do 01_supabase_setup.sql.        ║
+// ╚══════════════════════════════════════════════════════════════════════╝
+const SUPABASE_URL  = 'https://cdlttflshgmwvvsreygc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbHR0ZmxzaGdtd3Z2c3JleWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTY2MzksImV4cCI6MjEwNzk5MjYzOX0.gOuY2MAROUWNuMbmlHq_thkRJYwr2clmn5pNRF6uIoI';
+
+const EMAIL_RH      = 'alodp@cabanaburger.com.br';
+const WEB3FORMS_KEY = 'e73ff3c6-17a1-4bfe-ba9e-ffc7f0fea661';
+const BUCKET        = 'documentos-pj';
+const MAX_MB        = 10;
+const TIPOS_OK      = ['application/pdf','image/jpeg','image/png','image/heic','image/heif','image/webp'];
+
+// ── ESTADO ──
+let currentSection = 1;
+let sb = null;            // cliente Supabase
+const anexos = {};        // { cnpj: [File], identidade: [File, File], ... }
+
+// ── DOCUMENTOS EXIGIDOS ──
+const DOCS = [
+  { k:'cnpj',       ico:'🏢', nome:'Cartão CNPJ',
+    hint:'Emitido pela Receita Federal — PDF ou foto legível' },
+  { k:'contrato',   ico:'📄', nome:'Contrato Social ou CCMEI',
+    hint:'Documento de constituição da empresa' },
+  { k:'identidade', ico:'🪪', nome:'RG ou CNH', multi:true,
+    hint:'Frente e verso — pode anexar os dois arquivos' },
+  { k:'residencia', ico:'🏠', nome:'Comprovante de Residência',
+    hint:'Luz, água, gás ou telefone — emitido nos últimos 3 meses' },
+  { k:'foto',       ico:'🤳', nome:'Foto sua (selfie ou retrato)',
+    hint:'Recente, fundo neutro, rosto visível' },
+];
+
+// ── NAVEGAÇÃO ──
+function goToSection(n) {
+  if(n > currentSection && !validateSection(currentSection)) return;
+  document.getElementById('section-'+currentSection).classList.remove('active');
+  document.getElementById('section-'+n).classList.add('active');
+  for(let i=1; i<=5; i++) {
+    const el = document.getElementById('step-'+i);
+    el.classList.remove('active','done');
+    if(i < n)  el.classList.add('done');
+    if(i === n) el.classList.add('active');
+  }
+  currentSection = n;
+  window.scrollTo({top:0, behavior:'smooth'});
+  hideAlert();
+}
+
+// ── VALIDAÇÃO ──
+function validateSection(n) {
+  hideAlert();
+  if(n === 1) {
+    if(!v('f-nome'))        return err('Informe seu nome completo.');
+    if(!v('f-cpf'))         return err('Informe seu CPF.');
+    if(!v('f-nascimento'))  return err('Informe sua data de nascimento.');
+    if(!v('f-sexo'))        return err('Selecione o sexo.');
+    if(!v('f-cor'))         return err('Selecione a cor/raça.');
+    if(!v('f-estado-civil'))return err('Selecione o estado civil.');
+    if(!v('f-nome-mae'))    return err('Informe o nome da mãe.');
+    if(!v('f-telefone'))    return err('Informe seu telefone/WhatsApp.');
+    if(!v('f-email'))       return err('Informe seu e-mail pessoal.');
+    if(!v('f-endereco'))    return err('Informe seu endereço completo.');
+    if(!v('f-camiseta'))    return err('Informe o tamanho da sua camiseta.');
+  }
+  if(n === 2) {
+    const tipo = document.querySelector('input[name="f-transporte-tipo"]:checked')?.value;
+    if(!tipo) return err('Selecione o tipo de benefício de transporte (ou "Não desejo").');
+    if(tipo === 'vt') {
+      const linhas = getLinhasVT();
+      if(!linhas.length) return err('Adicione pelo menos uma linha de transporte.');
+      for(const l of linhas) {
+        if(!l.empresa) return err('Informe a empresa em todas as linhas de transporte.');
+        if(!l.valor)   return err('Informe o valor unitário em todas as linhas.');
+        if(!l.qtd)     return err('Informe a quantidade/dia em todas as linhas.');
+      }
+    }
+  }
+  if(n === 3) {
+    if(!v('f-cnpj'))     return err('Informe o CNPJ da empresa.');
+    if(!v('f-razao'))    return err('Informe a Razão Social.');
+    if(!v('f-abertura')) return err('Informe a data de abertura do CNPJ.');
+  }
+  if(n === 4) {
+    if(!v('f-pix'))   return err('Informe a chave PIX.');
+    if(!v('f-banco')) return err('Informe o banco.');
+    if(!v('f-conta')) return err('Informe o número da conta.');
+  }
+  return true;
+}
+
+function v(id) { return document.getElementById(id)?.value?.trim(); }
+function err(msg) {
+  const el = document.getElementById('alert-error');
+  el.textContent = '⚠️ ' + msg; el.classList.add('show');
+  window.scrollTo({top:0, behavior:'smooth'});
+  return false;
+}
+function hideAlert() {
+  document.getElementById('alert-error').classList.remove('show');
+}
+
+// ── DOCUMENTOS: MONTAGEM DAS ZONAS DE UPLOAD ──
+function montarDocs() {
+  const box = document.getElementById('docs-container');
+  if (!box) return;
+  box.innerHTML = DOCS.map(d => `
+    <div class="doc-card" id="doc-${d.k}">
+      <div class="doc-head">
+        <span class="doc-ico">${d.ico}</span>
+        <div class="doc-txt">
+          <div class="doc-nome">${d.nome} <span style="color:var(--danger)">*</span></div>
+          <div class="doc-hint">${d.hint}</div>
+        </div>
+        <span class="doc-check">✓</span>
+        <button type="button" class="doc-btn">
+          Anexar
+          <input type="file" ${d.multi ? 'multiple' : ''}
+                 accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,application/pdf,image/*"
+                 onchange="addArquivo('${d.k}', this)">
+        </button>
+      </div>
+      <div class="doc-files" id="files-${d.k}"></div>
+    </div>`).join('');
+}
+
+function addArquivo(k, input) {
+  const doc = DOCS.find(d => d.k === k);
+  const novos = Array.from(input.files || []);
+  input.value = '';                       // permite reanexar o mesmo arquivo
+  if (!novos.length) return;
+
+  for (const f of novos) {
+    if (f.size > MAX_MB * 1024 * 1024) {
+      return err(`"${f.name}" tem ${(f.size/1048576).toFixed(1)} MB. O limite é ${MAX_MB} MB por arquivo.`);
+    }
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    const extOk = ['pdf','jpg','jpeg','png','heic','heif','webp'].includes(ext);
+    if (!TIPOS_OK.includes(f.type) && !extOk) {
+      return err(`"${f.name}" não é um formato aceito. Envie PDF, JPG, PNG ou HEIC.`);
+    }
+  }
+
+  if (!anexos[k]) anexos[k] = [];
+  if (doc && doc.multi) {
+    anexos[k] = anexos[k].concat(novos).slice(0, 2);
+  } else {
+    anexos[k] = [novos[0]];
+  }
+  hideAlert();
+  renderArquivos(k);
+}
+
+function removeArquivo(k, i) {
+  if (!anexos[k]) return;
+  anexos[k].splice(i, 1);
+  if (!anexos[k].length) delete anexos[k];
+  renderArquivos(k);
+}
+
+function renderArquivos(k) {
+  const lista = document.getElementById('files-' + k);
+  const card  = document.getElementById('doc-' + k);
+  const fs    = anexos[k] || [];
+  if (!lista || !card) return;
+  lista.innerHTML = fs.map((f, i) => `
+    <div class="upload-item">
+      <span>${f.type === 'application/pdf' ? '📄' : '🖼️'}</span>
+      <span class="fname">${escHtml(f.name)}</span>
+      <span class="fsize">${(f.size/1024).toFixed(0)} KB</span>
+      <button type="button" class="rm-btn" title="Remover" onclick="removeArquivo('${k}', ${i})">&times;</button>
+    </div>`).join('');
+  card.classList.toggle('ok', fs.length > 0);
+  card.classList.remove('erro');
+}
+
+function escHtml(t) {
+  return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function docsFaltando() {
+  return DOCS.filter(d => !(anexos[d.k] || []).length);
+}
+
+// ── SUPABASE ──
+function getSb() {
+  if (sb) return sb;
+  if (!window.supabase || !window.supabase.createClient)
+    throw new Error('biblioteca do Supabase não carregou — verifique a conexão.');
+  if (SUPABASE_URL.startsWith('COLE_AQUI') || SUPABASE_ANON.startsWith('COLE_AQUI'))
+    throw new Error('o portal ainda não foi configurado (SUPABASE_URL / SUPABASE_ANON).');
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  return sb;
+}
+
+function dmyToISO(t) {
+  const p = String(t || '').split('/');
+  if (p.length !== 3 || p[2].length !== 4) return null;
+  const d = new Date(+p[2], +p[1] - 1, +p[0]);
+  if (isNaN(d) || d.getDate() !== +p[0]) return null;
+  return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+}
+
+function progresso(txt, pct) {
+  const box = document.getElementById('envio-box');
+  const t   = document.getElementById('envio-txt');
+  const bar = document.getElementById('envio-bar');
+  if (box) box.classList.add('show');
+  if (t)   t.textContent = txt;
+  if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+}
+
+// ── SUBMIT ──
+async function submitForm() {
+  hideAlert();
+
+  // o login anônimo do Supabase não funciona com o arquivo aberto direto do
+  // disco; a página precisa estar publicada (ou num servidor local)
+  if (location.protocol === 'file:')
+    return err('Esta página precisa estar publicada na web para enviar os documentos. Abra pelo link oficial do portal.');
+
+  for (let n = 1; n <= 4; n++) if (!validateSection(n)) { goToSection(n); return; }
+
+  const faltam = docsFaltando();
+  if (faltam.length) {
+    faltam.forEach(d => document.getElementById('doc-' + d.k)?.classList.add('erro'));
+    return err('Faltam documentos: ' + faltam.map(d => d.nome).join(', ') + '.');
+  }
+  if (!document.getElementById('f-termos').checked)
+    return err('Você precisa aceitar os termos para continuar.');
+
+  const btn = document.getElementById('btn-submit');
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('submit-text').textContent = 'Enviando...';
+  btn.disabled = true;
+
+  try {
+    const db = getSb();
+
+    // 1. sessão anônima — serve só para dar uma pasta exclusiva a este envio
+    progresso('Abrindo conexão segura…', 4);
+    const { data: auth, error: eAuth } = await db.auth.signInAnonymously();
+    if (eAuth) throw new Error('não foi possível abrir a sessão: ' + eAuth.message);
+    const uid = auth.user.id;
+
+    // 2. upload dos documentos
+    const fila = [];
+    DOCS.forEach(d => (anexos[d.k] || []).forEach((f, i) => fila.push({ d, f, i })));
+
+    const arquivos = [];
+    for (let n = 0; n < fila.length; n++) {
+      const { d, f, i } = fila[n];
+      progresso(`Enviando ${d.nome}${fila.filter(x => x.d.k === d.k).length > 1 ? ` (${i+1})` : ''} — ${n+1} de ${fila.length}`,
+                6 + (n / fila.length) * 82);
+      const ext  = (f.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const path = `${uid}/${d.k}${i ? '-' + (i + 1) : ''}.${ext}`;
+      const { error: eUp } = await db.storage.from(BUCKET)
+        .upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: false });
+      if (eUp) throw new Error(`falha ao enviar "${f.name}": ${eUp.message}`);
+      arquivos.push({ tipo: d.k, rotulo: d.nome, nome: f.name, caminho: path, bytes: f.size, mime: f.type || null });
+    }
+
+    // 3. grava o cadastro
+    progresso('Gravando o cadastro…', 90);
+    const transpTipo = document.querySelector('input[name="f-transporte-tipo"]:checked')?.value || null;
+    const { data: row, error: eIns } = await db.from('cadastros_pj').insert({
+      user_id:    uid,
+      nome:         v('f-nome'),
+      nome_social:  v('f-nome-social') || null,
+      cpf:          v('f-cpf'),
+      nascimento:   dmyToISO(v('f-nascimento')),
+      sexo:         v('f-sexo'),
+      cor_raca:     v('f-cor'),
+      estado_civil: v('f-estado-civil'),
+      nome_mae:     v('f-nome-mae'),
+      telefone:     v('f-telefone'),
+      email:        v('f-email'),
+      endereco:     v('f-endereco'),
+      cep:          v('f-cep') || null,
+      camiseta:     v('f-camiseta'),
+      transporte_tipo: transpTipo,
+      vt_linhas:    transpTipo === 'vt' ? getLinhasVT() : [],
+      razao_social: v('f-razao'),
+      cnpj:         v('f-cnpj'),
+      abertura:     dmyToISO(v('f-abertura')),
+      seis_meses:   dmyToISO(v('f-seis-meses')),
+      endereco_pj:  v('f-endereco-pj') || null,
+      pix:          v('f-pix'),
+      banco:        v('f-banco'),
+      agencia:      v('f-agencia') || null,
+      conta:        v('f-conta'),
+      tipo_conta:   v('f-tipo-conta'),
+      arquivos,
+      termos_aceite: true
+    }).select('protocolo').single();
+    if (eIns) throw new Error('falha ao gravar o cadastro: ' + eIns.message);
+
+    // 4. aviso ao RH — de propósito sem dado pessoal no corpo do e-mail.
+    //    Os dados ficam no painel, o e-mail só avisa que chegou.
+    progresso('Avisando o time de RH…', 96);
+    try {
+      await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          subject:   '🆕 Novo cadastro PJ — protocolo ' + row.protocolo,
+          from_name: 'Portal de Cadastro PJ',
+          'Protocolo':  row.protocolo,
+          'Recebido em': new Date().toLocaleString('pt-BR'),
+          'Documentos': arquivos.length + ' arquivo(s)',
+          'Onde ver':   'Abra o painel de RH e busque pelo protocolo. Os dados e os documentos não são enviados por e-mail.'
+        })
+      });
+    } catch (_) { /* o cadastro já está salvo; o aviso é secundário */ }
+
+    progresso('Concluído.', 100);
+    document.getElementById('out-protocolo').textContent = row.protocolo;
+    document.getElementById('out-ndocs').textContent     = arquivos.length;
+    document.getElementById('section-5').style.display   = 'none';
+    document.getElementById('screen-success').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch (e) {
+    document.getElementById('envio-box')?.classList.remove('show');
+    err('Não conseguimos concluir o envio: ' + e.message +
+        ' — se persistir, envie os documentos para ' + EMAIL_RH + '.');
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('submit-text').textContent = '✅ Enviar Cadastro';
+    btn.disabled = false;
+  }
+}
+
+// ── TRANSPORTE ──
+let vtLinhaCount = 0;
+
+function selectTransporte(tipo) {
+  ['combustivel','vt'].forEach(t => {
+    const label = document.getElementById('label-'+t);
+    const radio = document.getElementById('f-transporte-'+t);
+    if(label) label.style.borderColor = t===tipo ? 'var(--green)' : 'var(--gray-200)';
+    if(label) label.style.background  = t===tipo ? 'var(--green-pale)' : '';
+    if(radio) radio.checked = t===tipo;
+  });
+  const vtFields = document.getElementById('vt-fields');
+  if(vtFields) {
+    vtFields.style.display = tipo==='vt' ? '' : 'none';
+    if(tipo==='vt' && vtLinhaCount===0) addLinhaVT();
+  }
+}
+
+function addLinhaVT() {
+  vtLinhaCount++;
+  const id = vtLinhaCount;
+  const container = document.getElementById('vt-linhas-container');
+  if(!container) return;
+  const row = document.createElement('div');
+  row.id = 'vt-linha-'+id;
+  row.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr 2fr 36px;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `
+    <input class="form-input" id="vt-emp-${id}" type="text" placeholder="Ex: SP Trans, Metrô..." style="padding:10px 12px;font-size:13px;">
+    <input class="form-input" id="vt-val-${id}" type="text" placeholder="0,00" style="padding:10px 12px;font-size:13px;" oninput="maskDecimal(this)">
+    <input class="form-input" id="vt-qtd-${id}" type="number" placeholder="2" min="1" max="10" style="padding:10px 12px;font-size:13px;">
+    <input class="form-input" id="vt-cod-${id}" type="text" placeholder="Código ou nome da linha" style="padding:10px 12px;font-size:13px;">
+    <button type="button" onclick="removeLinhaVT(${id})"
+      style="width:34px;height:34px;border:none;background:#fde8e8;color:var(--danger);border-radius:7px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
+      title="Remover linha">&times;</button>`;
+  container.appendChild(row);
+}
+
+function removeLinhaVT(id) {
+  const row = document.getElementById('vt-linha-'+id);
+  if(row) row.remove();
+}
+
+function getLinhasVT() {
+  const container = document.getElementById('vt-linhas-container');
+  if(!container) return [];
+  const result = [];
+  container.querySelectorAll('[id^="vt-emp-"]').forEach(empEl => {
+    const id = empEl.id.replace('vt-emp-','');
+    result.push({
+      empresa: empEl.value.trim(),
+      valor:   document.getElementById('vt-val-'+id)?.value.trim() || '',
+      qtd:     document.getElementById('vt-qtd-'+id)?.value.trim() || '',
+      codigo:  document.getElementById('vt-cod-'+id)?.value.trim() || '',
+    });
+  });
+  return result;
+}
+
+function maskDecimal(el) {
+  let v = el.value.replace(/[^0-9,]/g,'');
+  el.value = v;
+}
+
+// ── MÁSCARAS ──
+function maskCPF(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,11);
+  v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  el.value = v;
+}
+function maskCNPJ(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,14);
+  v = v.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+  el.value = v;
+}
+function maskDate(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,8);
+  v = v.replace(/(\d{2})(\d)/,'$1/$2').replace(/(\d{2})(\d)/,'$1/$2');
+  el.value = v;
+  if(el.id === 'f-abertura') calcSeisMeses(v);
+}
+function maskPhone(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,11);
+  el.value = v.length <= 10
+    ? v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'')
+    : v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3').replace(/-$/,'');
+}
+function maskCEP(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,8);
+  el.value = v.replace(/(\d{5})(\d)/,'$1-$2');
+}
+function calcSeisMeses(dateStr) {
+  const p = dateStr.split('/');
+  if(p.length !== 3 || p[2].length !== 4) return;
+  const d = new Date(+p[2], +p[1]-1, +p[0]);
+  if(isNaN(d)) return;
+  d.setMonth(d.getMonth()+6);
+  document.getElementById('f-seis-meses').value =
+    ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
+}
+
+// ── CONSULTA CNPJ (JSONP — funciona em file://) ──
+function buscarCNPJ() {
+  const cnpj = v('f-cnpj').replace(/\D/g,'');
+  if(cnpj.length !== 14) { alert('Informe um CNPJ válido com 14 dígitos.'); return; }
+  const btn = document.querySelector('.btn-lookup');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ Buscando...'; btn.disabled = true;
+  const cbName = 'cnpjCb_' + Date.now();
+  const script = document.createElement('script');
+  script.src = `https://receitaws.com.br/v1/cnpj/${cnpj}?callback=${cbName}`;
+  const timer = setTimeout(() => {
+    cleanup(); btn.innerHTML = orig; btn.disabled = false;
+    alert('⚠️ Tempo esgotado. Verifique sua conexão.');
+  }, 8000);
+  function cleanup() {
+    clearTimeout(timer); delete window[cbName];
+    if(script.parentNode) script.parentNode.removeChild(script);
+  }
+  window[cbName] = function(d) {
+    cleanup(); btn.innerHTML = orig; btn.disabled = false;
+    if(d.status === 'ERROR') { alert('⚠️ ' + (d.message||'CNPJ não encontrado.')); return; }
+    document.getElementById('f-razao').value = d.nome || '';
+    if(d.abertura) { document.getElementById('f-abertura').value = d.abertura; calcSeisMeses(d.abertura); }
+    const end = [d.logradouro,d.numero,d.bairro,d.municipio,d.uf].filter(Boolean).join(', ');
+    if(end) document.getElementById('f-endereco-pj').value = end;
+    alert('✅ Dados preenchidos com sucesso!');
+  };
+  script.onerror = function() {
+    cleanup(); btn.innerHTML = orig; btn.disabled = false;
+    alert('⚠️ Não foi possível consultar o CNPJ.');
+  };
+  document.head.appendChild(script);
+}
+
+// ── INICIALIZAÇÃO ──
+montarDocs();
+</script>
+</body>
+</html>
