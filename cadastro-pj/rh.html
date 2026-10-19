@@ -335,6 +335,12 @@ const SUPABASE_URL  = 'https://cdlttflshgmwvvsreygc.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbHR0ZmxzaGdtd3Z2c3JleWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTY2MzksImV4cCI6MjEwNzk5MjYzOX0.gOuY2MAROUWNuMbmlHq_thkRJYwr2clmn5pNRF6uIoI';
 const VALIDADE_LINK = 120;   // segundos de validade do link do documento
 
+/* Aviso ao RH quando uma vaga é solicitada. Mesmo serviço que os portais usam. */
+const WEB3FORMS_KEY = 'e73ff3c6-17a1-4bfe-ba9e-ffc7f0fea661';
+const EMAIL_RH      = 'alodp@cabanaburger.com.br';
+const LINK_PAINEL   = 'https://cabana-dashboards.bi-253.workers.dev/cadastro-pj/rh.html';
+const AVISAR_VAGA   = true;   // false desliga o e-mail sem mexer em mais nada
+
 const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise',
                    pendente:'Pendente', aprovado:'Aprovado' };
 
@@ -1493,6 +1499,7 @@ async function salvarVaga() {
     }).select('*').single();
     if (error) throw new Error(error.message);
     VAGAS.unshift(data);
+    avisarVagaNova(data, user.email);
     voltarDaTela(); pintarVagas();
     msg('app-msg', `Solicitação enviada para ${data.unidade} · ${data.cargo}. `
                  + 'O código da vaga é gerado quando o RH aprovar.', 'ok');
@@ -1501,6 +1508,48 @@ async function salvarVaga() {
     bt.disabled = false; bt.textContent = 'Enviar solicitação';
     erro('Não consegui salvar: ' + e.message);
   }
+}
+
+/* Aviso de vaga nova. Roda depois de a vaga já estar gravada: se o e-mail
+   falhar, a solicitação não se perde — por isso o erro aqui é só um log. */
+function avisarVagaNova(v, emailSolicitante) {
+  if (!AVISAR_VAGA) return;
+  const corpo = {
+    access_key: WEB3FORMS_KEY,
+    subject: `🆕 Nova vaga solicitada — ${v.unidade} · ${v.cargo}`
+             + (v.nivel ? ' ' + v.nivel : ''),
+    from_name: 'Painel de Cadastros · Vagas',
+    replyto: emailSolicitante || '',
+    'Unidade': (v.confidencial ? '🔒 CONFIDENCIAL · ' : '') + v.unidade,
+    'Cargo': v.cargo + (v.nivel ? ' · ' + v.nivel : ''),
+    'Contrato': v.tipo_contrato || cargoDe(v.cargo).tipo || '—',
+    'Turno': v.turno === 'Outra' ? (v.turno_outro || 'Outra') : v.turno,
+    'Motivo': v.motivo || '—',
+    'Substituído': v.nome_substituido
+      ? v.nome_substituido + (v.data_desligamento
+          ? ' · desligamento em ' + soData(v.data_desligamento) : '')
+      : '—',
+    'Solicitante': `${v.nome_solicitante}`
+      + (v.cargo_solicitante ? ` (${v.cargo_solicitante})` : '')
+      + (emailSolicitante ? ` · ${emailSolicitante}` : ''),
+    'Gestor do solicitante': v.gestor_solicitante || '—',
+    'Aprovada com o gestor': v.aprovada_gestor ? 'Sim' : 'Não',
+    'Indicação': v.tem_indicacao
+      ? [v.indicado_nome, v.indicado_telefone].filter(Boolean).join(' · ')
+        + (v.indicado_por ? ` · indicado por ${v.indicado_por}` : '')
+        + (v.veio_indica_ai ? ' · veio pelo Indica Aí' : '')
+      : 'Não',
+    'Observação': v.observacao || '—',
+    'AÇÃO NECESSÁRIA': 'A vaga está aguardando aprovação do RH. O código só é '
+      + 'gerado depois que ela for aprovada no painel — antes disso, nenhum '
+      + 'candidato consegue se cadastrar nela.',
+    'Painel': LINK_PAINEL,
+  };
+  fetch('https://api.web3forms.com/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(corpo)
+  }).catch(e => console.warn('aviso de vaga não saiu:', e));
 }
 
 /* ── detalhe da vaga ── */
