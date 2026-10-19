@@ -346,11 +346,18 @@ const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise',
 
 let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
 const CACHE = {};            // linhas ja carregadas por tipo
-let PERFIL = { papel: 'rh', nome: '', unidade: null };
+let PERFIL = { papel: 'rh', nome: '', unidade: null }, MEU_ID = null;
 let VAGAS = [], CARGOS = [], SIGLA = {}, selVaga = null, etapaFoco = '', buscaFunil = '';
+let AVISO_SETUP = '';
 
 /* Carregadas da tabela `unidades` no login — a sigla de cada uma vira o
-   prefixo do código da vaga (ELD-001). */
+   prefixo do código da vaga (ELD-001). A lista abaixo é só a rede de
+   segurança para o caso de a tabela ainda não existir: sem ela o campo
+   obrigatório ficaria vazio e ninguém entenderia por quê. */
+const UNIDADES_RESERVA = ['Alphaville','Barra Shopping RJ','Botafogo','Braz Leme',
+  'Campinas','Campo Belo','Cozinha Central','Guarulhos','Leopoldo','Matriz','Moema',
+  'Mooca','Morumbi Shopping','Morumbi Town','Niteroi','Oscar Freire','Pinheiros',
+  'Shop Eldorado','Tatuape','Villa Lobos Shopping'];
 let UNIDADES = [];
 
 const TURNOS = ['Abertura (08h00 às 16h20)','Intermediário (12h00 às 20h20)',
@@ -814,6 +821,7 @@ async function abrirApp() {
   }
   PERFIL = p;
   const { data: { user } } = await db.auth.getUser();
+  MEU_ID = user?.id || null;
   $('who').textContent = (p.nome || user?.email || '')
     + (ehRH() ? '' : ' · gerente' + (p.unidade ? ' · ' + p.unidade : ''));
 
@@ -828,13 +836,24 @@ async function abrirApp() {
   }
 
   // lista de cargos, para o formulário e para o tipo de contrato
-  const { data: cg } = await db.from('cargos_vaga').select('*')
+  const { data: cg, error: eCg } = await db.from('cargos_vaga').select('*')
     .eq('ativo', true).order('ordem');
   CARGOS = cg || [];
-  const { data: un } = await db.from('unidades').select('*')
+  if (eCg || !CARGOS.length)
+    AVISO_SETUP = 'A tabela de cargos ainda não existe no banco. Rode o '
+      + '20_vagas.sql no SQL Editor — sem ela não dá para solicitar vaga.';
+  const { data: un, error: eUn } = await db.from('unidades').select('*')
     .eq('ativo', true).order('ordem');
-  UNIDADES = (un || []).map(u => u.nome);
-  SIGLA = Object.fromEntries((un || []).map(u => [u.nome, u.sigla]));
+  if (eUn || !(un || []).length) {
+    UNIDADES = UNIDADES_RESERVA.slice();
+    SIGLA = {};
+    AVISO_SETUP = 'A tabela de unidades ainda não existe no banco. Estou usando '
+      + 'uma lista de reserva, e o código da vaga vai sair com uma sigla '
+      + 'improvisada. Rode o 21_vagas_ajustes.sql no SQL Editor.';
+  } else {
+    UNIDADES = un.map(u => u.nome);
+    SIGLA = Object.fromEntries(un.map(u => [u.nome, u.sigla]));
+  }
 
   $('login').style.display = 'none';
   $('app').style.display   = 'block';
@@ -880,11 +899,14 @@ function ajustarUI() {
   document.querySelectorAll('.top .btn-ghost').forEach(b => {
     if (b.textContent.includes('CSV')) b.style.display = ehRH() ? '' : 'none';
   });
+  if (AVISO_SETUP && (t === 'vaga' || t === 'funil')) msg('app-msg', AVISO_SETUP);
+  else if (!AVISO_SETUP) msg('app-msg', '');
 }
 
 /* ───────────── LISTA ───────────── */
 async function carregar() {
-  msg('app-msg', '');
+  // o aviso de banco incompleto sobrevive ao recarregamento da lista
+  msg('app-msg', (TIPO === 'vaga' || TIPO === 'funil') ? AVISO_SETUP : '');
   $('vazio').textContent = 'Carregando…';
   $('vazio').style.display = 'block';
   const deste = TIPO;
@@ -1601,6 +1623,26 @@ function abrirVaga(id) {
       ${v.confidencial ? '<dt>Confidencial</dt><dd>Sim — unidade oculta no portal</dd>' : ''}
     </dl></div>
 
+    ${podeExcluir(v) ? `
+    <div class="grp">
+      <h3>Excluir</h3>
+      <div class="fm show" style="border-radius:9px;border-top:1.5px solid #fca5a5" id="fm-del">
+        <label>Apagar esta vaga de vez?</label>
+        <div style="font-size:11.5px;color:#b91c1c;line-height:1.5;margin-bottom:9px">
+          ${(() => { const n = ehRH() ? candidatosDa(v).length : 0;
+            return n ? `<b>${n} candidato(s) já informaram este código.</b> O cadastro `
+              + 'deles continua, mas fica sem vaga vinculada. Se a ideia é só encerrar '
+              + 'a vaga, use <b>Cancelar vaga</b> — preserva o histórico.'
+              : 'Some da lista e do funil, sem volta. Para apenas encerrar, use '
+              + '<b>Cancelar vaga</b>.'; })()}
+        </div>
+        <div class="linha">
+          <button class="btn btn-sm btn-dng" onclick="excluirVaga('${v.id}', this)">
+            Sim, excluir${v.codigo ? ' ' + es(v.codigo) : ''}</button>
+        </div>
+      </div>
+    </div>` : ''}
+
     <div class="grp"><h3>Solicitação</h3><dl class="kv">
       ${linhaF('Solicitante', v.nome_solicitante)}
       ${linhaF('Cargo do solicitante', v.cargo_solicitante)}
@@ -1648,6 +1690,32 @@ function abrirVaga(id) {
   $('ov').classList.add('show');
   $('dv').classList.add('show');
   if (TIPO === 'vaga') pintarVagas();
+}
+
+/* O gerente apaga só o que ele mesmo pediu e enquanto ainda não foi
+   aprovado. Depois da aprovação a vaga entrou no funil e é do RH. */
+function podeExcluir(v) {
+  if (ehRH()) return true;
+  return v.solicitante_id === MEU_ID && v.etapa === 'solicitada';
+}
+
+async function excluirVaga(id, btn) {
+  const v = VAGAS.find(x => x.id === id);
+  if (!v) return;
+  btn.disabled = true; btn.textContent = 'Excluindo…';
+  try {
+    const { error } = await cliente().from('vagas').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    VAGAS = VAGAS.filter(x => x.id !== id);
+    fechar();
+    if (TIPO === 'funil') pintarFunil(); else pintarVagas();
+    msg('app-msg', `Vaga ${v.codigo || v.unidade + ' · ' + v.cargo} excluída.`, 'ok');
+    setTimeout(() => msg('app-msg', AVISO_SETUP), 7000);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Sim, excluir';
+    alert('Não consegui excluir: ' + e.message
+        + '\n\nSe a vaga já foi aprovada, só o RH pode apagá-la.');
+  }
 }
 
 async function copiarCodigo(btn, cod) {
