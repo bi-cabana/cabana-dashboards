@@ -99,6 +99,10 @@
   .doc .t b{display:block;font-size:12.5px;color:var(--gray-800)}
   .doc .t span{font-size:11px;color:var(--gray-400)}
   .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .copiar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
+          padding:12px 14px;background:var(--green-pale);border:1.5px solid var(--green-light);border-radius:10px}
+  .copiar .t{flex:1;min-width:150px;font-size:12px;color:var(--green-dark);line-height:1.45}
+  .copiar .t b{display:block;font-size:12.5px}
   textarea.inp{resize:vertical;min-height:70px;font-size:13px}
   .rodape{font-size:11.5px;color:var(--gray-400);text-align:center;margin-top:26px;line-height:1.7}
 </style>
@@ -322,6 +326,11 @@ function abrir(id) {
     `${es(l.empresa)} — R$ ${es(l.valor)} × ${es(l.qtd)}/dia${l.codigo ? ' · ' + es(l.codigo) : ''}`).join('<br>');
 
   $('d-body').innerHTML = `
+    <div class="copiar">
+      <div class="t"><b>Sistema de admissão</b>Copia todos os campos no mesmo formato do e-mail de hoje, prontos para colar.</div>
+      <button class="btn btn-sm btn-primary" onclick="copiarSistema(this)">Copiar dados</button>
+    </div>
+
     <div class="grp">
       <h3>Documentos</h3>
       ${(r.arquivos || []).length
@@ -371,6 +380,9 @@ function abrir(id) {
                    onclick="mudarStatus('${r.id}','${k}')">${v}</button>`).join('')}
       </div>
       ${r.tratado_em ? `<div class="sub" style="margin-top:10px">Última tratativa em ${dataBR(r.tratado_em)}</div>` : ''}
+      <div class="sub" style="margin-top:6px">${r.sincronizado_em
+        ? 'No SharePoint desde ' + dataBR(r.sincronizado_em) + (r.pasta_sharepoint ? ' · ' + es(r.pasta_sharepoint) : '')
+        : 'Ainda não copiado para o SharePoint — a rotina roda a cada 15 min.'}</div>
     </div>`;
 
   $('ov').classList.add('show');
@@ -384,6 +396,75 @@ function fechar() {
   selId = null; pintar();
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
+
+/* ───── BLOCO PARA O SISTEMA DE ADMISSÃO ─────
+   Mesma ordem e mesmos rótulos do e-mail que o RH recebe hoje, para o hábito
+   de copiar e colar continuar valendo. Espelha CAMPOS_SISTEMA do
+   sincronizar_cadastros.py — mexeu aqui, mexa lá também. */
+const CAMPOS_SISTEMA = [
+  ['Nome Completo',   r => r.nome],
+  ['Nome Social',     r => r.nome_social],
+  ['CPF',             r => r.cpf],
+  ['Nascimento',      r => soData(r.nascimento)],
+  ['Sexo / Gênero',   r => r.sexo],
+  ['Cor / Raça',      r => r.cor_raca],
+  ['Estado Civil',    r => r.estado_civil],
+  ['Nome da Mãe',     r => r.nome_mae],
+  ['WhatsApp',        r => r.telefone],
+  ['E-mail',          r => r.email],
+  ['Endereço',        r => r.endereco],
+  ['CEP',             r => r.cep],
+  ['Camiseta',        r => r.camiseta],
+  ['Tipo Transporte', r => ({vt:'Vale Transporte', combustivel:'Auxílio Combustível'})[r.transporte_tipo]],
+  ['CNPJ',            r => r.cnpj],
+  ['Razão Social',    r => r.razao_social],
+  ['Abertura CNPJ',   r => soData(r.abertura)],
+  ['6 Meses CNPJ',    r => soData(r.seis_meses)],
+  ['Endereço PJ',     r => r.endereco_pj],
+  ['Chave PIX',       r => r.pix],
+  ['Banco',           r => r.banco],
+  ['Agência',         r => r.agencia],
+  ['Conta',           r => r.conta],
+  ['Tipo de Conta',   r => r.tipo_conta],
+];
+
+function blocoSistema(r) {
+  const p = [];
+  for (const [rot, pegar] of CAMPOS_SISTEMA) {
+    const v = pegar(r);
+    p.push(rot + '\n' + (v == null || v === '' ? '—' : v));
+    if (rot === 'Tipo Transporte') {
+      (r.vt_linhas || []).forEach((l, i) => p.push(
+        `VT Linha ${i+1}\n${l.empresa||'—'} | R$ ${l.valor||'—'} | ${l.qtd||'—'}x/dia` +
+        (l.codigo ? ' | ' + l.codigo : '')));
+    }
+  }
+  const n = (r.arquivos || []).length;
+  p.push(`Documentos\n✅ ${n} anexado(s) no portal` +
+         (r.pasta_sharepoint ? ' · ' + r.pasta_sharepoint : ''));
+  return p.join('\n');
+}
+
+async function copiarSistema(btn) {
+  const r = linhas.find(x => x.id === selId);
+  if (!r) return;
+  const txt = blocoSistema(r);
+  const orig = btn.textContent;
+  try {
+    await navigator.clipboard.writeText(txt);
+  } catch (_) {
+    const ta = document.createElement('textarea');       // navegador sem permissão
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {
+      ta.remove();
+      return alert('Não consegui copiar automaticamente. O mesmo conteúdo está em "Dados para o sistema.txt", na pasta do SharePoint.');
+    }
+    ta.remove();
+  }
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => { btn.textContent = orig; }, 2200);
+}
 
 async function baixar(i, btn) {
   const r = linhas.find(x => x.id === selId);
@@ -426,7 +507,7 @@ function exportarCSV() {
   const cols = ['protocolo','criado_em','status','nome','nome_social','cpf','nascimento','sexo','cor_raca',
                 'estado_civil','nome_mae','telefone','email','endereco','cep','camiseta','transporte_tipo',
                 'razao_social','cnpj','abertura','seis_meses','endereco_pj','pix','banco','agencia','conta',
-                'tipo_conta','observacao'];
+                'tipo_conta','observacao','sincronizado_em','pasta_sharepoint'];
   const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const rs  = visiveis();
   const csv = '﻿' + [cols.join(';')]
