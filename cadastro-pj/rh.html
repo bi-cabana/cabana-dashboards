@@ -139,13 +139,24 @@
   .et{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;
     font-weight:700;white-space:nowrap;background:var(--gray-100);color:var(--gray-700)}
   .et-solicitada{background:#f5f3ff;color:#6d28d9}
-  .et-em_selecao{background:#fff7ed;color:#c2410c}
+  .et-divulgacao{background:#fdf4ff;color:#a21caf}
+  .et-triagem{background:#fff7ed;color:#c2410c}
+  .et-entrevista_atracao{background:#fff7ed;color:#c2410c}
+  .et-entrevista_gestor{background:#fef2f2;color:#b91c1c}
+  .et-proposta{background:#fefce8;color:#a16207}
   .et-documentos{background:#fffbeb;color:#b45309}
   .et-oris,.et-aso,.et-programar{background:#eff6ff;color:#1d4ed8}
   .et-inicio_agendado{background:#ecfeff;color:#0e7490}
   .et-admitido{background:var(--green-pale);color:var(--green-dark)}
   .et-cancelada{background:#f3f4f6;color:var(--gray-400)}
   .atraso{color:var(--danger);font-weight:800}
+  .st{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;
+    font-weight:800;white-space:nowrap}
+  .st-aberta{background:var(--green-pale);color:var(--green-dark)}
+  .st-congelada{background:#eff6ff;color:#1d4ed8}
+  .st-fechada{background:var(--gray-100);color:var(--gray-500)}
+  .st-cancelada{background:#fef2f2;color:#b91c1c}
+  tr.parada td{opacity:.55}
 
   /* formulário de solicitação */
   .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -348,6 +359,7 @@ let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
 const CACHE = {};            // linhas ja carregadas por tipo
 let PERFIL = { papel: 'rh', nome: '', unidade: null }, MEU_ID = null;
 let VAGAS = [], CARGOS = [], SIGLA = {}, selVaga = null, etapaFoco = '', buscaFunil = '';
+let statusFoco = '';
 let AVISO_SETUP = '';
 
 /* Carregadas da tabela `unidades` no login — a sigla de cada uma vira o
@@ -358,34 +370,73 @@ const UNIDADES_RESERVA = ['Alphaville','Barra Shopping RJ','Botafogo','Braz Leme
   'Campinas','Campo Belo','Cozinha Central','Guarulhos','Leopoldo','Matriz','Moema',
   'Mooca','Morumbi Shopping','Morumbi Town','Niteroi','Oscar Freire','Pinheiros',
   'Shop Eldorado','Tatuape','Villa Lobos Shopping'];
-let UNIDADES = [];
+let UNIDADES = [], REGIONAL = {};
 
 const TURNOS = ['Abertura (08h00 às 16h20)','Intermediário (12h00 às 20h20)',
   'Fechamento (15h00 às 23h20)','Fechamento (16h00 às 00h20)',
   'Madrugada (20h00 às 04h20)','Outra'];
 
-const MOTIVOS = ['Substituição por desligamento','Substituição por promoção/transferência',
-  'Aumento de quadro','Abertura de nova loja','Vaga temporária',
-  'Cobertura de afastamento'];
+/* Os motivos reais, como aparecem no controle operacional. Vêm da tabela
+   motivos_vaga; a lista abaixo é só a reserva para o caso de o 23 ainda não
+   ter rodado. Os que começam com "Reposição" abrem os campos de quem saiu. */
+const MOTIVOS_RESERVA = ['Aumento de quadro','Completar quadro','Ajuste de HC',
+  'Inauguração','Reposição por desligamento (por parte da empresa)',
+  'Reposição por pedido de desligamento (por parte do funcionário)',
+  'Reposição abandono de emprego',
+  'Reposição por transferência/movimentação interna',
+  'Funcionário não deu continuidade ao processo de contratação'];
+let MOTIVOS = MOTIVOS_RESERVA.slice();
+const ehReposicao = m => /^(Reposição|Substituição)/.test(m || '');
 
 const NIVEIS = ['Júnior','Pleno','Sênior'];
 
-/* As etapas do painel de Admissões, com o prazo em dias contado da aprovação.
-   sla = null quer dizer que a etapa não tem prazo próprio. */
+/* O caminho inteiro, do pedido à entrada. As cinco primeiras depois de
+   "Solicitada" vêm do controle operacional e cobrem o recrutamento; as seis
+   últimas são a admissão, que é o que o portal já automatizava. Eram dois
+   funis porque eram duas planilhas, não porque são dois processos.
+
+   O prazo de cada etapa tem duas origens. As de recrutamento usam a meta do
+   cargo (`fase` aponta para qual delas): um Gerente tem 15 dias úteis de
+   entrega, um Atendente tem 10. As de admissão têm prazo fixo em dias
+   corridos (`sla`), porque D1-D7 não muda com o cargo. */
 const ETAPAS = [
-  { k:'solicitada',      t:'Solicitada',           d:'aguardando aprovação', sla:null },
-  { k:'em_selecao',      t:'Em seleção',           d:'',                     sla:null },
-  { k:'documentos',      t:'Documentos',           d:'até D1',               sla:1 },
-  { k:'oris',            t:'Lançamento no Oris',   d:'até D2',               sla:2 },
-  { k:'aso',             t:'ASO',                  d:'até D3',               sla:3 },
-  { k:'programar',       t:'Programar admissão',   d:'até D4',               sla:4 },
-  { k:'inicio_agendado', t:'Início agendado',      d:'até D7',               sla:7 },
-  { k:'admitido',        t:'Admitido',             d:'',                     sla:null },
+  { k:'solicitada',         t:'Solicitada',               d:'aguardando aprovação' },
+  { k:'divulgacao',         t:'Alinhamento / Divulgação', d:'', fase:'entrega' },
+  { k:'triagem',            t:'Triagem de currículo',     d:'', fase:'entrega' },
+  { k:'entrevista_atracao', t:'Entrevista c/ Atração',    d:'', fase:'entrega' },
+  { k:'entrevista_gestor',  t:'Entrevista c/ Gestor',     d:'', fase:'gestor' },
+  { k:'proposta',           t:'Em proposta',              d:'', fase:'admissao' },
+  { k:'documentos',         t:'Documentos',               d:'até D1', sla:1 },
+  { k:'oris',               t:'Lançamento no Oris',       d:'até D2', sla:2 },
+  { k:'aso',                t:'ASO',                      d:'até D3', sla:3 },
+  { k:'programar',          t:'Programar admissão',       d:'até D4', sla:4 },
+  { k:'inicio_agendado',    t:'Início agendado',          d:'até D7', sla:7 },
+  { k:'admitido',           t:'Admitido',                 d:'' },
 ];
 const ET = Object.fromEntries(ETAPAS.map(e => [e.k, e]));
-ET.cancelada = { k:'cancelada', t:'Cancelada', d:'', sla:null };
+
+/* Onde a vaga está no funil é a etapa. O que aconteceu com ela é o status —
+   congelar ou cancelar não faz a vaga voltar no funil, faz ela parar onde
+   está. Eram a mesma coisa no desenho antigo, e por isso cancelar apagava o
+   histórico de até onde a vaga tinha chegado. */
+const STATUS_VAGA = { aberta:'Aberta', congelada:'Congelada',
+                      fechada:'Fechada', cancelada:'Cancelada' };
+const statusDe = v => v.status || 'aberta';
+/* Aberta é a vaga cujo relógio ainda corre — é dela que se cobra prazo.
+   No funil entram também as fechadas, porque uma vaga que chegou ao fim é
+   justamente o que o funil existe para contar. Congelada e cancelada saem
+   dos dois: pararam no meio e não viraram nem atraso nem admissão. */
+const vagaViva = v => statusDe(v) === 'aberta';
+const noFunil  = v => ['aberta', 'fechada'].includes(statusDe(v));
+const vagaParada = v => ['congelada', 'cancelada'].includes(statusDe(v));
 
 const ehRH = () => PERFIL.papel === 'rh';
+/* Na planilha a regional se repetia em toda linha da mesma loja. Aqui ela é
+   propriedade da loja, e o painel só consulta. */
+const regionalDe = u => {
+  const r = REGIONAL[u];
+  return r ? (r.coord ? `${r.regiao} · ${r.coord}` : r.regiao) : '';
+};
 const hoje = () => new Date().toISOString().slice(0, 10);
 
 /* Dias corridos desde a aprovação — é o relógio do funil. */
@@ -393,9 +444,46 @@ function diasDesdeAprovacao(v) {
   if (!v.aprovada_em) return null;
   return Math.floor((Date.now() - new Date(v.aprovada_em)) / 86400000);
 }
+/* As metas do cargo, da aba "Metas SLA". Quando o cargo não está na tabela,
+   vale a linha "Padrão" da planilha. */
+function metasDe(v) {
+  const c = CARGOS.find(x => x.cargo === v.cargo) || {};
+  return { entrega:    c.meta_entrega    ?? 10,
+           gestor:     c.meta_gestor     ?? 4,
+           admissao:   c.meta_admissao   ?? 10,
+           fechamento: c.meta_fechamento ?? 25 };
+}
+function diasNaEtapa(v) {
+  const base = v.etapa_desde || v.aprovada_em;
+  return base ? Math.floor((Date.now() - new Date(base)) / 86400000) : null;
+}
+/* Prazo da etapa em que a vaga está agora, em dias. */
+function prazoDa(v) {
+  const e = ET[v.etapa];
+  if (!e) return null;
+  if (e.sla != null) return e.sla;
+  return e.fase ? metasDe(v)[e.fase] : null;
+}
+/* Dois relógios correm ao mesmo tempo: o da etapa atual e o da vaga inteira.
+   Estourar qualquer um dos dois é atraso. O segundo existe porque uma vaga
+   pode nunca estourar uma etapa e mesmo assim levar três meses para fechar. */
 function atrasada(v) {
-  const sla = ET[v.etapa]?.sla, d = diasDesdeAprovacao(v);
-  return sla != null && d != null && d > sla;
+  if (!vagaViva(v)) return false;
+  const ag = diasDesdeAprovacao(v);
+  if (ag != null && ag > metasDe(v).fechamento) return true;
+  const p = prazoDa(v), d = diasNaEtapa(v);
+  return p != null && d != null && d > p;
+}
+function porqueAtrasada(v) {
+  const ag = diasDesdeAprovacao(v), m = metasDe(v);
+  const p = prazoDa(v), d = diasNaEtapa(v);
+  if (ag != null && ag > m.fechamento)
+    return `${ag} dias de vaga aberta, e a meta de fechamento para `
+         + `${es(v.cargo)} é de ${m.fechamento}.`;
+  if (p != null && d != null && d > p)
+    return `${d} dias parada em "${es(ET[v.etapa].t)}", e o prazo desta `
+         + `etapa para ${es(v.cargo)} é de ${p} dia(s).`;
+  return '';
 }
 /* Candidatos que informaram este código de vaga, nas duas filas. */
 function candidatosDa(v) {
@@ -836,6 +924,10 @@ async function abrirApp() {
   }
 
   // lista de cargos, para o formulário e para o tipo de contrato
+  const { data: mv } = await db.from('motivos_vaga').select('motivo')
+    .eq('ativo', true).order('ordem');
+  if ((mv || []).length) MOTIVOS = mv.map(x => x.motivo);
+
   const { data: cg, error: eCg } = await db.from('cargos_vaga').select('*')
     .eq('ativo', true).order('ordem');
   CARGOS = cg || [];
@@ -853,6 +945,8 @@ async function abrirApp() {
   } else {
     UNIDADES = un.map(u => u.nome);
     SIGLA = Object.fromEntries(un.map(u => [u.nome, u.sigla]));
+    REGIONAL = Object.fromEntries(un.map(u =>
+      [u.nome, { regiao: u.regiao || '', coord: u.coord_regional || '' }]));
   }
 
   $('login').style.display = 'none';
@@ -1318,10 +1412,10 @@ function vagasVisiveis() {
 function pintarVagas() {
   const rs = vagasVisiveis();
   $('cab').innerHTML = ['Código','Unidade','Cargo','Turno','Contrato',
-                        'Solicitante','Pedido em','Etapa']
+                        'Solicitante','Pedido em','Etapa','Status']
     .map(t => `<th>${t}</th>`).join('');
   $('corpo').innerHTML = rs.map(v => `
-    <tr class="${selVaga === v.id ? 'sel' : ''}${atrasada(v) ? ' pend' : ''}"
+    <tr class="${selVaga === v.id ? 'sel' : ''}${atrasada(v) ? ' pend' : ''}${vagaParada(v) ? ' parada' : ''}"
         onclick="abrirVaga('${v.id}')">
       <td class="mono">${v.codigo ? es(v.codigo)
         : '<span class="semcod">aguardando</span>'}</td>
@@ -1335,6 +1429,7 @@ function pintarVagas() {
       <td>${soData(v.data_solicitacao)}</td>
       <td><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span>
         ${atrasada(v) ? `<div class="sub atraso">${diasDesdeAprovacao(v)}d · atrasada</div>` : ''}</td>
+      <td><span class="st st-${es(statusDe(v))}">${es(STATUS_VAGA[statusDe(v)])}</span></td>
     </tr>`).join('');
   $('vazio').style.display = rs.length ? 'none' : 'block';
   $('vazio').textContent = VAGAS.length
@@ -1409,8 +1504,13 @@ function novaVaga() {
         ${campoF('motivo','Motivo da abertura <span class="req">*</span>',
                  sel('motivo', MOTIVOS), {span:1})}
         ${campoF('nome_substituido','Nome do substituído', txt('nome_substituido',''))}
-        ${campoF('data_desligamento','Data do desligamento',
+        ${campoF('data_desligamento','Data do desligamento/transferência',
           txt('data_desligamento','DD/MM/AAAA'))}
+        ${campoF('motivo_desligamento','Motivo do desligamento/transferência',
+          `<textarea class="inp" id="v-motivo_desligamento" style="min-height:56px"
+             placeholder="O que levou à saída" oninput="formMudou()"></textarea>`, {span:1})}
+        ${campoF('desligamento_dp','Desligamento já formalizado com o DP?',
+          simnao('desligamento_dp', false))}
       </div></div>
 
       <div class="grp"><h3>Aprovação e indicação</h3><div class="fgrid">
@@ -1452,9 +1552,11 @@ function formMudou() {
   const mostrar = (id, cond) => $('ff-' + id)?.classList.toggle('hide', !cond);
   mostrar('nivel', !!c.tem_nivel);
   mostrar('turno_outro', $('v-turno')?.value === 'Outra');
-  const subst = /^Substituição/.test($('v-motivo')?.value || '');
+  const subst = ehReposicao($('v-motivo')?.value);
   mostrar('nome_substituido', subst);
   mostrar('data_desligamento', subst);
+  mostrar('motivo_desligamento', subst);
+  mostrar('desligamento_dp', subst);
   const ind = leSim('tem_indicacao');
   mostrar('veio_indica_ai', ind);
   mostrar('indicado_por', ind);
@@ -1486,8 +1588,8 @@ async function salvarVaga() {
   if (val('turno') === 'Outra' && !val('turno_outro'))
     return erro('Descreva o turno.');
   if (!val('motivo'))           return erro('Informe o motivo da abertura.');
-  if (/^Substituição/.test(val('motivo')) && !val('nome_substituido'))
-    return erro('Informe o nome de quem está sendo substituído.');
+  if (ehReposicao(val('motivo')) && !val('nome_substituido'))
+    return erro('Informe o nome de quem está sendo reposto.');
   if (!leSim('aprovada_gestor'))
     return erro('A vaga precisa estar aprovada com o seu gestor antes de ser solicitada.');
   if (leSim('tem_indicacao') && !val('indicado_nome'))
@@ -1508,8 +1610,10 @@ async function salvarVaga() {
       turno: val('turno'),
       turno_outro: val('turno') === 'Outra' ? val('turno_outro') : null,
       motivo: val('motivo'),
-      nome_substituido: val('nome_substituido') || null,
-      data_desligamento: paraISO(val('data_desligamento')),
+      nome_substituido: ehReposicao(val('motivo')) ? (val('nome_substituido') || null) : null,
+      data_desligamento: ehReposicao(val('motivo')) ? paraISO(val('data_desligamento')) : null,
+      motivo_desligamento: ehReposicao(val('motivo')) ? (val('motivo_desligamento') || null) : null,
+      desligamento_dp: ehReposicao(val('motivo')) ? leSim('desligamento_dp') : null,
       confidencial: leSim('confidencial'),
       aprovada_gestor: leSim('aprovada_gestor'),
       tem_indicacao: leSim('tem_indicacao'),
@@ -1580,7 +1684,7 @@ function abrirVaga(id) {
   if (!v) return;
   selVaga = id; selId = null;
   const cands = ehRH() ? candidatosDa(v) : [];
-  const d = diasDesdeAprovacao(v), sla = ET[v.etapa]?.sla;
+  const d = diasDesdeAprovacao(v);
   const linhaF = (k, val) => (val == null || val === '' || val === '—') ? ''
     : `<dt>${es(k)}</dt><dd>${es(val)}</dd>`;
 
@@ -1604,19 +1708,24 @@ function abrirVaga(id) {
         <b>${es(SIGLA[v.unidade] || '???')}-000</b>, e é o que o candidato digita no portal.
       </div>
       <div class="ac">
-        <button class="btn btn-sm btn-primary" onclick="moverEtapa('${v.id}','em_selecao')">✓ Aprovar e gerar código</button>
-        <button class="btn btn-sm btn-ghost" onclick="moverEtapa('${v.id}','cancelada')">Recusar</button>
+        <button class="btn btn-sm btn-primary" onclick="moverEtapa('${v.id}','divulgacao')">✓ Aprovar e gerar código</button>
+        <button class="btn btn-sm btn-ghost" onclick="mudarStatusVaga('${v.id}','cancelada')">Recusar</button>
       </div>
     </div>` : ''}
 
     ${atrasada(v) ? `<div class="fbox"><b>⚠️ Atrasada</b>
       <div style="font-size:11.5px;color:#78350f;line-height:1.5">
-        ${d} dias desde a aprovação, e a etapa "${es(ET[v.etapa].t)}" tem prazo de ${sla} dia(s).
+        ${porqueAtrasada(v)}
       </div></div>` : ''}
 
     <div class="grp"><h3>Situação</h3><dl class="kv">
-      <dt>Etapa</dt><dd><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span></dd>
+      <dt>Etapa</dt><dd><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span>
+        ${prazoDa(v) != null ? `<span class="sub"> · prazo de ${prazoDa(v)} dia(s)`
+          + `${diasNaEtapa(v) != null ? `, está há ${diasNaEtapa(v)}` : ''}</span>` : ''}</dd>
+      <dt>Status</dt><dd><span class="st st-${es(statusDe(v))}">${es(STATUS_VAGA[statusDe(v)])}</span>
+        ${v.congelada_motivo ? `<span class="sub"> · ${es(v.congelada_motivo)}</span>` : ''}</dd>
       ${linhaF('Contrato', v.tipo_contrato)}
+      ${linhaF('Regional', regionalDe(v.unidade))}
       ${linhaF('Turno', turnoDe(v))}
       ${v.aprovada_em ? `<dt>Aprovada em</dt><dd>${dataBR(v.aprovada_em)} · ${d} dia(s) atrás</dd>` : ''}
       ${linhaF('Início previsto', soData(v.data_inicio))}
@@ -1649,7 +1758,10 @@ function abrirVaga(id) {
       ${linhaF('Gestor', v.gestor_solicitante)}
       ${linhaF('Motivo', v.motivo)}
       ${linhaF('Substituído', v.nome_substituido)}
+      ${linhaF('Motivo da saída', v.motivo_desligamento)}
       ${linhaF('Desligamento', soData(v.data_desligamento))}
+      ${v.desligamento_dp == null ? ''
+        : linhaF('Formalizado com o DP', v.desligamento_dp ? 'Sim' : 'Não')}
       ${linhaF('Aprovada com o gestor', v.aprovada_gestor ? 'Sim' : 'Não')}
       ${v.tem_indicacao ? linhaF('Indicado',
         [v.indicado_nome, v.indicado_telefone].filter(Boolean).join(' · ') || 'sim') : ''}
@@ -1678,8 +1790,16 @@ function abrirVaga(id) {
         ${ETAPAS.filter(e => e.k !== 'solicitada').map(e =>
           `<button class="btn btn-sm ${v.etapa === e.k ? 'btn-primary' : 'btn-ghost'}"
              onclick="moverEtapa('${v.id}','${e.k}')">${e.t}</button>`).join('')}
-        <button class="btn btn-sm ${v.etapa === 'cancelada' ? 'btn-primary' : 'btn-ghost'}"
-          onclick="moverEtapa('${v.id}','cancelada')">Cancelar vaga</button>
+      </div>
+      <h3 style="margin-top:18px">Status</h3>
+      <div class="acoes">
+        ${Object.entries(STATUS_VAGA).map(([k, t]) =>
+          `<button class="btn btn-sm ${statusDe(v) === k ? 'btn-primary' : 'btn-ghost'}"
+             onclick="mudarStatusVaga('${v.id}','${k}')">${t}</button>`).join('')}
+      </div>
+      <div class="sub" style="margin-top:7px;line-height:1.5">
+        Congelar ou cancelar não tira a vaga da etapa em que ela está — ela só
+        para de contar prazo e sai do funil até voltar para Aberta.
       </div>
       <label class="lbl" style="margin-top:14px">Data de início prevista</label>
       <input class="inp" id="v-inicio" type="text" placeholder="DD/MM/AAAA"
@@ -1734,8 +1854,10 @@ function irParaCandidato(tipo, id) {
 async function moverEtapa(id, etapa) {
   const v = VAGAS.find(x => x.id === id);
   if (!v) return;
-  const patch = { etapa };
-  if (etapa === 'em_selecao' && !v.aprovada_em) {
+  const patch = { etapa, etapa_desde: new Date().toISOString() };
+  if (etapa === 'admitido') patch.status = 'fechada';
+  // o código nasce aqui: é a primeira vez que a vaga sai de "solicitada"
+  if (etapa !== 'solicitada' && !v.aprovada_em) {
     const { data: { user } } = await cliente().auth.getUser();
     patch.aprovada_em = new Date().toISOString();
     patch.aprovada_por = user.id;
@@ -1752,6 +1874,35 @@ async function moverEtapa(id, etapa) {
     setTimeout(() => msg('app-msg', ''), 6000);
   } catch (e) {
     alert('Não consegui mover a vaga: ' + e.message);
+  }
+}
+
+/* O status é o que aconteceu com a vaga; a etapa é onde ela parou. Separar
+   os dois é o que permite reabrir uma vaga congelada no mesmo ponto. */
+async function mudarStatusVaga(id, st) {
+  const v = VAGAS.find(x => x.id === id);
+  if (!v) return;
+  const patch = { status: st };
+  if (st === 'congelada' || st === 'cancelada') {
+    const m = prompt(st === 'congelada'
+      ? 'Por que a vaga está sendo congelada?'
+      : 'Por que a vaga está sendo cancelada?', v.congelada_motivo || '');
+    if (m === null) return;
+    patch.congelada_motivo = m.trim() || null;
+    patch.congelada_em = new Date().toISOString().slice(0, 10);
+  }
+  if (st === 'aberta' && statusDe(v) === 'congelada')
+    patch.reaberta_em = new Date().toISOString().slice(0, 10);
+  try {
+    const { data, error } = await cliente().from('vagas')
+      .update(patch).eq('id', id).select('*').single();
+    if (error) throw new Error(error.message);
+    Object.assign(v, data);
+    if (TIPO === 'funil') { pintarFunil(); fechar(); } else abrirVaga(id);
+    msg('app-msg', `${v.codigo || v.unidade} — ${STATUS_VAGA[st]}.`, 'ok');
+    setTimeout(() => msg('app-msg', AVISO_SETUP), 6000);
+  } catch (e) {
+    alert('Não consegui mudar o status: ' + e.message);
   }
 }
 
@@ -1772,7 +1923,7 @@ function pintarFunil() {
   // O funil mede o caminho do processo: quantas vagas já passaram por cada
   // etapa, não quantas estão paradas nela. Por isso é acumulado — é o que faz
   // a figura afunilar e deixa ver onde o processo perde força.
-  const vivas = VAGAS.filter(v => v.etapa !== 'cancelada');
+  const vivas = VAGAS.filter(noFunil);
   const ordem = ETAPAS.map(e => e.k);
   const posDe = v => ordem.indexOf(v.etapa);
 
@@ -1785,9 +1936,13 @@ function pintarFunil() {
   const base = linhas[0]?.total || 0;
   const maior = Math.max(1, ...linhas.map(l => l.total));
 
-  const emSelecao  = vivas.filter(v => v.etapa === 'em_selecao').length;
+  // as duas metades do funil: recrutamento até a proposta, admissão daí em diante
+  const emSelecao  = vivas.filter(v =>
+    ['divulgacao','triagem','entrevista_atracao','entrevista_gestor','proposta']
+      .includes(v.etapa)).length;
   const emAdmissao = vivas.filter(v =>
     ['documentos','oris','aso','programar','inicio_agendado'].includes(v.etapa)).length;
+  const paradas = VAGAS.filter(vagaParada).length;
   const comProblema = vivas.filter(v =>
     atrasada(v) || candidatosDa(v).some(c => faltantes(c).length)).length;
   const admitidos = vivas.filter(v => v.etapa === 'admitido').length;
@@ -1802,7 +1957,7 @@ function pintarFunil() {
 
   $('funil').innerHTML = `
     <div class="kpis">
-      <div class="kpi"><b>${emSelecao}</b><span>Vagas em seleção</span></div>
+      <div class="kpi"><b>${emSelecao}</b><span>Vagas em recrutamento</span></div>
       <div class="kpi"><b>${emAdmissao}</b><span>Vagas em admissão</span></div>
       <div class="kpi ${comProblema ? 'al' : ''}"><b>${comProblema}</b>
         <span>Com pendência ou atraso</span></div>
@@ -1815,6 +1970,8 @@ function pintarFunil() {
       <div class="sub">${base} vaga(s) no processo · ${admitidos} admitida(s) ·
         a barra mostra quantas já chegaram a cada etapa</div>
       <div class="leg">
+        ${paradas ? `<span style="color:var(--gray-400)">${paradas} fora do funil
+          (congelada ou cancelada)</span>` : ''}
         <span><i style="background:#3a7a2e"></i>no prazo</span>
         <span><i style="background:#d97706"></i>parada nesta etapa e atrasada</span>
         <span style="margin-left:auto">clique numa etapa para filtrar a lista</span>
@@ -1846,20 +2003,22 @@ function pintarFunil() {
              value="${es(buscaFunil)}" oninput="buscaFunil=this.value;pintarFunil()">
       ${etapaFoco ? `<button class="chip on" onclick="focarEtapa('')">
         ${es(ET[etapaFoco]?.t)} ✕</button>` : ''}
-      ${VAGAS.some(v => v.etapa === 'cancelada')
-        ? `<button class="chip ${etapaFoco === 'cancelada' ? 'on' : ''}"
-             onclick="focarEtapa('cancelada')">Canceladas</button>` : ''}
+      ${Object.entries(STATUS_VAGA).filter(([k]) => k !== 'aberta')
+        .filter(([k]) => VAGAS.some(v => statusDe(v) === k))
+        .map(([k, t]) => `<button class="chip ${statusFoco === k ? 'on' : ''}"
+             onclick="focarStatus('${k}')">${t}</button>`).join('')}
     </div>
 
     <div class="tbl"><table>
       <thead><tr>
         <th>Código</th><th>Unidade</th><th>Cargo</th><th>Contrato</th>
-        <th>Etapa</th><th>Dias</th><th>Candidatos</th><th>Início</th>
+        <th>Etapa</th><th>Status</th><th>Dias</th><th>Candidatos</th><th>Início</th>
       </tr></thead>
       <tbody>${listaFunil().map(v => {
         const c = candidatosDa(v), pend = c.filter(x => faltantes(x).length).length;
         const d = diasDesdeAprovacao(v);
-        return `<tr class="${atrasada(v) ? 'pend' : ''}" onclick="abrirVaga('${v.id}')">
+        return `<tr class="${atrasada(v) ? 'pend' : ''}${vagaParada(v) ? ' parada' : ''}"
+                     onclick="abrirVaga('${v.id}')">
           <td class="mono">${v.codigo ? es(v.codigo)
             : '<span class="semcod">aguardando</span>'}</td>
           <td><div class="nm">${v.confidencial ? '🔒 ' : ''}${es(v.unidade)}</div>
@@ -1867,6 +2026,7 @@ function pintarFunil() {
           <td>${es(v.cargo)}${v.nivel ? `<div class="sub">${es(v.nivel)}</div>` : ''}</td>
           <td><span class="tag tag-${v.tipo_contrato === 'PJ' ? 'pj' : 'clt'}">${es(v.tipo_contrato)}</span></td>
           <td><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span></td>
+          <td><span class="st st-${es(statusDe(v))}">${es(STATUS_VAGA[statusDe(v)])}</span></td>
           <td class="${atrasada(v) ? 'atraso' : ''}">${d == null ? '—' : d + 'd'}</td>
           <td>${c.length ? `${c.length}${pend ? ` <span class="falta">${pend} c/ pend.</span>` : ''}`
                          : '<span class="sub">—</span>'}</td>
@@ -1881,7 +2041,8 @@ function pintarFunil() {
 function listaFunil() {
   const q = buscaFunil.trim().toLowerCase();
   return VAGAS
-    .filter(v => etapaFoco ? v.etapa === etapaFoco : v.etapa !== 'cancelada')
+    .filter(v => statusFoco ? statusDe(v) === statusFoco : noFunil(v))
+    .filter(v => !etapaFoco || v.etapa === etapaFoco)
     .filter(v => {
       if (!q) return true;
       const cand = candidatosDa(v).map(c => c.nome).join(' ');
@@ -1895,6 +2056,12 @@ function listaFunil() {
 
 function focarEtapa(k) {
   etapaFoco = (etapaFoco === k) ? '' : k;
+  pintarFunil();
+}
+
+function focarStatus(k) {
+  statusFoco = (statusFoco === k) ? '' : k;
+  etapaFoco = '';
   pintarFunil();
 }
 
