@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Cabana Burger · Painel de Cadastros PJ</title>
+<title>Cabana Burger · Painel de Cadastros</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -42,10 +42,17 @@
 
   /* ── APP ── */
   #app{display:none}
-  .top{background:var(--green-dark);padding:18px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-  .top h1{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;flex:1;min-width:200px}
-  .top .who{font-size:12px;color:rgba(255,255,255,.75)}
-  .wrap{max-width:1240px;margin:0 auto;padding:22px 16px 60px}
+  .top{background:var(--green-dark);padding:16px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .top h1{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff}
+  .top .who{font-size:12px;color:rgba(255,255,255,.75);margin-left:auto}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 16px 60px}
+
+  /* chave PJ / CLT */
+  .tipo{display:flex;background:rgba(0,0,0,.22);border-radius:9px;padding:3px;gap:3px}
+  .tipo button{padding:7px 18px;border-radius:7px;border:none;background:none;cursor:pointer;
+    font-family:inherit;font-size:13px;font-weight:700;color:rgba(255,255,255,.72);transition:.2s}
+  .tipo button:hover{color:#fff}
+  .tipo button.on{background:#fff;color:var(--green-dark)}
 
   .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
   .bar .inp{flex:1;min-width:220px}
@@ -54,70 +61,73 @@
   .chip:hover{border-color:var(--green-light)}
   .chip.on{background:var(--green);border-color:var(--green);color:#fff}
 
-  .tbl{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .tbl{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto}
   table{width:100%;border-collapse:collapse;font-size:13px}
   thead th{background:var(--gray-50);text-align:left;padding:11px 14px;font-size:11px;font-weight:700;
-           color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--gray-200);white-space:nowrap}
+    color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;
+    border-bottom:1px solid var(--gray-200);white-space:nowrap}
   tbody td{padding:12px 14px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
   tbody tr{cursor:pointer;transition:.12s}
   tbody tr:hover{background:var(--green-pale)}
   tbody tr.sel{background:var(--green-pale)}
+  tbody tr.pend td{box-shadow:inset 4px 0 0 var(--warn)}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.02em}
   .nm{font-weight:700;color:var(--gray-900)}
   .sub{font-size:11.5px;color:var(--gray-400);margin-top:2px}
   .vazio{padding:46px 20px;text-align:center;color:var(--gray-400);font-size:13.5px}
 
   .st{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
-  .st-recebido  {background:#eff6ff;color:#1d4ed8}
+  .st-recebido{background:#eff6ff;color:#1d4ed8}
   .st-em_analise{background:#fffbeb;color:#b45309}
-  .st-pendente  {background:#fef2f2;color:#b91c1c}
-  .st-aprovado  {background:var(--green-pale);color:var(--green-dark)}
+  .st-pendente{background:#fef2f2;color:#b91c1c}
+  .st-aprovado{background:var(--green-pale);color:var(--green-dark)}
   .falta{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;
-         font-weight:800;background:#fef3c7;color:#92400e;white-space:nowrap}
+    font-weight:800;background:#fef3c7;color:#92400e;white-space:nowrap}
   .completo{color:var(--gray-400);font-size:11.5px}
-  tbody tr.pend td{box-shadow:inset 4px 0 0 var(--warn)}
-  .fbox{margin-bottom:14px;padding:13px 15px;border-radius:10px;
-        border:1.5px solid #f0b429;background:#fffaf0}
-  .fbox b{display:block;font-size:12.5px;color:#92400e;margin-bottom:6px}
-  .fbox ul{margin:0 0 10px 18px;font-size:12.5px;color:#78350f;line-height:1.75}
-  .fbox li{font-weight:700}
-  .fbox .ac{display:flex;gap:7px;flex-wrap:wrap}
-  .fbox .mini{padding:5px 11px;font-size:11.5px;border-radius:7px;border:1.5px solid #f0b429;
-              background:#fff;color:#92400e;font-family:inherit;font-weight:700;cursor:pointer}
-  .fbox .mini:hover{background:#fef3c7}
 
   /* ── DETALHE ── */
   .ov{position:fixed;inset:0;background:rgba(17,24,39,.45);display:none;z-index:90}
   .ov.show{display:block}
-  .dv{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:#fff;z-index:100;
-      transform:translateX(100%);transition:transform .25s ease;overflow-y:auto;box-shadow:-8px 0 32px rgba(0,0,0,.14)}
+  .dv{position:fixed;top:0;right:0;bottom:0;width:min(580px,100%);background:#fff;z-index:100;
+    transform:translateX(100%);transition:transform .25s ease;overflow-y:auto;box-shadow:-8px 0 32px rgba(0,0,0,.14)}
   .dv.show{transform:translateX(0)}
   .dv-top{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--gray-200);
-          padding:18px 24px;display:flex;align-items:flex-start;gap:12px;z-index:2}
+    padding:18px 24px;display:flex;align-items:flex-start;gap:12px;z-index:2}
   .dv-top h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;flex:1;line-height:1.3}
   .x{background:none;border:none;font-size:26px;line-height:1;color:var(--gray-400);cursor:pointer;padding:0 4px}
   .x:hover{color:var(--gray-900)}
   .dv-body{padding:22px 24px 48px}
   .grp{margin-bottom:24px}
   .grp h3{font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;
-          letter-spacing:.07em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray-100)}
-  .kv{display:grid;grid-template-columns:132px 1fr;gap:4px 12px;font-size:13px;line-height:1.5}
+    letter-spacing:.07em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray-100)}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;font-size:13px;line-height:1.5}
   .kv dt{color:var(--gray-500);font-size:12px;padding:4px 0}
   .kv dd{color:var(--gray-900);font-weight:500;padding:4px 0;word-break:break-word}
   .doc{display:flex;align-items:center;gap:11px;padding:11px 14px;border:1.5px solid var(--gray-200);
-       border-radius:9px;margin-bottom:8px;transition:.2s}
+    border-radius:9px;margin-bottom:8px;transition:.2s}
   .doc:hover{border-color:var(--green)}
   .doc .ic{font-size:19px}
   .doc .t{flex:1;min-width:0}
   .doc .t b{display:block;font-size:12.5px;color:var(--gray-800)}
   .doc .t span{font-size:11px;color:var(--gray-400)}
   .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-  .copiar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
-          padding:12px 14px;background:var(--green-pale);border:1.5px solid var(--green-light);border-radius:10px}
-  .copiar .t{flex:1;min-width:150px;font-size:12px;color:var(--green-dark);line-height:1.45}
-  .copiar .t b{display:block;font-size:12.5px}
   textarea.inp{resize:vertical;min-height:70px;font-size:13px}
   .rodape{font-size:11.5px;color:var(--gray-400);text-align:center;margin-top:26px;line-height:1.7}
+
+  .copiar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
+    padding:12px 14px;background:var(--green-pale);border:1.5px solid var(--green-light);border-radius:10px}
+  .copiar .t{flex:1;min-width:150px;font-size:12px;color:var(--green-dark);line-height:1.45}
+  .copiar .t b{display:block;font-size:12.5px}
+
+  .fbox{margin-bottom:14px;padding:13px 15px;border-radius:10px;
+    border:1.5px solid #f0b429;background:#fffaf0}
+  .fbox b{display:block;font-size:12.5px;color:#92400e;margin-bottom:6px}
+  .fbox ul{margin:0 0 10px 18px;font-size:12.5px;color:#78350f;line-height:1.75}
+  .fbox li{font-weight:700}
+  .fbox .ac{display:flex;gap:7px;flex-wrap:wrap}
+  .fbox .mini{padding:5px 11px;font-size:11.5px;border-radius:7px;border:1.5px solid #f0b429;
+    background:#fff;color:#92400e;font-family:inherit;font-weight:700;cursor:pointer}
+  .fbox .mini:hover{background:#fef3c7}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 </head>
@@ -126,13 +136,15 @@
 <!-- ══════════ LOGIN ══════════ -->
 <div id="login">
   <div class="login-card">
-    <h1>Cadastros PJ</h1>
+    <h1>Cadastros de Admissão</h1>
     <p>Acesso restrito ao time de Gente &amp; Gestão do Cabana Burger.</p>
     <div class="msg err" id="login-msg"></div>
     <label class="lbl">E-mail corporativo</label>
-    <input class="inp" id="in-email" type="email" autocomplete="username" placeholder="voce@cabanaburger.com.br" style="margin-bottom:14px">
+    <input class="inp" id="in-email" type="email" autocomplete="username"
+           placeholder="voce@cabanaburger.com.br" style="margin-bottom:14px">
     <label class="lbl">Senha</label>
-    <input class="inp" id="in-senha" type="password" autocomplete="current-password" placeholder="••••••••" style="margin-bottom:20px">
+    <input class="inp" id="in-senha" type="password" autocomplete="current-password"
+           placeholder="••••••••" style="margin-bottom:20px">
     <button class="btn btn-primary" id="btn-login" style="width:100%" onclick="entrar()">Entrar</button>
   </div>
 </div>
@@ -140,7 +152,11 @@
 <!-- ══════════ APP ══════════ -->
 <div id="app">
   <div class="top">
-    <h1>Cadastros de Prestadores PJ</h1>
+    <h1>Cadastros de Admissão</h1>
+    <div class="tipo" id="sw-tipo">
+      <button data-t="pj"  class="on" onclick="trocarTipo('pj')">Prestadores PJ</button>
+      <button data-t="clt"            onclick="trocarTipo('clt')">Admissão CLT</button>
+    </div>
     <span class="who" id="who"></span>
     <button class="btn btn-sm btn-ghost" onclick="exportarCSV()">Baixar CSV</button>
     <button class="btn btn-sm btn-ghost" onclick="carregar()">Atualizar</button>
@@ -151,7 +167,8 @@
     <div class="msg err" id="app-msg"></div>
 
     <div class="bar">
-      <input class="inp" id="busca" type="search" placeholder="Buscar por nome, CPF, CNPJ ou protocolo…" oninput="pintar()">
+      <input class="inp" id="busca" type="search"
+             placeholder="Buscar por nome, CPF, CNPJ ou protocolo…" oninput="pintar()">
       <button class="chip on" data-f=""           onclick="filtrar(this)">Todos</button>
       <button class="chip"    data-f="recebido"   onclick="filtrar(this)">Recebidos</button>
       <button class="chip"    data-f="em_analise" onclick="filtrar(this)">Em análise</button>
@@ -161,13 +178,7 @@
     </div>
 
     <div class="tbl">
-      <table>
-        <thead><tr>
-          <th>Protocolo</th><th>Nome</th><th>CPF</th><th>Empresa</th>
-          <th>Documentos</th><th>Recebido</th><th>Status</th>
-        </tr></thead>
-        <tbody id="corpo"></tbody>
-      </table>
+      <table><thead><tr id="cab"></tr></thead><tbody id="corpo"></tbody></table>
       <div class="vazio" id="vazio">Carregando…</div>
     </div>
 
@@ -193,35 +204,339 @@
 
 <script>
 /* ╔══════════════════════════════════════════════════════════════════════╗
-   ║  CONFIGURAÇÃO — as mesmas duas linhas do index.html                  ║
+   ║  CONFIGURAÇÃO                                                        ║
    ╚══════════════════════════════════════════════════════════════════════╝ */
 const SUPABASE_URL  = 'https://cdlttflshgmwvvsreygc.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbHR0ZmxzaGdtd3Z2c3JleWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTY2MzksImV4cCI6MjEwNzk5MjYzOX0.gOuY2MAROUWNuMbmlHq_thkRJYwr2clmn5pNRF6uIoI';
-const BUCKET        = 'documentos-pj';
-const VALIDADE_LINK = 120;            // segundos de validade do link do documento
+const VALIDADE_LINK = 120;   // segundos de validade do link do documento
 
-const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise', pendente:'Pendente', aprovado:'Aprovado' };
+const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise',
+                   pendente:'Pendente', aprovado:'Aprovado' };
 
-let sb = null, linhas = [], filtro = '', selId = null;
+let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
+const CACHE = {};            // linhas ja carregadas por tipo
 
-/* Documentos que faltam neste cadastro. Vem gravado do portal; para os
-   cadastros antigos, anteriores a essa regra, deduz pelo que foi anexado. */
-const DOCS_EXIGIDOS = [
-  ['cnpj',       'Cartão CNPJ'],
-  ['contrato',   'Contrato Social ou CCMEI'],
-  ['identidade', 'RG ou CNH'],
-  ['residencia', 'Comprovante de Residência'],
-  ['foto',       'Foto 3x4'],
-];
+const $  = id => document.getElementById(id);
+const es = t  => String(t ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function dataBR(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR') + ' ' +
+    d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
+function soData(iso) {
+  if (!iso) return '—';
+  const p = String(iso).slice(0, 10).split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+}
+const sn   = v => v === true ? 'Sim' : v === false ? 'Não' : '—';
+const transp = v => ({ vt:'Vale Transporte', combustivel:'Auxílio Combustível',
+                       nenhum:'Não desejo' })[v] || '—';
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  OS DOIS TIPOS DE CADASTRO                                           ║
+   ║  Tudo que difere entre PJ e CLT está aqui. O resto do painel é       ║
+   ║  igual para os dois.                                                 ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+
+/* --- auxiliares das regras condicionais do CLT (espelham o campos.js) --- */
+const idade = r => {
+  if (!r.nascimento) return null;
+  const n = new Date(String(r.nascimento).slice(0, 10));
+  if (isNaN(n)) return null;
+  const h = new Date();
+  let a = h.getFullYear() - n.getFullYear();
+  const m = h.getMonth() - n.getMonth();
+  if (m < 0 || (m === 0 && h.getDate() < n.getDate())) a--;
+  return a;
+};
+const casou = r => ['CASADO(A)','UNIÃO ESTÁVEL','SEPARADO(A)','DIVORCIADO(A)','VIÚVO(A)']
+  .includes(r.estado_civil);
+
+const TIPOS = {
+
+  /* ════════════════ PRESTADOR PJ ════════════════ */
+  pj: {
+    rotulo: 'Prestador PJ',
+    tabela: 'cadastros_pj',
+    bucket: 'documentos-pj',
+    busca: ['nome','nome_social','cpf','cnpj','protocolo','razao_social','email'],
+
+    docs: [
+      ['cnpj',       () => 'Cartão CNPJ'],
+      ['contrato',   () => 'Contrato Social ou CCMEI'],
+      ['identidade', () => 'RG ou CNH'],
+      ['residencia', () => 'Comprovante de Residência'],
+      ['foto',       () => 'Foto 3x4'],
+    ],
+
+    colunas: [
+      { t:'Protocolo', v: r => `<span class="mono">${es(r.protocolo)}</span>` },
+      { t:'Nome',      v: r => `<div class="nm">${es(r.nome_social || r.nome)}</div>` +
+                               (r.nome_social ? `<div class="sub">${es(r.nome)}</div>` : '') },
+      { t:'CPF',       v: r => `<span class="mono">${es(r.cpf)}</span>` },
+      { t:'Empresa',   v: r => `${es(r.razao_social || '—')}` +
+                               `<div class="sub mono">${es(r.cnpj || '')}</div>` },
+    ],
+
+    grupos: [
+      { t:'Pessoais', c: [
+        ['CPF', r=>r.cpf], ['Nascimento', r=>soData(r.nascimento)],
+        ['Sexo / Gênero', r=>r.sexo], ['Cor / Raça', r=>r.cor_raca],
+        ['Estado civil', r=>r.estado_civil], ['Nome da mãe', r=>r.nome_mae],
+        ['WhatsApp', r=>r.telefone], ['E-mail', r=>r.email],
+        ['Endereço', r=>r.endereco], ['CEP', r=>r.cep], ['Camiseta', r=>r.camiseta],
+      ]},
+      { t:'Transporte', c: [['Benefício', r=>transp(r.transporte_tipo)]], vt:1 },
+      { t:'Empresa PJ', c: [
+        ['Razão social', r=>r.razao_social], ['CNPJ', r=>r.cnpj],
+        ['Abertura', r=>soData(r.abertura)], ['Completa 6 meses', r=>soData(r.seis_meses)],
+        ['Endereço', r=>r.endereco_pj],
+      ]},
+      { t:'Bancário', c: [
+        ['Chave PIX', r=>r.pix], ['Banco', r=>r.banco],
+        ['Agência', r=>r.agencia], ['Conta', r=>r.conta], ['Tipo', r=>r.tipo_conta],
+      ]},
+    ],
+
+    /* Mesma ordem e mesmos rótulos do e-mail que o RH recebe hoje. */
+    sistema: [
+      ['Nome Completo',   r=>r.nome],          ['Nome Social', r=>r.nome_social],
+      ['CPF',             r=>r.cpf],           ['Nascimento', r=>soData(r.nascimento)],
+      ['Sexo / Gênero',   r=>r.sexo],          ['Cor / Raça', r=>r.cor_raca],
+      ['Estado Civil',    r=>r.estado_civil],  ['Nome da Mãe', r=>r.nome_mae],
+      ['WhatsApp',        r=>r.telefone],      ['E-mail', r=>r.email],
+      ['Endereço',        r=>r.endereco],      ['CEP', r=>r.cep],
+      ['Camiseta',        r=>r.camiseta],
+      ['Tipo Transporte', r=>transp(r.transporte_tipo), 'vt'],
+      ['CNPJ',            r=>r.cnpj],          ['Razão Social', r=>r.razao_social],
+      ['Abertura CNPJ',   r=>soData(r.abertura)],
+      ['6 Meses CNPJ',    r=>soData(r.seis_meses)],
+      ['Endereço PJ',     r=>r.endereco_pj],   ['Chave PIX', r=>r.pix],
+      ['Banco',           r=>r.banco],         ['Agência', r=>r.agencia],
+      ['Conta',           r=>r.conta],         ['Tipo de Conta', r=>r.tipo_conta],
+    ],
+
+    csv: ['protocolo','criado_em','status','nome','nome_social','cpf','nascimento','sexo',
+          'cor_raca','estado_civil','nome_mae','telefone','email','endereco','cep','camiseta',
+          'transporte_tipo','razao_social','cnpj','abertura','seis_meses','endereco_pj','pix',
+          'banco','agencia','conta','tipo_conta','observacao','sincronizado_em','pasta_sharepoint'],
+  },
+
+  /* ════════════════ ADMISSÃO CLT ════════════════ */
+  clt: {
+    rotulo: 'Admissão CLT',
+    tabela: 'cadastros_clt',
+    bucket: 'documentos-clt',
+    busca: ['nome','nome_social','cpf','protocolo','email','pis_pasep','rg_numero'],
+
+    docs: [
+      ['cpf',            () => 'CPF'],
+      ['identidade',     () => 'RG ou CNH'],
+      ['titulo',         () => 'Título de eleitor',          r => (idade(r) ?? 99) >= 18],
+      ['reservista',     () => 'Certificado de reservista',
+        r => /^Homem/.test(r.identidade_genero || '')
+          && (r.nac_pais || 'BRASIL').toUpperCase() === 'BRASIL'
+          && (idade(r) ?? 99) >= 18],
+      ['residencia',     () => 'Comprovante de residência'],
+      ['ctps',           () => 'Carteira de trabalho'],
+      ['certidao',       r => casou(r) ? 'Certidão de casamento' : 'Certidão de nascimento'],
+      ['conta_bancaria', () => 'Comprovante de conta bancária'],
+      ['escolaridade',   () => 'Comprovante de escolaridade',
+        r => !/^Analfabeto/.test(r.grau_instrucao || '')],
+      ['laudo_pcd',      () => 'Laudo médico (PCD)', r => r.pcd === true],
+    ],
+
+    colunas: [
+      { t:'Protocolo', v: r => `<span class="mono">${es(r.protocolo)}</span>` },
+      { t:'Nome',      v: r => `<div class="nm">${es(r.nome_social || r.nome)}</div>` +
+                               (r.nome_social ? `<div class="sub">${es(r.nome)}</div>` : '') },
+      { t:'CPF',       v: r => `<span class="mono">${es(r.cpf)}</span>` },
+      { t:'Contato',   v: r => `${es(r.tel_celular || '—')}` +
+                               `<div class="sub">${es(r.email || '')}</div>` },
+    ],
+
+    grupos: [
+      { t:'Identificação', c: [
+        ['CPF', r=>r.cpf], ['Nascimento', r=>soData(r.nascimento)],
+        ['Idade', r=>idade(r) != null ? idade(r) + ' anos' : '—'],
+        ['Naturalidade', r=>[r.nac_cidade, r.nac_uf].filter(Boolean).join(' / ')],
+        ['País de nascimento', r=>r.nac_pais],
+        ['Naturalizado', r=>sn(r.naturalizado)],
+        ['Data de migração', r=>soData(r.data_migracao)],
+        ['Grau de instrução', r=>r.grau_instrucao],
+        ['Estado civil', r=>r.estado_civil],
+        ['Nome da mãe', r=>r.nome_mae], ['Nome do pai', r=>r.nome_pai],
+      ]},
+      { t:'Autodeclaração', c: [
+        ['Raça', r=>r.raca], ['Identidade de gênero', r=>r.identidade_genero],
+        ['Especificação', r=>r.especificacao_genero],
+        ['PCD', r=>sn(r.pcd)], ['Tipo de deficiência', r=>r.pcd_tipo],
+      ]},
+      { t:'Contato e endereço', c: [
+        ['E-mail', r=>r.email], ['Celular', r=>r.tel_celular],
+        ['Residencial', r=>r.tel_residencial], ['CEP', r=>r.cep],
+        ['Endereço', r=>[r.end_logradouro, r.endereco,
+                         r.sem_numero ? 'S/N' : r.numero].filter(Boolean).join(' ')],
+        ['Complemento', r=>r.complemento], ['Bairro', r=>r.bairro],
+        ['Cidade / UF', r=>[r.end_cidade, r.end_uf].filter(Boolean).join(' / ')],
+      ]},
+      { t:'RG', c: [
+        ['Número', r=>[r.rg_numero, r.rg_digito].filter(Boolean).join('-')],
+        ['Emissão', r=>soData(r.rg_emissao)], ['UF', r=>r.rg_uf], ['Órgão', r=>r.rg_orgao],
+      ]},
+      { t:'Outros registros', c: [
+        ['PIS / PASEP', r=>r.pis_pasep],
+        ['Data de cadastro', r=>soData(r.pis_data_cadastro)],
+        ['Número do SUS', r=>r.num_sus],
+        ['Matrícula da certidão', r=>r.matricula_nascimento],
+      ]},
+      { t:'Carteira de trabalho', c: [
+        ['Número', r=>r.ctps_numero], ['Série', r=>r.ctps_serie],
+        ['Prefixo', r=>r.ctps_prefixo], ['Emissão', r=>soData(r.ctps_emissao)],
+        ['UF', r=>r.ctps_uf],
+      ]},
+      { t:'Título de eleitor', c: [
+        ['Número', r=>r.titulo_numero], ['Zona', r=>r.titulo_zona],
+        ['Seção', r=>r.titulo_secao], ['UF', r=>r.titulo_uf],
+      ]},
+      { t:'Certificado militar', c: [
+        ['Número', r=>r.militar_numero], ['Categoria', r=>r.militar_categoria],
+      ]},
+      { t:'CNH', c: [
+        ['Número', r=>r.cnh_numero], ['Categoria', r=>r.cnh_categoria],
+        ['UF', r=>r.cnh_uf], ['Validade', r=>soData(r.cnh_validade)],
+      ]},
+      { t:'Visto estrangeiro', c: [
+        ['Tipo', r=>r.visto_tipo], ['RNE', r=>r.visto_rne],
+        ['Validade RNE', r=>soData(r.visto_validade_rne)],
+        ['Validade profissional', r=>soData(r.visto_validade_prof)],
+      ]},
+      { t:'Conselho de classe', c: [
+        ['Conselho', r=>r.conselho_sigla], ['Número', r=>r.conselho_numero],
+        ['Vencimento', r=>soData(r.conselho_vencimento)],
+      ]},
+      { t:'Bancário', c: [
+        ['Meio de pagamento', r=>r.meio_pagamento], ['Banco', r=>r.banco],
+        ['Agência', r=>r.agencia], ['Conta', r=>r.conta], ['Tipo', r=>r.tipo_conta],
+      ]},
+      { t:'Benefícios', c: [
+        ['Transporte', r=>transp(r.transporte_tipo)], ['Camiseta', r=>r.camiseta],
+      ], vt:1, dep:1 },
+    ],
+
+    /* Agrupado pelas abas do sistema de destino, para colar na ordem da tela. */
+    sistema: [
+      ['§','— ABA PESSOAIS · IDENTIFICAÇÃO —'],
+      ['Nome Completo',   r=>r.nome],
+      ['Nome Social',     r=>r.nome_social],
+      ['Data nasc',       r=>soData(r.nascimento)],
+      ['País',            r=>r.nac_pais],
+      ['UF',              r=>r.nac_uf],
+      ['Local nascimento', r=>r.nac_cidade],
+      ['Grau de instrução', r=>r.grau_instrucao],
+      ['Estado cívil',    r=>r.estado_civil],
+      ['Naturalizado',    r=>sn(r.naturalizado)],
+      ['Data Migração',   r=>soData(r.data_migracao)],
+      ['Nome da Mãe',     r=>r.nome_mae],
+      ['Nome do Pai',     r=>r.nome_pai],
+      ['§','— AUTO DECLARAÇÃO —'],
+      ['Raça',            r=>r.raca],
+      ['Identidade gênero', r=>r.identidade_genero],
+      ['Especificação do gênero', r=>r.especificacao_genero],
+      ['Nome Social para Travesti ou Transexual', r=>r.nome_social],
+      ['§','— ENDEREÇO —'],
+      ['País',            r=>r.end_pais],
+      ['CEP',             r=>r.cep],
+      ['UF',              r=>r.end_uf],
+      ['Cidade',          r=>r.end_cidade],
+      ['Logradouro',      r=>r.end_logradouro],
+      ['Endereço',        r=>r.endereco],
+      ['Número',          r=>r.sem_numero ? 'SEM NÚMERO' : r.numero],
+      ['Bairro',          r=>r.bairro],
+      ['Complemento',     r=>r.complemento],
+      ['§','— COMUNICAÇÃO —'],
+      ['Tel residencial', r=>r.tel_residencial],
+      ['Tel celular',     r=>r.tel_celular],
+      ['E-mail',          r=>r.email],
+      ['§','— DADOS BANCÁRIOS —'],
+      ['Meio pagamento',  r=>r.meio_pagamento],
+      ['Banco',           r=>r.banco],
+      ['Agência',         r=>r.agencia],
+      ['CC',              r=>r.conta],
+      ['§','— ABA DOCUMENTOS · RG —'],
+      ['Número',          r=>r.rg_numero],
+      ['Dígito',          r=>r.rg_digito],
+      ['Data emissão',    r=>soData(r.rg_emissao)],
+      ['UF',              r=>r.rg_uf],
+      ['Orgão',           r=>r.rg_orgao],
+      ['§','— DOCUMENTOS —'],
+      ['Número SUS',      r=>r.num_sus],
+      ['CPF',             r=>r.cpf],
+      ['PIS/PASEP',       r=>r.pis_pasep],
+      ['Data cadastro',   r=>soData(r.pis_data_cadastro)],
+      ['Matrícula de Nascimento', r=>r.matricula_nascimento],
+      ['§','— CARTEIRA PROFISSIONAL —'],
+      ['Número',          r=>r.ctps_numero],
+      ['Data emissão',    r=>soData(r.ctps_emissao)],
+      ['Prefixo',         r=>r.ctps_prefixo],
+      ['Série',           r=>r.ctps_serie],
+      ['UF',              r=>r.ctps_uf],
+      ['§','— CERTIFICADO MILITAR —'],
+      ['Número',          r=>r.militar_numero],
+      ['Categoria',       r=>r.militar_categoria],
+      ['§','— TÍTULO ELEITOR —'],
+      ['Número',          r=>r.titulo_numero],
+      ['Zona',            r=>r.titulo_zona],
+      ['Seção',           r=>r.titulo_secao],
+      ['UF',              r=>r.titulo_uf],
+      ['§','— CARTEIRA DE HABILITAÇÃO —'],
+      ['Número',          r=>r.cnh_numero],
+      ['Categoria',       r=>r.cnh_categoria],
+      ['UF',              r=>r.cnh_uf],
+      ['Validade',        r=>soData(r.cnh_validade)],
+      ['§','— VISTO ESTRANGEIRO —'],
+      ['Tipo',            r=>r.visto_tipo],
+      ['Validade RNE',    r=>soData(r.visto_validade_rne)],
+      ['Validade Profissional', r=>soData(r.visto_validade_prof)],
+      ['RNE',             r=>r.visto_rne],
+      ['§','— OUTROS —'],
+      ['Conselho Regional', r=>r.conselho_sigla],
+      ['Número do Conselho', r=>r.conselho_numero],
+      ['Data Vencimento', r=>soData(r.conselho_vencimento)],
+      ['§','— BENEFÍCIOS —'],
+      ['Tipo Transporte', r=>transp(r.transporte_tipo), 'vt'],
+      ['Camiseta',        r=>r.camiseta],
+    ],
+
+    csv: ['protocolo','criado_em','status','nome','nome_social','cpf','nascimento',
+          'nac_pais','nac_uf','nac_cidade','naturalizado','data_migracao','grau_instrucao',
+          'estado_civil','nome_mae','nome_pai','raca','identidade_genero','especificacao_genero',
+          'pcd','pcd_tipo','email','tel_celular','tel_residencial','cep','end_uf','end_cidade',
+          'end_logradouro','endereco','numero','sem_numero','bairro','complemento',
+          'rg_numero','rg_digito','rg_emissao','rg_uf','rg_orgao','num_sus','pis_pasep',
+          'pis_data_cadastro','matricula_nascimento','ctps_numero','ctps_serie','ctps_prefixo',
+          'ctps_emissao','ctps_uf','militar_numero','militar_categoria','titulo_numero',
+          'titulo_zona','titulo_secao','titulo_uf','cnh_numero','cnh_categoria','cnh_uf',
+          'cnh_validade','visto_tipo','visto_rne','conselho_sigla','conselho_numero',
+          'meio_pagamento','banco','agencia','conta','tipo_conta','transporte_tipo','camiseta',
+          'observacao','sincronizado_em','pasta_sharepoint'],
+  },
+};
+
+const T = () => TIPOS[TIPO];
+
+/* Documentos que faltam. Vem gravado do portal; nos cadastros antigos,
+   anteriores a essa regra, deduz pelo que foi anexado. */
 function faltantes(r) {
   if (Array.isArray(r.documentos_faltantes)) return r.documentos_faltantes;
   const tem = new Set((r.arquivos || []).map(a => a.tipo));
-  return DOCS_EXIGIDOS.filter(([k]) => !tem.has(k)).map(([, nome]) => nome);
+  return T().docs
+    .filter(([k, nome, ver]) => !tem.has(k) && (!ver || ver(r)))
+    .map(([k, nome]) => nome(r));
 }
-
-const $  = id => document.getElementById(id);
-const es = t  => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const nd = t  => t ? '—' : '—';
 
 function msg(id, texto, tipo) {
   const el = $(id);
@@ -232,7 +547,8 @@ function msg(id, texto, tipo) {
 function cliente() {
   if (sb) return sb;
   if (!window.supabase?.createClient) throw new Error('a biblioteca do Supabase não carregou.');
-  if (SUPABASE_URL.startsWith('COLE_AQUI')) throw new Error('painel ainda não configurado (SUPABASE_URL / SUPABASE_ANON).');
+  if (SUPABASE_URL.startsWith('COLE_AQUI'))
+    throw new Error('painel ainda não configurado (SUPABASE_URL / SUPABASE_ANON).');
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   return sb;
 }
@@ -262,7 +578,8 @@ async function abrirApp() {
   if (error) throw new Error('não foi possível verificar a permissão: ' + error.message);
   if (!ok) {
     await db.auth.signOut();
-    throw new Error('Este usuário existe, mas não está autorizado a ver os cadastros. Peça para incluírem você na tabela rh_autorizado.');
+    throw new Error('Este usuário existe, mas não está autorizado a ver os cadastros. '
+                  + 'Peça para incluírem você na tabela rh_autorizado.');
   }
   const { data: { user } } = await db.auth.getUser();
   $('who').textContent = user?.email || '';
@@ -276,16 +593,33 @@ async function sair() {
   location.reload();
 }
 
+/* ───────────── TIPO ───────────── */
+function trocarTipo(t) {
+  if (t === TIPO) return;
+  CACHE[TIPO] = linhas;
+  TIPO = t;
+  fechar();
+  document.querySelectorAll('#sw-tipo button')
+    .forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  $('busca').placeholder = t === 'pj'
+    ? 'Buscar por nome, CPF, CNPJ ou protocolo…'
+    : 'Buscar por nome, CPF, PIS, RG ou protocolo…';
+  if (CACHE[t]) { linhas = CACHE[t]; pintar(); } else { linhas = []; carregar(); }
+}
+
 /* ───────────── LISTA ───────────── */
 async function carregar() {
   msg('app-msg', '');
   $('vazio').textContent = 'Carregando…';
   $('vazio').style.display = 'block';
+  const deste = TIPO;
   try {
     const { data, error } = await cliente()
-      .from('cadastros_pj').select('*').order('criado_em', { ascending: false }).limit(1000);
+      .from(T().tabela).select('*').order('criado_em', { ascending:false }).limit(1000);
     if (error) throw new Error(error.message);
+    if (deste !== TIPO) return;         // trocou de aba no meio do caminho
     linhas = data || [];
+    CACHE[TIPO] = linhas;
     pintar();
   } catch (e) {
     msg('app-msg', 'Erro ao carregar: ' + e.message);
@@ -300,70 +634,61 @@ function filtrar(btn) {
 }
 
 function visiveis() {
-  const q = $('busca').value.trim().toLowerCase().replace(/[.\-\/]/g, '');
+  const q = $('busca').value.trim().toLowerCase().replace(/[.\-\/\s]/g, '');
   return linhas.filter(r => {
     if (filtro === '__pend') { if (!faltantes(r).length) return false; }
     else if (filtro && r.status !== filtro) return false;
     if (!q) return true;
-    const alvo = [r.nome, r.nome_social, r.cpf, r.cnpj, r.protocolo, r.razao_social, r.email]
-      .join(' ').toLowerCase().replace(/[.\-\/]/g, '');
-    return alvo.includes(q);
+    return T().busca.map(k => r[k]).join(' ').toLowerCase()
+      .replace(/[.\-\/\s]/g, '').includes(q);
   });
 }
 
-function dataBR(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR') + ' ' +
-    d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-function soData(iso) {
-  if (!iso) return '—';
-  const p = String(iso).slice(0, 10).split('-');
-  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
-}
-
 function pintar() {
-  const rs = visiveis();
-  $('corpo').innerHTML = rs.map(r => `
-    <tr class="${r.id === selId ? 'sel' : ''}${faltantes(r).length ? ' pend' : ''}" onclick="abrir('${r.id}')">
-      <td class="mono">${es(r.protocolo)}</td>
-      <td><div class="nm">${es(r.nome_social || r.nome)}</div>
-          ${r.nome_social ? `<div class="sub">${es(r.nome)}</div>` : ''}</td>
-      <td class="mono">${es(r.cpf)}</td>
-      <td>${es(r.razao_social || '—')}<div class="sub mono">${es(r.cnpj || '')}</div></td>
-      <td>${(() => { const f = faltantes(r); return f.length
-          ? `<span class="falta">faltam ${f.length}</span>`
-          : `<span class="completo">${(r.arquivos || []).length} · completo</span>`; })()}</td>
+  const cfg = T(), rs = visiveis();
+  $('cab').innerHTML = cfg.colunas.map(c => `<th>${es(c.t)}</th>`).join('')
+    + '<th>Documentos</th><th>Recebido</th><th>Status</th>';
+  $('corpo').innerHTML = rs.map(r => {
+    const f = faltantes(r);
+    return `<tr class="${r.id === selId ? 'sel' : ''}${f.length ? ' pend' : ''}"
+                onclick="abrir('${r.id}')">
+      ${cfg.colunas.map(c => `<td>${c.v(r)}</td>`).join('')}
+      <td>${f.length ? `<span class="falta">faltam ${f.length}</span>`
+                     : `<span class="completo">${(r.arquivos||[]).length} · completo</span>`}</td>
       <td>${dataBR(r.criado_em)}</td>
       <td><span class="st st-${es(r.status)}">${es(ST_LABEL[r.status] || r.status)}</span></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   $('vazio').style.display = rs.length ? 'none' : 'block';
   $('vazio').textContent = linhas.length
     ? 'Nenhum cadastro corresponde ao filtro.'
-    : 'Nenhum cadastro recebido ainda.';
+    : `Nenhum cadastro de ${cfg.rotulo} recebido ainda.`;
 }
 
 /* ───────────── DETALHE ───────────── */
-function campo(rot, val) { return `<dt>${rot}</dt><dd>${es(val || '—')}</dd>`; }
-
 function abrir(id) {
-  const r = linhas.find(x => x.id === id);
+  const cfg = T(), r = linhas.find(x => x.id === id);
   if (!r) return;
   selId = id;
   $('d-nome').textContent  = r.nome_social ? `${r.nome_social} (${r.nome})` : r.nome;
-  $('d-proto').textContent = r.protocolo + ' · recebido em ' + dataBR(r.criado_em);
+  $('d-proto').textContent = `${cfg.rotulo} · ${r.protocolo} · recebido em ${dataBR(r.criado_em)}`;
 
-  const vt = (r.vt_linhas || []).map(l =>
-    `${es(l.empresa)} — R$ ${es(l.valor)} × ${es(l.qtd)}/dia${l.codigo ? ' · ' + es(l.codigo) : ''}`).join('<br>');
+  const linhasVT = (r.vt_linhas || []).map(l =>
+    `${es(l.empresa)} — R$ ${es(l.valor)} × ${es(l.qtd)}/dia${l.codigo ? ' · ' + es(l.codigo) : ''}`)
+    .join('<br>');
+  const deps = (r.dependentes || []).map(d =>
+    `${es(d.nome)} — ${es(d.parentesco || '—')}, ${es(d.nascimento || '—')}` +
+    (d.cpf ? ` · ${es(d.cpf)}` : '')).join('<br>');
+
+  const f = faltantes(r);
 
   $('d-body').innerHTML = `
     <div class="copiar">
-      <div class="t"><b>Sistema de admissão</b>Copia todos os campos no mesmo formato do e-mail de hoje, prontos para colar.</div>
+      <div class="t"><b>Sistema de admissão</b>Copia todos os campos na ordem das abas do sistema, prontos para colar.</div>
       <button class="btn btn-sm btn-primary" onclick="copiarSistema(this)">Copiar dados</button>
     </div>
 
-    ${(() => { const f = faltantes(r); return !f.length ? '' : `
+    ${!f.length ? '' : `
     <div class="fbox">
       <b>⚠️ Faltam ${f.length} documento${f.length > 1 ? 's' : ''}</b>
       <ul>${f.map(n => `<li>${es(n)}</li>`).join('')}</ul>
@@ -371,8 +696,10 @@ function abrir(id) {
         O candidato declarou ciência de que a admissão não prossegue sem eles.
         Quando chegar por e-mail, salve na pasta do SharePoint e baixe a pendência aqui.
       </div>
-      <div class="ac">${f.map(n => `<button class="mini" onclick="resolverFalta('${r.id}', ${JSON.stringify(n).replace(/"/g, '&quot;')})">✓ recebi ${es(n)}</button>`).join('')}</div>
-    </div>`; })()}
+      <div class="ac">${f.map(n => `<button class="mini"
+        onclick="resolverFalta('${r.id}', ${JSON.stringify(n).replace(/"/g,'&quot;')})"
+        >✓ recebi ${es(n)}</button>`).join('')}</div>
+    </div>`}
 
     <div class="grp">
       <h3>Documentos</h3>
@@ -387,36 +714,23 @@ function abrir(id) {
         : '<div class="sub">Nenhum documento anexado.</div>'}
     </div>
 
-    <div class="grp"><h3>Pessoais</h3><dl class="kv">
-      ${campo('CPF', r.cpf)}${campo('Nascimento', soData(r.nascimento))}
-      ${campo('Sexo / Gênero', r.sexo)}${campo('Cor / Raça', r.cor_raca)}
-      ${campo('Estado civil', r.estado_civil)}${campo('Nome da mãe', r.nome_mae)}
-      ${campo('WhatsApp', r.telefone)}${campo('E-mail', r.email)}
-      ${campo('Endereço', r.endereco)}${campo('CEP', r.cep)}${campo('Camiseta', r.camiseta)}
-    </dl></div>
-
-    <div class="grp"><h3>Transporte</h3><dl class="kv">
-      ${campo('Benefício', r.transporte_tipo === 'vt' ? 'Vale Transporte'
-                        : r.transporte_tipo === 'combustivel' ? 'Auxílio Combustível' : '—')}
-      ${vt ? `<dt>Linhas</dt><dd>${vt}</dd>` : ''}
-    </dl></div>
-
-    <div class="grp"><h3>Empresa PJ</h3><dl class="kv">
-      ${campo('Razão social', r.razao_social)}${campo('CNPJ', r.cnpj)}
-      ${campo('Abertura', soData(r.abertura))}${campo('Completa 6 meses', soData(r.seis_meses))}
-      ${campo('Endereço', r.endereco_pj)}
-    </dl></div>
-
-    <div class="grp"><h3>Bancário</h3><dl class="kv">
-      ${campo('Chave PIX', r.pix)}${campo('Banco', r.banco)}
-      ${campo('Agência', r.agencia)}${campo('Conta', r.conta)}${campo('Tipo', r.tipo_conta)}
-    </dl></div>
+    ${cfg.grupos.map(g => {
+      const itens = g.c.map(([rot, fn]) => {
+        const v = fn(r);
+        return (v == null || v === '' || v === '—') ? '' : `<dt>${es(rot)}</dt><dd>${es(v)}</dd>`;
+      }).join('');
+      const extra = (g.vt && linhasVT ? `<dt>Linhas</dt><dd>${linhasVT}</dd>` : '')
+                  + (g.dep && deps ? `<dt>Dependentes</dt><dd>${deps}</dd>` : '');
+      if (!itens && !extra) return '';
+      return `<div class="grp"><h3>${es(g.t)}</h3><dl class="kv">${itens}${extra}</dl></div>`;
+    }).join('')}
 
     <div class="grp">
       <h3>Tratativa</h3>
       <div class="msg" id="d-msg"></div>
       <label class="lbl">Observação interna</label>
-      <textarea class="inp" id="d-obs" placeholder="Ex.: comprovante ilegível, pedir reenvio">${es(r.observacao || '')}</textarea>
+      <textarea class="inp" id="d-obs"
+        placeholder="Ex.: comprovante ilegível, pedir reenvio">${es(r.observacao || '')}</textarea>
       <div class="acoes">
         ${Object.entries(ST_LABEL).map(([k, v]) =>
           `<button class="btn btn-sm ${r.status === k ? 'btn-primary' : 'btn-ghost'}"
@@ -424,7 +738,8 @@ function abrir(id) {
       </div>
       ${r.tratado_em ? `<div class="sub" style="margin-top:10px">Última tratativa em ${dataBR(r.tratado_em)}</div>` : ''}
       <div class="sub" style="margin-top:6px">${r.sincronizado_em
-        ? 'No SharePoint desde ' + dataBR(r.sincronizado_em) + (r.pasta_sharepoint ? ' · ' + es(r.pasta_sharepoint) : '')
+        ? 'No SharePoint desde ' + dataBR(r.sincronizado_em)
+          + (r.pasta_sharepoint ? ' · ' + es(r.pasta_sharepoint) : '')
         : 'Ainda não copiado para o SharePoint — a rotina roda a cada 15 min.'}</div>
     </div>`;
 
@@ -440,106 +755,13 @@ function fechar() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
 
-/* ───── BLOCO PARA O SISTEMA DE ADMISSÃO ─────
-   Mesma ordem e mesmos rótulos do e-mail que o RH recebe hoje, para o hábito
-   de copiar e colar continuar valendo. Espelha CAMPOS_SISTEMA do
-   sincronizar_cadastros.py — mexeu aqui, mexa lá também. */
-const CAMPOS_SISTEMA = [
-  ['Nome Completo',   r => r.nome],
-  ['Nome Social',     r => r.nome_social],
-  ['CPF',             r => r.cpf],
-  ['Nascimento',      r => soData(r.nascimento)],
-  ['Sexo / Gênero',   r => r.sexo],
-  ['Cor / Raça',      r => r.cor_raca],
-  ['Estado Civil',    r => r.estado_civil],
-  ['Nome da Mãe',     r => r.nome_mae],
-  ['WhatsApp',        r => r.telefone],
-  ['E-mail',          r => r.email],
-  ['Endereço',        r => r.endereco],
-  ['CEP',             r => r.cep],
-  ['Camiseta',        r => r.camiseta],
-  ['Tipo Transporte', r => ({vt:'Vale Transporte', combustivel:'Auxílio Combustível'})[r.transporte_tipo]],
-  ['CNPJ',            r => r.cnpj],
-  ['Razão Social',    r => r.razao_social],
-  ['Abertura CNPJ',   r => soData(r.abertura)],
-  ['6 Meses CNPJ',    r => soData(r.seis_meses)],
-  ['Endereço PJ',     r => r.endereco_pj],
-  ['Chave PIX',       r => r.pix],
-  ['Banco',           r => r.banco],
-  ['Agência',         r => r.agencia],
-  ['Conta',           r => r.conta],
-  ['Tipo de Conta',   r => r.tipo_conta],
-];
-
-function blocoSistema(r) {
-  const p = [];
-  for (const [rot, pegar] of CAMPOS_SISTEMA) {
-    const v = pegar(r);
-    p.push(rot + '\n' + (v == null || v === '' ? '—' : v));
-    if (rot === 'Tipo Transporte') {
-      (r.vt_linhas || []).forEach((l, i) => p.push(
-        `VT Linha ${i+1}\n${l.empresa||'—'} | R$ ${l.valor||'—'} | ${l.qtd||'—'}x/dia` +
-        (l.codigo ? ' | ' + l.codigo : '')));
-    }
-  }
-  const n = (r.arquivos || []).length, f = faltantes(r);
-  p.push(`Documentos\n${f.length ? '⚠️' : '✅'} ${n} anexado(s) no portal` +
-         (f.length ? ` · FALTAM: ${f.join(', ')}` : '') +
-         (r.pasta_sharepoint ? ' · ' + r.pasta_sharepoint : ''));
-  return p.join('\n');
-}
-
-/* Baixa de pendencia: o documento chegou por fora (e-mail, WhatsApp) e o RH
-   tira da lista. O arquivo em si vai para a pasta do SharePoint na mao. */
-async function resolverFalta(id, nome) {
-  const r = linhas.find(x => x.id === id);
-  if (!r) return;
-  const resto = faltantes(r).filter(n => n !== nome);
-  try {
-    const db = cliente();
-    const { error } = await db.from('cadastros_pj')
-      .update({ documentos_faltantes: resto }).eq('id', id);
-    if (error) throw new Error(error.message);
-    r.documentos_faltantes = resto;
-    abrir(id);
-    const m = $('d-msg');
-    if (m) { m.className = 'msg ok show';
-             m.textContent = resto.length
-               ? `"${nome}" baixado. Ainda faltam ${resto.length}.`
-               : `"${nome}" baixado. Documentação completa.`; }
-  } catch (e) {
-    alert('Não consegui salvar: ' + e.message);
-  }
-}
-
-async function copiarSistema(btn) {
-  const r = linhas.find(x => x.id === selId);
-  if (!r) return;
-  const txt = blocoSistema(r);
-  const orig = btn.textContent;
-  try {
-    await navigator.clipboard.writeText(txt);
-  } catch (_) {
-    const ta = document.createElement('textarea');       // navegador sem permissão
-    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); } catch (e) {
-      ta.remove();
-      return alert('Não consegui copiar automaticamente. O mesmo conteúdo está em "Dados para o sistema.txt", na pasta do SharePoint.');
-    }
-    ta.remove();
-  }
-  btn.textContent = '✓ Copiado';
-  setTimeout(() => { btn.textContent = orig; }, 2200);
-}
-
 async function baixar(i, btn) {
   const r = linhas.find(x => x.id === selId);
   const a = r?.arquivos?.[i];
   if (!a) return;
   const orig = btn.textContent; btn.textContent = '…'; btn.disabled = true;
   try {
-    const { data, error } = await cliente().storage.from(BUCKET)
+    const { data, error } = await cliente().storage.from(T().bucket)
       .createSignedUrl(a.caminho, VALIDADE_LINK);
     if (error) throw new Error(error.message);
     window.open(data.signedUrl, '_blank', 'noopener');
@@ -555,35 +777,102 @@ async function mudarStatus(id, novo) {
   try {
     const db = cliente();
     const { data: { user } } = await db.auth.getUser();
-    const { error } = await db.from('cadastros_pj').update({
+    const { error } = await db.from(T().tabela).update({
       status: novo, observacao: obs || null,
       tratado_por: user.id, tratado_em: new Date().toISOString()
     }).eq('id', id);
     if (error) throw new Error(error.message);
-    const r = linhas.find(x => x.id === id);
-    Object.assign(r, { status: novo, observacao: obs || null, tratado_em: new Date().toISOString() });
-    abrir(id);   // redesenha o painel com o status novo
-    const m = $('d-msg'); m.className = 'msg ok show'; m.textContent = 'Status atualizado para "' + ST_LABEL[novo] + '".';
+    Object.assign(linhas.find(x => x.id === id),
+      { status: novo, observacao: obs || null, tratado_em: new Date().toISOString() });
+    abrir(id);
+    const m = $('d-msg');
+    m.className = 'msg ok show';
+    m.textContent = 'Status atualizado para "' + ST_LABEL[novo] + '".';
   } catch (e) {
     const m = $('d-msg'); m.className = 'msg err show'; m.textContent = 'Erro ao salvar: ' + e.message;
   }
 }
 
+/* Baixa de pendência: o documento chegou por fora (e-mail, WhatsApp) e o RH
+   tira da lista. O arquivo em si vai para a pasta do SharePoint na mão. */
+async function resolverFalta(id, nome) {
+  const r = linhas.find(x => x.id === id);
+  if (!r) return;
+  const resto = faltantes(r).filter(n => n !== nome);
+  try {
+    const { error } = await cliente().from(T().tabela)
+      .update({ documentos_faltantes: resto }).eq('id', id);
+    if (error) throw new Error(error.message);
+    r.documentos_faltantes = resto;
+    abrir(id);
+    const m = $('d-msg');
+    m.className = 'msg ok show';
+    m.textContent = resto.length
+      ? `"${nome}" baixado. Ainda faltam ${resto.length}.`
+      : `"${nome}" baixado. Documentação completa.`;
+  } catch (e) {
+    alert('Não consegui salvar: ' + e.message);
+  }
+}
+
+/* ───────────── BLOCO PARA O SISTEMA DE ADMISSÃO ─────────────
+   Rótulo numa linha, valor na seguinte — o formato que o RH já usa.
+   Linhas com '§' são separadores de aba, para não se perder nos 70 campos
+   do CLT. Espelha CAMPOS_SISTEMA das rotinas de sincronização. */
+function blocoSistema(r) {
+  const p = [];
+  for (const [rot, fn, marca] of T().sistema) {
+    if (rot === '§') { p.push('', fn); continue; }
+    const v = fn(r);
+    p.push(rot + '\n' + (v == null || v === '' ? '—' : v));
+    if (marca === 'vt') {
+      (r.vt_linhas || []).forEach((l, i) => p.push(
+        `VT Linha ${i+1}\n${l.empresa||'—'} | R$ ${l.valor||'—'} | ${l.qtd||'—'}x/dia` +
+        (l.codigo ? ' | ' + l.codigo : '')));
+    }
+  }
+  (r.dependentes || []).forEach((d, i) => p.push(
+    `Dependente ${i+1}\n${d.nome||'—'} | ${d.nascimento||'—'} | ${d.parentesco||'—'}` +
+    (d.cpf ? ' | ' + d.cpf : '')));
+  const n = (r.arquivos || []).length, f = faltantes(r);
+  p.push('', `Documentos\n${f.length ? '⚠️' : '✅'} ${n} anexado(s) no portal` +
+    (f.length ? ` · FALTAM: ${f.join(', ')}` : '') +
+    (r.pasta_sharepoint ? ' · ' + r.pasta_sharepoint : ''));
+  return p.join('\n');
+}
+
+async function copiarSistema(btn) {
+  const r = linhas.find(x => x.id === selId);
+  if (!r) return;
+  const txt = blocoSistema(r), orig = btn.textContent;
+  try {
+    await navigator.clipboard.writeText(txt);
+  } catch (_) {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {
+      ta.remove();
+      return alert('Não consegui copiar automaticamente. O mesmo conteúdo está em '
+                 + '"Dados para o sistema.txt", na pasta do SharePoint.');
+    }
+    ta.remove();
+  }
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => { btn.textContent = orig; }, 2200);
+}
+
 /* ───────────── CSV ───────────── */
 function exportarCSV() {
-  const cols = ['protocolo','criado_em','status','nome','nome_social','cpf','nascimento','sexo','cor_raca',
-                'estado_civil','nome_mae','telefone','email','endereco','cep','camiseta','transporte_tipo',
-                'razao_social','cnpj','abertura','seis_meses','endereco_pj','pix','banco','agencia','conta',
-                'tipo_conta','observacao','sincronizado_em','pasta_sharepoint'];
-  const extra = r => faltantes(r).join(' | ');
+  const cols = T().csv;
   const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rs  = visiveis();
+  const rs = visiveis();
   const csv = '﻿' + [cols.concat(['Documentos faltantes']).join(';')]
-    .concat(rs.map(r => cols.map(c => esc(r[c])).concat([esc(extra(r))]).join(';')))
+    .concat(rs.map(r => cols.map(c => esc(r[c])).concat([esc(faltantes(r).join(' | '))]).join(';')))
     .join('\r\n');
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = 'cadastros_pj_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+  a.download = `cadastros_${TIPO}_` + new Date().toISOString().slice(0, 10) + '.csv';
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -591,8 +880,7 @@ function exportarCSV() {
 /* ───────────── SESSÃO JÁ ABERTA ───────────── */
 (async () => {
   try {
-    const db = cliente();
-    const { data: { session } } = await db.auth.getSession();
+    const { data: { session } } = await cliente().auth.getSession();
     if (session) await abrirApp();
   } catch (e) {
     msg('login-msg', e.message);
