@@ -72,6 +72,19 @@
   .st-em_analise{background:#fffbeb;color:#b45309}
   .st-pendente  {background:#fef2f2;color:#b91c1c}
   .st-aprovado  {background:var(--green-pale);color:var(--green-dark)}
+  .falta{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;
+         font-weight:800;background:#fef3c7;color:#92400e;white-space:nowrap}
+  .completo{color:var(--gray-400);font-size:11.5px}
+  tbody tr.pend td{box-shadow:inset 4px 0 0 var(--warn)}
+  .fbox{margin-bottom:14px;padding:13px 15px;border-radius:10px;
+        border:1.5px solid #f0b429;background:#fffaf0}
+  .fbox b{display:block;font-size:12.5px;color:#92400e;margin-bottom:6px}
+  .fbox ul{margin:0 0 10px 18px;font-size:12.5px;color:#78350f;line-height:1.75}
+  .fbox li{font-weight:700}
+  .fbox .ac{display:flex;gap:7px;flex-wrap:wrap}
+  .fbox .mini{padding:5px 11px;font-size:11.5px;border-radius:7px;border:1.5px solid #f0b429;
+              background:#fff;color:#92400e;font-family:inherit;font-weight:700;cursor:pointer}
+  .fbox .mini:hover{background:#fef3c7}
 
   /* ── DETALHE ── */
   .ov{position:fixed;inset:0;background:rgba(17,24,39,.45);display:none;z-index:90}
@@ -114,7 +127,7 @@
 <div id="login">
   <div class="login-card">
     <h1>Cadastros PJ</h1>
-    <p>Acesso restrito ao time de Gente &amp; Gestão da Cabana Burger.</p>
+    <p>Acesso restrito ao time de Gente &amp; Gestão do Cabana Burger.</p>
     <div class="msg err" id="login-msg"></div>
     <label class="lbl">E-mail corporativo</label>
     <input class="inp" id="in-email" type="email" autocomplete="username" placeholder="voce@cabanaburger.com.br" style="margin-bottom:14px">
@@ -144,13 +157,14 @@
       <button class="chip"    data-f="em_analise" onclick="filtrar(this)">Em análise</button>
       <button class="chip"    data-f="pendente"   onclick="filtrar(this)">Pendentes</button>
       <button class="chip"    data-f="aprovado"   onclick="filtrar(this)">Aprovados</button>
+      <button class="chip"    data-f="__pend"     onclick="filtrar(this)">Doc. pendente</button>
     </div>
 
     <div class="tbl">
       <table>
         <thead><tr>
           <th>Protocolo</th><th>Nome</th><th>CPF</th><th>Empresa</th>
-          <th>Docs</th><th>Recebido</th><th>Status</th>
+          <th>Documentos</th><th>Recebido</th><th>Status</th>
         </tr></thead>
         <tbody id="corpo"></tbody>
       </table>
@@ -189,6 +203,21 @@ const VALIDADE_LINK = 120;            // segundos de validade do link do documen
 const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise', pendente:'Pendente', aprovado:'Aprovado' };
 
 let sb = null, linhas = [], filtro = '', selId = null;
+
+/* Documentos que faltam neste cadastro. Vem gravado do portal; para os
+   cadastros antigos, anteriores a essa regra, deduz pelo que foi anexado. */
+const DOCS_EXIGIDOS = [
+  ['cnpj',       'Cartão CNPJ'],
+  ['contrato',   'Contrato Social ou CCMEI'],
+  ['identidade', 'RG ou CNH'],
+  ['residencia', 'Comprovante de Residência'],
+  ['foto',       'Foto 3x4'],
+];
+function faltantes(r) {
+  if (Array.isArray(r.documentos_faltantes)) return r.documentos_faltantes;
+  const tem = new Set((r.arquivos || []).map(a => a.tipo));
+  return DOCS_EXIGIDOS.filter(([k]) => !tem.has(k)).map(([, nome]) => nome);
+}
 
 const $  = id => document.getElementById(id);
 const es = t  => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -273,7 +302,8 @@ function filtrar(btn) {
 function visiveis() {
   const q = $('busca').value.trim().toLowerCase().replace(/[.\-\/]/g, '');
   return linhas.filter(r => {
-    if (filtro && r.status !== filtro) return false;
+    if (filtro === '__pend') { if (!faltantes(r).length) return false; }
+    else if (filtro && r.status !== filtro) return false;
     if (!q) return true;
     const alvo = [r.nome, r.nome_social, r.cpf, r.cnpj, r.protocolo, r.razao_social, r.email]
       .join(' ').toLowerCase().replace(/[.\-\/]/g, '');
@@ -296,13 +326,15 @@ function soData(iso) {
 function pintar() {
   const rs = visiveis();
   $('corpo').innerHTML = rs.map(r => `
-    <tr class="${r.id === selId ? 'sel' : ''}" onclick="abrir('${r.id}')">
+    <tr class="${r.id === selId ? 'sel' : ''}${faltantes(r).length ? ' pend' : ''}" onclick="abrir('${r.id}')">
       <td class="mono">${es(r.protocolo)}</td>
       <td><div class="nm">${es(r.nome_social || r.nome)}</div>
           ${r.nome_social ? `<div class="sub">${es(r.nome)}</div>` : ''}</td>
       <td class="mono">${es(r.cpf)}</td>
       <td>${es(r.razao_social || '—')}<div class="sub mono">${es(r.cnpj || '')}</div></td>
-      <td>${(r.arquivos || []).length}</td>
+      <td>${(() => { const f = faltantes(r); return f.length
+          ? `<span class="falta">faltam ${f.length}</span>`
+          : `<span class="completo">${(r.arquivos || []).length} · completo</span>`; })()}</td>
       <td>${dataBR(r.criado_em)}</td>
       <td><span class="st st-${es(r.status)}">${es(ST_LABEL[r.status] || r.status)}</span></td>
     </tr>`).join('');
@@ -330,6 +362,17 @@ function abrir(id) {
       <div class="t"><b>Sistema de admissão</b>Copia todos os campos no mesmo formato do e-mail de hoje, prontos para colar.</div>
       <button class="btn btn-sm btn-primary" onclick="copiarSistema(this)">Copiar dados</button>
     </div>
+
+    ${(() => { const f = faltantes(r); return !f.length ? '' : `
+    <div class="fbox">
+      <b>⚠️ Faltam ${f.length} documento${f.length > 1 ? 's' : ''}</b>
+      <ul>${f.map(n => `<li>${es(n)}</li>`).join('')}</ul>
+      <div style="font-size:11.5px;color:#78350f;margin-bottom:9px;line-height:1.5">
+        O candidato declarou ciência de que a admissão não prossegue sem eles.
+        Quando chegar por e-mail, salve na pasta do SharePoint e baixe a pendência aqui.
+      </div>
+      <div class="ac">${f.map(n => `<button class="mini" onclick="resolverFalta('${r.id}', ${JSON.stringify(n).replace(/"/g, '&quot;')})">✓ recebi ${es(n)}</button>`).join('')}</div>
+    </div>`; })()}
 
     <div class="grp">
       <h3>Documentos</h3>
@@ -439,10 +482,34 @@ function blocoSistema(r) {
         (l.codigo ? ' | ' + l.codigo : '')));
     }
   }
-  const n = (r.arquivos || []).length;
-  p.push(`Documentos\n✅ ${n} anexado(s) no portal` +
+  const n = (r.arquivos || []).length, f = faltantes(r);
+  p.push(`Documentos\n${f.length ? '⚠️' : '✅'} ${n} anexado(s) no portal` +
+         (f.length ? ` · FALTAM: ${f.join(', ')}` : '') +
          (r.pasta_sharepoint ? ' · ' + r.pasta_sharepoint : ''));
   return p.join('\n');
+}
+
+/* Baixa de pendencia: o documento chegou por fora (e-mail, WhatsApp) e o RH
+   tira da lista. O arquivo em si vai para a pasta do SharePoint na mao. */
+async function resolverFalta(id, nome) {
+  const r = linhas.find(x => x.id === id);
+  if (!r) return;
+  const resto = faltantes(r).filter(n => n !== nome);
+  try {
+    const db = cliente();
+    const { error } = await db.from('cadastros_pj')
+      .update({ documentos_faltantes: resto }).eq('id', id);
+    if (error) throw new Error(error.message);
+    r.documentos_faltantes = resto;
+    abrir(id);
+    const m = $('d-msg');
+    if (m) { m.className = 'msg ok show';
+             m.textContent = resto.length
+               ? `"${nome}" baixado. Ainda faltam ${resto.length}.`
+               : `"${nome}" baixado. Documentação completa.`; }
+  } catch (e) {
+    alert('Não consegui salvar: ' + e.message);
+  }
 }
 
 async function copiarSistema(btn) {
@@ -508,10 +575,12 @@ function exportarCSV() {
                 'estado_civil','nome_mae','telefone','email','endereco','cep','camiseta','transporte_tipo',
                 'razao_social','cnpj','abertura','seis_meses','endereco_pj','pix','banco','agencia','conta',
                 'tipo_conta','observacao','sincronizado_em','pasta_sharepoint'];
+  const extra = r => faltantes(r).join(' | ');
   const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const rs  = visiveis();
-  const csv = '﻿' + [cols.join(';')]
-    .concat(rs.map(r => cols.map(c => esc(r[c])).join(';'))).join('\r\n');
+  const csv = '﻿' + [cols.concat(['Documentos faltantes']).join(';')]
+    .concat(rs.map(r => cols.map(c => esc(r[c])).concat([esc(extra(r))]).join(';')))
+    .join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   a.download = 'cadastros_pj_' + new Date().toISOString().slice(0, 10) + '.csv';
