@@ -128,6 +128,32 @@
   .fbox .mini{padding:5px 11px;font-size:11.5px;border-radius:7px;border:1.5px solid #f0b429;
     background:#fff;color:#92400e;font-family:inherit;font-weight:700;cursor:pointer}
   .fbox .mini:hover{background:#fef3c7}
+
+  /* WhatsApp */
+  .zap{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;
+    border:none;background:#25D366;color:#fff;font-family:inherit;font-size:12px;
+    font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+  .zap:hover{background:#1da851}
+  .zap svg{width:14px;height:14px;fill:currentColor}
+  .zap.off{background:var(--gray-200);color:var(--gray-400);cursor:not-allowed}
+
+  /* recusa de documento */
+  .docw{margin-bottom:8px}
+  .docw .doc{margin-bottom:0}
+  .doc.rec{border-color:#fca5a5;background:#fef7f7}
+  .doc .mot{font-size:11px;color:var(--danger);font-weight:700;margin-top:3px}
+  .btn-rec{background:#fff;border:1.5px solid var(--gray-200);color:var(--gray-500);
+    padding:7px 12px;border-radius:7px;font-family:inherit;font-size:12px;
+    font-weight:700;cursor:pointer;transition:.2s}
+  .btn-rec:hover{border-color:var(--danger);color:var(--danger);background:#fef2f2}
+  .fm{display:none;margin-top:8px;padding:12px 14px;border:1.5px solid #fca5a5;
+    border-top:none;border-radius:0 0 9px 9px;background:#fef7f7}
+  .fm.show{display:block}
+  .fm label{display:block;font-size:11.5px;font-weight:700;color:#b91c1c;margin-bottom:6px}
+  .fm .linha{display:flex;gap:7px;flex-wrap:wrap}
+  .fm .inp{flex:1;min-width:180px;padding:8px 11px;font-size:13px}
+  .btn-dng{background:var(--danger);color:#fff}
+  .btn-dng:hover{background:#b91c1c}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 </head>
@@ -263,6 +289,7 @@ const TIPOS = {
     tabela: 'cadastros_pj',
     bucket: 'documentos-pj',
     busca: ['nome','nome_social','cpf','cnpj','protocolo','razao_social','email'],
+    fone: r => r.telefone,
 
     docs: [
       ['cnpj',       () => 'Cartão CNPJ'],
@@ -331,6 +358,7 @@ const TIPOS = {
     tabela: 'cadastros_clt',
     bucket: 'documentos-clt',
     busca: ['nome','nome_social','cpf','protocolo','email','pis_pasep','rg_numero'],
+    fone: r => r.tel_celular,
 
     docs: [
       ['cpf',            () => 'CPF'],
@@ -538,6 +566,51 @@ function faltantes(r) {
     .map(([k, nome]) => nome(r));
 }
 
+/* ───────────── WHATSAPP ─────────────
+   Monta o link wa.me com o número cadastrado e uma mensagem já escrita:
+   quem fala, qual o protocolo e, havendo pendência, o que falta. */
+const ICONE_ZAP = '<svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.767.967-.94 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.019-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.414z"/></svg>';
+
+function telDe(r) {
+  const d = String(T().fone(r) || '').replace(/\D/g, '');
+  if (d.length === 10 || d.length === 11) return '55' + d;
+  if (d.length === 12 || d.length === 13) return d;     // já veio com o 55
+  return null;
+}
+
+function textoZap(r) {
+  // trata pelo nome social quando existe, e em caixa normal — "EDUARDO" soa como grito
+  const prim = (String(r.nome_social || r.nome || '').trim().split(/\s+/)[0] || '')
+    .toLowerCase().replace(/^./, c => c.toUpperCase());
+  const f = faltantes(r);
+  let t = `Olá, ${prim}! Aqui é o RH do Cabana Burger, sobre o seu cadastro `
+        + `(protocolo ${r.protocolo}).`;
+  if (f.length) {
+    t += `\n\nPara a admissão seguir, ainda precisamos de:\n`
+       + f.map(n => '• ' + n).join('\n')
+       + `\n\nPode enviar para alodp@cabanaburger.com.br citando o protocolo?`;
+  }
+  return t;
+}
+
+function zap(id, ev) {
+  if (ev) ev.stopPropagation();
+  const r = linhas.find(x => x.id === id);
+  if (!r) return;
+  const tel = telDe(r);
+  if (!tel) return alert('Este cadastro não tem um telefone válido.');
+  window.open(`https://wa.me/${tel}?text=${encodeURIComponent(textoZap(r))}`,
+              '_blank', 'noopener');
+}
+
+function botaoZap(r, rotulo) {
+  const tel = telDe(r);
+  if (!tel) return `<button class="zap off" disabled title="sem telefone válido">`
+                 + `${ICONE_ZAP}${rotulo || ''}</button>`;
+  return `<button class="zap" onclick="zap('${r.id}', event)"
+            title="Abrir conversa com ${es(T().fone(r))}">${ICONE_ZAP}${rotulo || ''}</button>`;
+}
+
 function msg(id, texto, tipo) {
   const el = $(id);
   el.className = 'msg ' + (tipo || 'err') + (texto ? ' show' : '');
@@ -647,7 +720,7 @@ function visiveis() {
 function pintar() {
   const cfg = T(), rs = visiveis();
   $('cab').innerHTML = cfg.colunas.map(c => `<th>${es(c.t)}</th>`).join('')
-    + '<th>Documentos</th><th>Recebido</th><th>Status</th>';
+    + '<th>Documentos</th><th>Recebido</th><th>Status</th><th></th>';
   $('corpo').innerHTML = rs.map(r => {
     const f = faltantes(r);
     return `<tr class="${r.id === selId ? 'sel' : ''}${f.length ? ' pend' : ''}"
@@ -657,6 +730,7 @@ function pintar() {
                      : `<span class="completo">${(r.arquivos||[]).length} · completo</span>`}</td>
       <td>${dataBR(r.criado_em)}</td>
       <td><span class="st st-${es(r.status)}">${es(ST_LABEL[r.status] || r.status)}</span></td>
+      <td>${botaoZap(r, 'WhatsApp')}</td>
     </tr>`;
   }).join('');
   $('vazio').style.display = rs.length ? 'none' : 'block';
@@ -698,20 +772,52 @@ function abrir(id) {
       </div>
       <div class="ac">${f.map(n => `<button class="mini"
         onclick="resolverFalta('${r.id}', ${JSON.stringify(n).replace(/"/g,'&quot;')})"
-        >✓ recebi ${es(n)}</button>`).join('')}</div>
+        >✓ recebi ${es(n)}</button>`).join('')}
+        ${botaoZap(r, 'Cobrar no WhatsApp')}</div>
     </div>`}
 
     <div class="grp">
       <h3>Documentos</h3>
       ${(r.arquivos || []).length
         ? r.arquivos.map((a, i) => `
-          <div class="doc">
-            <span class="ic">${a.mime === 'application/pdf' ? '📄' : '🖼️'}</span>
-            <div class="t"><b>${es(a.rotulo || a.tipo)}</b>
-              <span>${es(a.nome)} · ${(a.bytes / 1024).toFixed(0)} KB</span></div>
-            <button class="btn btn-sm btn-primary" onclick="baixar(${i}, this)">Abrir</button>
+          <div class="docw">
+            <div class="doc${a.recusado ? ' rec' : ''}">
+              <span class="ic">${a.recusado ? '⛔'
+                : a.mime === 'application/pdf' ? '📄' : '🖼️'}</span>
+              <div class="t"><b>${es(a.rotulo || a.tipo)}</b>
+                <span>${es(a.nome)} · ${(a.bytes / 1024).toFixed(0)} KB</span>
+                ${a.recusado ? `<div class="mot">Recusado — ${es(a.motivo || 'sem motivo')}</div>` : ''}
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="baixar(${i}, this)">Abrir</button>
+              ${a.recusado
+                ? `<button class="btn-rec" onclick="desfazerRecusa('${r.id}', ${i})"
+                     title="Voltar atrás na recusa">Desfazer</button>`
+                : `<button class="btn-rec" onclick="pedirRecusa(${i})"
+                     title="Documento errado, ilegível ou vencido">Recusar</button>`}
+            </div>
+            <div class="fm" id="fm-${i}">
+              <label>Por que está recusando "${es(a.rotulo || a.tipo)}"?</label>
+              <div class="linha">
+                <input class="inp" id="mot-${i}" list="motivos"
+                       placeholder="Ex.: ilegível, falta o verso, vencido"
+                       onkeydown="if(event.key==='Enter')confirmarRecusa('${r.id}', ${i})">
+                <button class="btn btn-sm btn-dng" onclick="confirmarRecusa('${r.id}', ${i})">Recusar</button>
+                <button class="btn btn-sm btn-ghost" onclick="pedirRecusa(${i}, true)">Cancelar</button>
+              </div>
+              <div style="font-size:11px;color:#b91c1c;margin-top:7px;line-height:1.45">
+                O documento volta para a lista de pendências e o candidato precisa reenviar.
+                O arquivo recusado continua guardado, para registro.
+              </div>
+            </div>
           </div>`).join('')
         : '<div class="sub">Nenhum documento anexado.</div>'}
+      <datalist id="motivos">
+        <option>Ilegível</option><option>Falta o verso</option>
+        <option>Documento vencido</option><option>Arquivo trocado</option>
+        <option>Não corresponde ao documento pedido</option>
+        <option>Dados divergentes do cadastro</option>
+        <option>Documento incompleto</option>
+      </datalist>
     </div>
 
     ${cfg.grupos.map(g => {
@@ -793,17 +899,86 @@ async function mudarStatus(id, novo) {
   }
 }
 
+/* ───────────── RECUSA DE DOCUMENTO ─────────────
+   O arquivo veio errado. Ele continua guardado (registro do que foi enviado),
+   mas fica marcado como recusado e o documento volta para a lista de
+   pendências — como se nunca tivesse chegado. */
+function pedirRecusa(i, fechando) {
+  document.querySelectorAll('.fm').forEach(f => f.classList.remove('show'));
+  if (fechando) return;
+  const fm = $('fm-' + i);
+  if (fm) { fm.classList.add('show'); $('mot-' + i)?.focus(); }
+}
+
+async function confirmarRecusa(id, i) {
+  const r = linhas.find(x => x.id === id);
+  const a = r?.arquivos?.[i];
+  if (!a) return;
+  const motivo = ($('mot-' + i)?.value || '').trim();
+  if (!motivo) { $('mot-' + i)?.focus(); return; }
+
+  const rotulo = a.rotulo || a.tipo;
+  const arquivos = r.arquivos.map((x, k) => k === i
+    ? { ...x, recusado: true, motivo, recusado_em: new Date().toISOString() } : x);
+  const faltam = faltantes(r);
+  if (!faltam.includes(rotulo)) faltam.push(rotulo);
+
+  try {
+    const { error } = await cliente().from(T().tabela)
+      .update({ arquivos, documentos_faltantes: faltam }).eq('id', id);
+    if (error) throw new Error(error.message);
+    r.arquivos = arquivos;
+    r.documentos_faltantes = faltam;
+    abrir(id);
+    const m = $('d-msg');
+    m.className = 'msg err show';
+    m.textContent = `"${rotulo}" recusado (${motivo}). Voltou para a lista de pendências — `
+                  + 'avise o candidato pelo WhatsApp.';
+  } catch (e) {
+    alert('Não consegui salvar a recusa: ' + e.message);
+  }
+}
+
+async function desfazerRecusa(id, i) {
+  const r = linhas.find(x => x.id === id);
+  const a = r?.arquivos?.[i];
+  if (!a) return;
+  const rotulo = a.rotulo || a.tipo;
+  const arquivos = r.arquivos.map((x, k) => k === i
+    ? { ...x, recusado: false, motivo: null, recusado_em: null } : x);
+  // só sai da pendência se não sobrou outro arquivo recusado do mesmo documento
+  const aindaRecusado = arquivos.some(x => x.recusado && (x.rotulo || x.tipo) === rotulo);
+  const faltam = aindaRecusado ? faltantes(r) : faltantes(r).filter(n => n !== rotulo);
+  try {
+    const { error } = await cliente().from(T().tabela)
+      .update({ arquivos, documentos_faltantes: faltam }).eq('id', id);
+    if (error) throw new Error(error.message);
+    r.arquivos = arquivos; r.documentos_faltantes = faltam;
+    abrir(id);
+    const m = $('d-msg');
+    m.className = 'msg ok show';
+    m.textContent = `Recusa de "${rotulo}" desfeita.`;
+  } catch (e) {
+    alert('Não consegui desfazer: ' + e.message);
+  }
+}
+
 /* Baixa de pendência: o documento chegou por fora (e-mail, WhatsApp) e o RH
    tira da lista. O arquivo em si vai para a pasta do SharePoint na mão. */
 async function resolverFalta(id, nome) {
   const r = linhas.find(x => x.id === id);
   if (!r) return;
   const resto = faltantes(r).filter(n => n !== nome);
+  // dar baixa também limpa a marca de recusa daquele documento
+  const arquivos = (r.arquivos || []).map(a =>
+    (a.rotulo || a.tipo) === nome && a.recusado
+      ? { ...a, recusado: false, motivo: null, recusado_em: null } : a);
   try {
     const { error } = await cliente().from(T().tabela)
-      .update({ documentos_faltantes: resto }).eq('id', id);
+      .update({ documentos_faltantes: resto, arquivos }).eq('id', id);
     if (error) throw new Error(error.message);
     r.documentos_faltantes = resto;
+    r.arquivos = arquivos;
     abrir(id);
     const m = $('d-msg');
     m.className = 'msg ok show';
