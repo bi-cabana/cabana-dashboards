@@ -69,6 +69,26 @@
   .grp-nota{font-size:11.5px;color:var(--gray-400);margin:-2px 0 12px;font-style:italic}
   .grp-tit + .form-grid{margin-top:14px}
 
+
+  /* ── CÓDIGO DA VAGA ── */
+  .vagabox{background:var(--green-pale);border:1.5px solid var(--green-light);
+    border-radius:11px;padding:16px 18px;margin-bottom:22px}
+  .vagabox .tit{font-size:13px;font-weight:800;color:var(--green-dark);margin-bottom:3px}
+  .vagabox .sb{font-size:12px;color:var(--gray-500);margin-bottom:11px;line-height:1.45}
+  .vagabox .linha{display:flex;gap:8px}
+  .vagabox input{flex:1;min-width:120px;padding:11px 14px;border:1.5px solid var(--gray-200);
+    border-radius:8px;font-family:ui-monospace,Menlo,monospace;font-size:15px;
+    font-weight:700;letter-spacing:.08em;text-transform:uppercase;outline:none;background:#fff}
+  .vagabox input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(84,160,69,.12)}
+  .vagabox button{padding:11px 18px;border-radius:8px;border:none;background:var(--green);
+    color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+    white-space:nowrap;transition:.2s}
+  .vagabox button:hover{background:var(--green-dark)}
+  .vr{display:none;margin-top:11px;padding:11px 14px;border-radius:8px;font-size:13px;line-height:1.5}
+  .vr.show{display:block}
+  .vr.ok{background:#fff;border:1.5px solid var(--green);color:var(--green-dark)}
+  .vr.ko{background:#fef2f2;border:1.5px solid #fca5a5;color:#b91c1c}
+
   /* ── CAMPOS ── */
   .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}
   @media(max-width:700px){.form-grid{grid-template-columns:repeat(2,1fr)}}
@@ -286,6 +306,80 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 const es = t => String(t ?? '').replace(/[&<>"']/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+const TIPO_PORTAL = 'CLT';
+const HTML_VAGA = `      <div class="vagabox">
+        <div class="tit">Código da vaga</div>
+        <div class="sb">O RH enviou este código junto com o link. Ele diz para qual
+          loja e cargo o seu cadastro vai.</div>
+        <div class="linha">
+          <input id="f-vaga" type="text" placeholder="V26-0000" maxlength="12"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();verificarVaga()}">
+          <button type="button" id="bt-vaga" onclick="verificarVaga()">Verificar</button>
+        </div>
+        <div class="vr" id="vaga-res"></div>
+      </div>
+
+`;
+
+/* ───────────── CÓDIGO DA VAGA ─────────────
+   O candidato digita o código que o RH mandou junto com o link. O portal
+   confere no banco se ele existe e está aberto, e mostra loja e cargo para a
+   pessoa confirmar que é a vaga certa. A consulta devolve só esses campos —
+   nada mais do banco chega ao navegador.                                     */
+let VAGA = null, UID = null;
+
+async function sessao(db) {
+  if (UID) return UID;
+  const { data, error } = await db.auth.signInAnonymously();
+  if (error) throw new Error('não foi possível abrir a sessão: ' + error.message);
+  UID = data.user.id;
+  return UID;
+}
+
+async function verificarVaga() {
+  const inp = document.getElementById('f-vaga');
+  const box = document.getElementById('vaga-res');
+  const bt  = document.getElementById('bt-vaga');
+  const cod = (inp.value || '').trim().toUpperCase();
+  inp.value = cod;
+  VAGA = null;
+  box.className = 'vr';
+  if (!cod) { inp.focus(); return erroVaga('Informe o código da vaga que o RH te enviou.'); }
+  const orig = bt.textContent; bt.textContent = '⏳'; bt.disabled = true;
+  try {
+    const db = cliente();
+    await sessao(db);
+    const { data, error } = await db.rpc('vaga_aberta', { p_codigo: cod });
+    if (error) throw new Error(error.message);
+    const x = (data || [])[0];
+    if (!x)
+      return erroVaga('Código não encontrado, ou a vaga já foi encerrada. '
+                    + 'Confira com quem te enviou o link.');
+    if (x.tipo_contrato !== TIPO_PORTAL)
+      return erroVaga(`Esta vaga é <b>${x.tipo_contrato}</b> e este formulário é `
+        + `<b>${TIPO_PORTAL}</b>. Peça o link correto para o RH.`);
+    VAGA = x;
+    box.className = 'vr ok show';
+    box.innerHTML = `✓ <b>${escV(x.cargo)}${x.nivel ? ' · ' + escV(x.nivel) : ''}</b>`
+      + ` — ${escV(x.unidade)}` + (x.turno ? `<br><span style="color:var(--gray-500)">`
+      + `${escV(x.turno)}</span>` : '');
+    return true;
+  } catch (e) {
+    return erroVaga('Não consegui verificar o código agora: ' + e.message);
+  } finally {
+    bt.textContent = orig; bt.disabled = false;
+  }
+}
+
+function erroVaga(html) {
+  const box = document.getElementById('vaga-res');
+  box.className = 'vr ko show';
+  box.innerHTML = html;
+  return false;
+}
+const escV = t => String(t ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 /* ══════════════════ MÁSCARAS ══════════════════ */
 const MASCARAS = {
   cpf:  v => v.replace(/\D/g,'').slice(0,11)
@@ -325,7 +419,7 @@ function montar() {
       <div class="card">
         <div class="card-title">${e.ico} ${es(e.titulo)}</div>
         <div class="card-subtitle">${es(e.sub)}</div>
-        ${e.n === 1 ? '<div class="required-note">Campos com <span style="color:var(--danger)">*</span> são obrigatórios.</div>' : ''}
+        ${e.n === 1 ? `${HTML_VAGA}<div class="required-note">Campos com <span style="color:var(--danger)">*</span> são obrigatórios.</div>` : ''}
         ${(e.grupos || []).map(grupo).join('')}
         ${e.extra === 'transporte_dependentes' ? blocoTransporte() + blocoDependentes() : ''}
         ${e.extra === 'anexos' ? blocoAnexos() : ''}
@@ -464,6 +558,12 @@ function irPara(n) {
 
 function validar(n) {
   esconderAlerta();
+  // o código da vaga vem antes de tudo: ele é que diz para onde o cadastro vai
+  if (n === 1 && !VAGA) {
+    document.getElementById('f-vaga')?.focus();
+    return erro('Verifique o código da vaga antes de continuar. '
+              + 'Ele foi enviado pelo RH junto com este link.');
+  }
   const e = ETAPAS.find(x => x.n === n);
   for (const g of (e.grupos || [])) {
     if (g.ver && !g.ver(D)) continue;
@@ -855,9 +955,7 @@ async function enviar() {
     const db = cliente();
 
     progresso('Abrindo conexão segura…', 4);
-    const { data: auth, error: eAuth } = await db.auth.signInAnonymously();
-    if (eAuth) throw new Error('não foi possível abrir a sessão: ' + eAuth.message);
-    const uid = auth.user.id;
+    const uid = await sessao(db);
 
     // documentos
     const fila = [];
@@ -879,6 +977,7 @@ async function enviar() {
     // cadastro
     progresso('Gravando o cadastro…', 90);
     const linha = { user_id: uid, arquivos, termos_aceite: true,
+      vaga_codigo: VAGA ? VAGA.codigo : null,
       documentos_faltantes: faltam.map(d => nomeDoc(d, D)),
       transporte_tipo: D.transporte_tipo || null,
       vt_linhas: linhasVT(), dependentes: dependentes() };
@@ -908,6 +1007,7 @@ async function enviar() {
           'Tipo': 'CLT',
           'Nome': D.nome + (D.nome_social ? ' (nome social: ' + D.nome_social + ')' : ''),
           'Protocolo': row.protocolo,
+          'Vaga': VAGA ? `${VAGA.codigo} · ${VAGA.unidade} · ${VAGA.cargo}` : '—',
           'CPF': D.cpf,
           'Contato': D.tel_celular + ' · ' + D.email,
           'Recebido em': new Date().toLocaleString('pt-BR'),
