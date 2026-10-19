@@ -129,6 +129,76 @@
     background:#fff;color:#92400e;font-family:inherit;font-weight:700;cursor:pointer}
   .fbox .mini:hover{background:#fef3c7}
 
+  /* ── VAGAS ── */
+  .bt-nova{margin-left:auto}
+  .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;
+    font-weight:800;letter-spacing:.02em;white-space:nowrap}
+  .tag-clt{background:#eef2ff;color:#3730a3}
+  .tag-pj{background:#f0f7ee;color:var(--green-dark)}
+  .tag-conf{background:#f3f4f6;color:var(--gray-500)}
+  .et{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;
+    font-weight:700;white-space:nowrap;background:var(--gray-100);color:var(--gray-700)}
+  .et-solicitada{background:#f5f3ff;color:#6d28d9}
+  .et-em_selecao{background:#fff7ed;color:#c2410c}
+  .et-documentos{background:#fffbeb;color:#b45309}
+  .et-oris,.et-aso,.et-programar{background:#eff6ff;color:#1d4ed8}
+  .et-inicio_agendado{background:#ecfeff;color:#0e7490}
+  .et-admitido{background:var(--green-pale);color:var(--green-dark)}
+  .et-cancelada{background:#f3f4f6;color:var(--gray-400)}
+  .atraso{color:var(--danger);font-weight:800}
+
+  /* formulário de solicitação */
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.fgrid{grid-template-columns:1fr}}
+  .fg2{grid-column:span 2}
+  @media(max-width:560px){.fg2{grid-column:span 1}}
+  .ff{display:flex;flex-direction:column}
+  .ff.hide{display:none}
+  .ff label{font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:6px}
+  .ff label .req{color:var(--danger)}
+  .ff .inp{font-size:13.5px;padding:10px 12px}
+  .ff .dica{font-size:11px;color:var(--gray-400);margin-top:4px}
+  .sim{display:flex;gap:7px}
+  .sim button{flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--gray-200);
+    background:#fff;font-family:inherit;font-size:13px;font-weight:700;
+    color:var(--gray-500);cursor:pointer;transition:.2s}
+  .sim button.on{border-color:var(--green);background:var(--green-pale);color:var(--green-dark)}
+
+  /* ── FUNIL (kanban) ── */
+  #funil{display:none}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:12px;margin-bottom:18px}
+  .kpi{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:15px 18px;border-top:3px solid var(--green)}
+  .kpi.al{border-top-color:var(--warn)}
+  .kpi.inf{border-top-color:var(--gray-300)}
+  .kpi b{display:block;font-family:'Syne',sans-serif;font-size:30px;font-weight:800;
+    letter-spacing:-1px;line-height:1.1}
+  .kpi.al b{color:var(--warn)}
+  .kpi span{font-size:12px;color:var(--gray-500);display:block;margin-top:3px;line-height:1.4}
+
+  .kb{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+  .col{flex:0 0 232px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+    display:flex;flex-direction:column;max-height:calc(100vh - 290px)}
+  .col-h{padding:12px 14px;border-bottom:1px solid var(--gray-100);
+    display:flex;align-items:center;gap:8px}
+  .col-h b{font-size:12.5px;font-weight:800;flex:1;line-height:1.25}
+  .col-h i{font-style:normal;font-family:'Syne',sans-serif;font-size:19px;font-weight:800}
+  .col-h .d{display:block;font-size:10.5px;color:var(--gray-400);font-weight:600;margin-top:1px}
+  .col-b{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:9px}
+  .col-b:empty::after{content:'—';color:var(--gray-300);font-size:13px;text-align:center;padding:12px 0}
+  .vc{border:1.5px solid var(--gray-200);border-radius:9px;padding:10px 11px;
+    cursor:pointer;transition:.15s;background:#fff}
+  .vc:hover{border-color:var(--green);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .vc.late{border-color:#fca5a5;background:#fef7f7}
+  .vc .cod{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--gray-400)}
+  .vc .un{font-size:13px;font-weight:800;margin:2px 0 1px;line-height:1.25}
+  .vc .cg{font-size:11.5px;color:var(--gray-500);line-height:1.35}
+  .vc .pe{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap;
+    font-size:10.5px;color:var(--gray-400)}
+  .vc .cand{background:var(--green-pale);color:var(--green-dark);border-radius:20px;
+    padding:1px 8px;font-weight:800}
+
   /* WhatsApp */
   .zap{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;
     border:none;background:#25D366;color:#fff;font-family:inherit;font-size:12px;
@@ -180,8 +250,10 @@
   <div class="top">
     <h1>Cadastros de Admissão</h1>
     <div class="tipo" id="sw-tipo">
-      <button data-t="pj"  class="on" onclick="trocarTipo('pj')">Prestadores PJ</button>
-      <button data-t="clt"            onclick="trocarTipo('clt')">Admissão CLT</button>
+      <button data-t="pj"   class="on" onclick="trocarTipo('pj')">Prestadores PJ</button>
+      <button data-t="clt"             onclick="trocarTipo('clt')">Admissão CLT</button>
+      <button data-t="vaga"            onclick="trocarTipo('vaga')">Vagas</button>
+      <button data-t="funil"           onclick="trocarTipo('funil')">Funil de Admissão</button>
     </div>
     <span class="who" id="who"></span>
     <button class="btn btn-sm btn-ghost" onclick="exportarCSV()">Baixar CSV</button>
@@ -201,12 +273,16 @@
       <button class="chip"    data-f="pendente"   onclick="filtrar(this)">Pendentes</button>
       <button class="chip"    data-f="aprovado"   onclick="filtrar(this)">Aprovados</button>
       <button class="chip"    data-f="__pend"     onclick="filtrar(this)">Doc. pendente</button>
+      <button class="btn btn-sm btn-primary bt-nova" id="bt-nova"
+              style="display:none" onclick="novaVaga()">+ Nova solicitação</button>
     </div>
 
     <div class="tbl">
       <table><thead><tr id="cab"></tr></thead><tbody id="corpo"></tbody></table>
       <div class="vazio" id="vazio">Carregando…</div>
     </div>
+
+    <div id="funil"></div>
 
     <div class="rodape">
       Os documentos abrem por link temporário, válido por 2 minutos, e não ficam acessíveis publicamente.<br>
@@ -241,6 +317,57 @@ const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise',
 
 let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
 const CACHE = {};            // linhas ja carregadas por tipo
+let PERFIL = { papel: 'rh', nome: '', unidade: null };
+let VAGAS = [], CARGOS = [], selVaga = null;
+
+/* As 20 unidades, como aparecem no dashboard de aderência. */
+const UNIDADES = ['Alphaville','Barra Shopping RJ','Botafogo','Braz Leme','Campinas',
+  'Campo Belo','Cozinha Central','Guarulhos','Leopoldo','Matriz','Moema','Mooca',
+  'Morumbi Shopping','Morumbi Town','Niteroi','Oscar Freire','Pinheiros',
+  'Shop Eldorado','Tatuape','Villa Lobos Shopping'];
+
+const TURNOS = ['Abertura (08h00 às 16h20)','Intermediário (12h00 às 20h20)',
+  'Fechamento (15h00 às 23h20)','Fechamento (16h00 às 00h20)',
+  'Madrugada (20h00 às 04h20)','Outra'];
+
+const MOTIVOS = ['Substituição por desligamento','Substituição por promoção/transferência',
+  'Aumento de quadro','Abertura de nova loja','Vaga temporária',
+  'Cobertura de afastamento'];
+
+const NIVEIS = ['Júnior','Pleno','Sênior'];
+
+/* As etapas do painel de Admissões, com o prazo em dias contado da aprovação.
+   sla = null quer dizer que a etapa não tem prazo próprio. */
+const ETAPAS = [
+  { k:'solicitada',      t:'Solicitada',           d:'aguardando aprovação', sla:null },
+  { k:'em_selecao',      t:'Em seleção',           d:'',                     sla:null },
+  { k:'documentos',      t:'Documentos',           d:'até D1',               sla:1 },
+  { k:'oris',            t:'Lançamento no Oris',   d:'até D2',               sla:2 },
+  { k:'aso',             t:'ASO',                  d:'até D3',               sla:3 },
+  { k:'programar',       t:'Programar admissão',   d:'até D4',               sla:4 },
+  { k:'inicio_agendado', t:'Início agendado',      d:'até D7',               sla:7 },
+  { k:'admitido',        t:'Admitido',             d:'',                     sla:null },
+];
+const ET = Object.fromEntries(ETAPAS.map(e => [e.k, e]));
+ET.cancelada = { k:'cancelada', t:'Cancelada', d:'', sla:null };
+
+const ehRH = () => PERFIL.papel === 'rh';
+const hoje = () => new Date().toISOString().slice(0, 10);
+
+/* Dias corridos desde a aprovação — é o relógio do funil. */
+function diasDesdeAprovacao(v) {
+  if (!v.aprovada_em) return null;
+  return Math.floor((Date.now() - new Date(v.aprovada_em)) / 86400000);
+}
+function atrasada(v) {
+  const sla = ET[v.etapa]?.sla, d = diasDesdeAprovacao(v);
+  return sla != null && d != null && d > sla;
+}
+/* Candidatos que informaram este código de vaga, nas duas filas. */
+function candidatosDa(v) {
+  return [].concat(CACHE.pj || [], CACHE.clt || [])
+    .filter(c => (c.vaga_codigo || '').toUpperCase() === v.codigo.toUpperCase());
+}
 
 const $  = id => document.getElementById(id);
 const es = t  => String(t ?? '').replace(/[&<>"']/g,
@@ -648,17 +775,37 @@ async function entrar() {
 
 async function abrirApp() {
   const db = cliente();
-  const { data: ok, error } = await db.rpc('eh_rh');
+  const { data: perfis, error } = await db.rpc('meu_perfil');
   if (error) throw new Error('não foi possível verificar a permissão: ' + error.message);
-  if (!ok) {
+  const p = (perfis || [])[0];
+  if (!p) {
     await db.auth.signOut();
-    throw new Error('Este usuário existe, mas não está autorizado a ver os cadastros. '
+    throw new Error('Este usuário existe, mas não está autorizado. '
                   + 'Peça para incluírem você na tabela rh_autorizado.');
   }
+  PERFIL = p;
   const { data: { user } } = await db.auth.getUser();
-  $('who').textContent = user?.email || '';
+  $('who').textContent = (p.nome || user?.email || '')
+    + (ehRH() ? '' : ' · gerente' + (p.unidade ? ' · ' + p.unidade : ''));
+
+  // o gerente só enxerga a aba de vagas
+  if (!ehRH()) {
+    document.querySelectorAll('#sw-tipo button').forEach(b => {
+      if (b.dataset.t !== 'vaga') b.style.display = 'none';
+    });
+    document.querySelectorAll('#sw-tipo button[data-t=vaga]')
+      .forEach(b => b.classList.add('on'));
+    TIPO = 'vaga';
+  }
+
+  // lista de cargos, para o formulário e para o tipo de contrato
+  const { data: cg } = await db.from('cargos_vaga').select('*')
+    .eq('ativo', true).order('ordem');
+  CARGOS = cg || [];
+
   $('login').style.display = 'none';
   $('app').style.display   = 'block';
+  ajustarUI();
   carregar();
 }
 
@@ -670,15 +817,35 @@ async function sair() {
 /* ───────────── TIPO ───────────── */
 function trocarTipo(t) {
   if (t === TIPO) return;
-  CACHE[TIPO] = linhas;
+  if (TIPO === 'pj' || TIPO === 'clt') CACHE[TIPO] = linhas;
   TIPO = t;
   fechar();
   document.querySelectorAll('#sw-tipo button')
     .forEach(b => b.classList.toggle('on', b.dataset.t === t));
-  $('busca').placeholder = t === 'pj'
-    ? 'Buscar por nome, CPF, CNPJ ou protocolo…'
-    : 'Buscar por nome, CPF, PIS, RG ou protocolo…';
-  if (CACHE[t]) { linhas = CACHE[t]; pintar(); } else { linhas = []; carregar(); }
+
+  ajustarUI();
+  const cadastro = (t === 'pj' || t === 'clt');
+  if (cadastro && CACHE[t]) { linhas = CACHE[t]; pintar(); }
+  else { if (cadastro) linhas = []; carregar(); }
+}
+
+/* Mostra e esconde o que pertence a cada aba. Chamado na troca de aba e
+   logo depois do login, porque o gerente ja entra direto na aba de vagas. */
+function ajustarUI() {
+  const t = TIPO, cadastro = (t === 'pj' || t === 'clt');
+  $('busca').style.display = t === 'funil' ? 'none' : '';
+  $('busca').placeholder = t === 'vaga'
+    ? 'Buscar por código, unidade, cargo ou solicitante…'
+    : t === 'pj' ? 'Buscar por nome, CPF, CNPJ ou protocolo…'
+                 : 'Buscar por nome, CPF, PIS, RG ou protocolo…';
+  document.querySelectorAll('.chip').forEach(c => c.style.display = cadastro ? '' : 'none');
+  $('bt-nova').style.display = t === 'vaga' ? '' : 'none';
+  document.querySelector('.tbl').style.display = t === 'funil' ? 'none' : '';
+  $('funil').style.display = t === 'funil' ? 'block' : 'none';
+  // o gerente nao exporta base de candidatos
+  document.querySelectorAll('.top .btn-ghost').forEach(b => {
+    if (b.textContent.includes('CSV')) b.style.display = ehRH() ? '' : 'none';
+  });
 }
 
 /* ───────────── LISTA ───────────── */
@@ -687,8 +854,27 @@ async function carregar() {
   $('vazio').textContent = 'Carregando…';
   $('vazio').style.display = 'block';
   const deste = TIPO;
+  const db = cliente();
   try {
-    const { data, error } = await cliente()
+    if (TIPO === 'vaga' || TIPO === 'funil') {
+      const { data, error } = await db.from('vagas').select('*')
+        .order('criado_em', { ascending:false }).limit(2000);
+      if (error) throw new Error(error.message);
+      VAGAS = data || [];
+      // o funil precisa dos candidatos dos dois lados para contar
+      if (TIPO === 'funil' && ehRH()) {
+        for (const t of ['pj', 'clt']) {
+          if (CACHE[t]) continue;
+          const { data: d2 } = await db.from(TIPOS[t].tabela).select('*')
+            .order('criado_em', { ascending:false }).limit(1000);
+          CACHE[t] = d2 || [];
+        }
+      }
+      if (deste !== TIPO) return;
+      pintar();
+      return;
+    }
+    const { data, error } = await db
       .from(T().tabela).select('*').order('criado_em', { ascending:false }).limit(1000);
     if (error) throw new Error(error.message);
     if (deste !== TIPO) return;         // trocou de aba no meio do caminho
@@ -719,6 +905,8 @@ function visiveis() {
 }
 
 function pintar() {
+  if (TIPO === 'vaga')  return pintarVagas();
+  if (TIPO === 'funil') return pintarFunil();
   const cfg = T(), rs = visiveis();
   $('cab').innerHTML = cfg.colunas.map(c => `<th>${es(c.t)}</th>`).join('')
     + '<th>Documentos</th><th>Recebido</th><th>Status</th><th></th>';
@@ -858,7 +1046,8 @@ function abrir(id) {
 function fechar() {
   $('ov').classList.remove('show');
   $('dv').classList.remove('show');
-  selId = null; pintar();
+  selId = null; selVaga = null;
+  if (TIPO !== 'funil') pintar();
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
 
@@ -1051,6 +1240,424 @@ function exportarCSV() {
   a.download = `cadastros_${TIPO}_` + new Date().toISOString().slice(0, 10) + '.csv';
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  VAGAS                                                               ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const cargoDe = c => CARGOS.find(x => x.cargo === c) || {};
+const turnoDe = v => v.turno === 'Outra' ? (v.turno_outro || 'Outra') : (v.turno || '—');
+
+function vagasVisiveis() {
+  const q = $('busca').value.trim().toLowerCase();
+  return VAGAS.filter(v => {
+    if (!q) return true;
+    return [v.codigo, v.unidade, v.cargo, v.nivel, v.nome_solicitante, v.gestor_solicitante]
+      .join(' ').toLowerCase().includes(q);
+  });
+}
+
+function pintarVagas() {
+  const rs = vagasVisiveis();
+  $('cab').innerHTML = ['Código','Unidade','Cargo','Turno','Contrato',
+                        'Solicitante','Pedido em','Etapa']
+    .map(t => `<th>${t}</th>`).join('');
+  $('corpo').innerHTML = rs.map(v => `
+    <tr class="${selVaga === v.id ? 'sel' : ''}${atrasada(v) ? ' pend' : ''}"
+        onclick="abrirVaga('${v.id}')">
+      <td class="mono">${es(v.codigo)}</td>
+      <td><div class="nm">${es(v.unidade)}</div>
+        ${v.confidencial ? '<span class="tag tag-conf">confidencial</span>' : ''}</td>
+      <td>${es(v.cargo)}${v.nivel ? `<div class="sub">${es(v.nivel)}</div>` : ''}</td>
+      <td style="font-size:12px">${es(turnoDe(v))}</td>
+      <td><span class="tag tag-${v.tipo_contrato === 'PJ' ? 'pj' : 'clt'}">${es(v.tipo_contrato)}</span></td>
+      <td>${es(v.nome_solicitante)}
+        ${v.gestor_solicitante ? `<div class="sub">gestor: ${es(v.gestor_solicitante)}</div>` : ''}</td>
+      <td>${soData(v.data_solicitacao)}</td>
+      <td><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span>
+        ${atrasada(v) ? `<div class="sub atraso">${diasDesdeAprovacao(v)}d · atrasada</div>` : ''}</td>
+    </tr>`).join('');
+  $('vazio').style.display = rs.length ? 'none' : 'block';
+  $('vazio').textContent = VAGAS.length
+    ? 'Nenhuma vaga corresponde à busca.'
+    : (ehRH() ? 'Nenhuma vaga solicitada ainda.'
+              : 'Você ainda não solicitou nenhuma vaga. Use "+ Nova solicitação".');
+}
+
+/* ── formulário de solicitação ── */
+function campoF(id, rot, ctrl, opc) {
+  return `<div class="ff ${opc && opc.span ? 'fg2' : ''}" id="ff-${id}">
+    <label for="v-${id}">${rot}</label>${ctrl}
+    ${opc && opc.dica ? `<span class="dica">${opc.dica}</span>` : ''}</div>`;
+}
+const sel = (id, opts, val) => `<select class="inp" id="v-${id}" onchange="formMudou()">
+  <option value="">Selecione…</option>
+  ${opts.map(o => `<option${val === o ? ' selected' : ''}>${es(o)}</option>`).join('')}</select>`;
+const txt = (id, ph, val) => `<input class="inp" id="v-${id}" type="text"
+  placeholder="${es(ph || '')}" value="${es(val || '')}" oninput="formMudou()">`;
+const simnao = (id, val) => `<div class="sim" id="v-${id}" data-v="${val ? '1' : '0'}">
+  <button class="${val ? '' : 'on'}" onclick="marcar('${id}', 0)">Não</button>
+  <button class="${val ? 'on' : ''}" onclick="marcar('${id}', 1)">Sim</button></div>`;
+
+function marcar(id, v) {
+  const el = $('v-' + id);
+  el.dataset.v = String(v);
+  el.querySelectorAll('button').forEach((b, i) => b.classList.toggle('on', i === v));
+  formMudou();
+}
+const leSim = id => $('v-' + id)?.dataset.v === '1';
+
+function novaVaga() {
+  selVaga = null;
+  $('d-nome').textContent  = 'Nova solicitação de vaga';
+  $('d-proto').textContent = 'O código é gerado quando você envia';
+  $('d-body').innerHTML = `
+    <div class="msg" id="v-msg"></div>
+    <div class="grp"><h3>Quem está solicitando</h3><div class="fgrid">
+      ${campoF('nome_solicitante','Nome do solicitante <span class="req">*</span>',
+               txt('nome_solicitante','', PERFIL.nome || ''))}
+      ${campoF('cargo_solicitante','Cargo do solicitante', txt('cargo_solicitante','Ex: Gerente de Loja'))}
+      ${campoF('gestor_solicitante','Gestor do solicitante', txt('gestor_solicitante',''))}
+      ${campoF('data_solicitacao','Data da solicitação',
+        `<input class="inp" id="v-data_solicitacao" type="text" value="${soData(hoje())}" readonly
+          style="background:var(--gray-50)">`)}
+    </div></div>
+
+    <div class="grp"><h3>A vaga</h3><div class="fgrid">
+      ${campoF('unidade','Unidade de trabalho <span class="req">*</span>',
+               sel('unidade', UNIDADES, PERFIL.unidade || ''))}
+      ${campoF('cargo','Cargo da vaga <span class="req">*</span>',
+               sel('cargo', CARGOS.map(c => c.cargo)))}
+      ${campoF('nivel','Nível', sel('nivel', NIVEIS))}
+      ${campoF('quantidade','Quantidade de vagas',
+        `<input class="inp" id="v-quantidade" type="number" min="1" max="20" value="1">`)}
+      ${campoF('turno','Turno <span class="req">*</span>', sel('turno', TURNOS), {span:1})}
+      ${campoF('turno_outro','Qual turno?', txt('turno_outro','Descreva o horário'))}
+      ${campoF('contrato','Tipo de contratação',
+        `<div class="inp" id="v-contrato" style="background:var(--gray-50);color:var(--gray-500)">
+           definido pelo cargo</div>`)}
+    </div></div>
+
+    <div class="grp"><h3>Motivo</h3><div class="fgrid">
+      ${campoF('motivo','Motivo da abertura <span class="req">*</span>',
+               sel('motivo', MOTIVOS), {span:1})}
+      ${campoF('nome_substituido','Nome do substituído', txt('nome_substituido',''))}
+      ${campoF('data_desligamento','Data do desligamento',
+        txt('data_desligamento','DD/MM/AAAA'))}
+    </div></div>
+
+    <div class="grp"><h3>Aprovação e indicação</h3><div class="fgrid">
+      ${campoF('confidencial','Vaga confidencial', simnao('confidencial', false),
+               {dica:'A unidade não aparece para o candidato'})}
+      ${campoF('aprovada_gestor','Aprovada com seu gestor? <span class="req">*</span>',
+               simnao('aprovada_gestor', false))}
+      ${campoF('tem_indicacao','Possui indicação para a vaga', simnao('tem_indicacao', false))}
+      ${campoF('indicado_nome','Nome do indicado', txt('indicado_nome',''))}
+      ${campoF('indicado_telefone','Telefone do indicado', txt('indicado_telefone','(11) 99999-9999'))}
+      ${campoF('observacao','Observação',
+        `<textarea class="inp" id="v-observacao" style="min-height:64px"
+           placeholder="Algo que o RH precise saber"></textarea>`, {span:1})}
+    </div></div>
+
+    <div class="acoes" style="margin-top:4px">
+      <button class="btn btn-primary" id="bt-salvar" onclick="salvarVaga()">Enviar solicitação</button>
+      <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
+    </div>
+    <div class="sub" style="margin-top:10px">A vaga nasce como <b>Solicitada</b> e só
+      recebe candidatos depois que o RH aprovar.</div>`;
+  formMudou();
+  $('ov').classList.add('show');
+  $('dv').classList.add('show');
+}
+
+/* mostra e esconde o que depende de outra resposta */
+function formMudou() {
+  const cargo = $('v-cargo')?.value;
+  const c = cargoDe(cargo);
+  const mostrar = (id, cond) => $('ff-' + id)?.classList.toggle('hide', !cond);
+  mostrar('nivel', !!c.tem_nivel);
+  mostrar('turno_outro', $('v-turno')?.value === 'Outra');
+  const subst = /^Substituição/.test($('v-motivo')?.value || '');
+  mostrar('nome_substituido', subst);
+  mostrar('data_desligamento', subst);
+  const ind = leSim('tem_indicacao');
+  mostrar('indicado_nome', ind);
+  mostrar('indicado_telefone', ind);
+  const ct = $('v-contrato');
+  if (ct) {
+    ct.textContent = c.tipo ? c.tipo + ' — definido pelo cargo' : 'definido pelo cargo';
+    ct.style.color = c.tipo ? 'var(--gray-900)' : 'var(--gray-500)';
+    ct.style.fontWeight = c.tipo ? '700' : '400';
+  }
+}
+
+const paraISO = t => {
+  const p = String(t || '').trim().split('/');
+  if (p.length !== 3 || p[2].length !== 4) return null;
+  return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+};
+
+async function salvarVaga() {
+  const vm = $('v-msg');
+  const erro = t => { vm.className = 'msg err show'; vm.textContent = '⚠️ ' + t; return false; };
+  const val = id => ($('v-' + id)?.value || '').trim();
+
+  if (!val('nome_solicitante')) return erro('Informe o nome do solicitante.');
+  if (!val('unidade'))          return erro('Escolha a unidade de trabalho.');
+  if (!val('cargo'))            return erro('Escolha o cargo da vaga.');
+  if (!val('turno'))            return erro('Escolha o turno.');
+  if (val('turno') === 'Outra' && !val('turno_outro'))
+    return erro('Descreva o turno.');
+  if (!val('motivo'))           return erro('Informe o motivo da abertura.');
+  if (/^Substituição/.test(val('motivo')) && !val('nome_substituido'))
+    return erro('Informe o nome de quem está sendo substituído.');
+  if (!leSim('aprovada_gestor'))
+    return erro('A vaga precisa estar aprovada com o seu gestor antes de ser solicitada.');
+  if (leSim('tem_indicacao') && !val('indicado_nome'))
+    return erro('Informe o nome do indicado.');
+
+  const bt = $('bt-salvar'); bt.disabled = true; bt.textContent = 'Enviando…';
+  try {
+    const db = cliente();
+    const { data: { user } } = await db.auth.getUser();
+    const { data, error } = await db.from('vagas').insert({
+      solicitante_id: user.id,
+      nome_solicitante: val('nome_solicitante'),
+      cargo_solicitante: val('cargo_solicitante') || null,
+      gestor_solicitante: val('gestor_solicitante') || null,
+      unidade: val('unidade'),
+      cargo: val('cargo'),
+      nivel: cargoDe(val('cargo')).tem_nivel ? (val('nivel') || null) : null,
+      turno: val('turno'),
+      turno_outro: val('turno') === 'Outra' ? val('turno_outro') : null,
+      quantidade: Math.max(1, parseInt(val('quantidade') || '1', 10)),
+      motivo: val('motivo'),
+      nome_substituido: val('nome_substituido') || null,
+      data_desligamento: paraISO(val('data_desligamento')),
+      confidencial: leSim('confidencial'),
+      aprovada_gestor: leSim('aprovada_gestor'),
+      tem_indicacao: leSim('tem_indicacao'),
+      indicado_nome: leSim('tem_indicacao') ? (val('indicado_nome') || null) : null,
+      indicado_telefone: leSim('tem_indicacao') ? (val('indicado_telefone') || null) : null,
+      observacao: val('observacao') || null,
+    }).select('*').single();
+    if (error) throw new Error(error.message);
+    VAGAS.unshift(data);
+    fechar(); pintarVagas();
+    msg('app-msg', `Vaga ${data.codigo} solicitada. O RH vai aprovar antes de ela `
+                 + 'receber candidatos.', 'ok');
+    setTimeout(() => msg('app-msg', ''), 9000);
+  } catch (e) {
+    bt.disabled = false; bt.textContent = 'Enviar solicitação';
+    erro('Não consegui salvar: ' + e.message);
+  }
+}
+
+/* ── detalhe da vaga ── */
+function abrirVaga(id) {
+  const v = VAGAS.find(x => x.id === id);
+  if (!v) return;
+  selVaga = id; selId = null;
+  const cands = ehRH() ? candidatosDa(v) : [];
+  const d = diasDesdeAprovacao(v), sla = ET[v.etapa]?.sla;
+  const linhaF = (k, val) => (val == null || val === '' || val === '—') ? ''
+    : `<dt>${es(k)}</dt><dd>${es(val)}</dd>`;
+
+  $('d-nome').textContent  = `${v.unidade} · ${v.cargo}${v.nivel ? ' ' + v.nivel : ''}`;
+  $('d-proto').textContent = `${v.codigo} · solicitada em ${soData(v.data_solicitacao)}`;
+  $('d-body').innerHTML = `
+    <div class="msg" id="v-msg"></div>
+
+    <div class="copiar" style="background:#fff;border-color:var(--gray-200)">
+      <div class="t"><b>Código da vaga</b>É este número que o candidato informa no portal.</div>
+      <button class="btn btn-sm btn-primary" onclick="copiarCodigo(this, '${es(v.codigo)}')">Copiar código</button>
+    </div>
+
+    ${v.etapa === 'solicitada' && ehRH() ? `
+    <div class="fbox">
+      <b>⏳ Aguardando aprovação</b>
+      <div style="font-size:11.5px;color:#78350f;margin-bottom:9px;line-height:1.5">
+        Enquanto não for aprovada, o código não funciona no portal do candidato.
+      </div>
+      <div class="ac">
+        <button class="btn btn-sm btn-primary" onclick="moverEtapa('${v.id}','em_selecao')">✓ Aprovar e abrir seleção</button>
+        <button class="btn btn-sm btn-ghost" onclick="moverEtapa('${v.id}','cancelada')">Recusar</button>
+      </div>
+    </div>` : ''}
+
+    ${atrasada(v) ? `<div class="fbox"><b>⚠️ Atrasada</b>
+      <div style="font-size:11.5px;color:#78350f;line-height:1.5">
+        ${d} dias desde a aprovação, e a etapa "${es(ET[v.etapa].t)}" tem prazo de ${sla} dia(s).
+      </div></div>` : ''}
+
+    <div class="grp"><h3>Situação</h3><dl class="kv">
+      <dt>Etapa</dt><dd><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span></dd>
+      ${linhaF('Contrato', v.tipo_contrato)}
+      ${linhaF('Turno', turnoDe(v))}
+      ${linhaF('Quantidade', v.quantidade > 1 ? v.quantidade + ' vagas' : '1 vaga')}
+      ${v.aprovada_em ? `<dt>Aprovada em</dt><dd>${dataBR(v.aprovada_em)} · ${d} dia(s) atrás</dd>` : ''}
+      ${linhaF('Início previsto', soData(v.data_inicio))}
+      ${v.confidencial ? '<dt>Confidencial</dt><dd>Sim — unidade oculta no portal</dd>' : ''}
+    </dl></div>
+
+    <div class="grp"><h3>Solicitação</h3><dl class="kv">
+      ${linhaF('Solicitante', v.nome_solicitante)}
+      ${linhaF('Cargo do solicitante', v.cargo_solicitante)}
+      ${linhaF('Gestor', v.gestor_solicitante)}
+      ${linhaF('Motivo', v.motivo)}
+      ${linhaF('Substituído', v.nome_substituido)}
+      ${linhaF('Desligamento', soData(v.data_desligamento))}
+      ${linhaF('Aprovada com o gestor', v.aprovada_gestor ? 'Sim' : 'Não')}
+      ${v.tem_indicacao ? linhaF('Indicação',
+        [v.indicado_nome, v.indicado_telefone].filter(Boolean).join(' · ')) : ''}
+      ${linhaF('Observação', v.observacao)}
+    </dl></div>
+
+    ${!ehRH() ? '' : `
+    <div class="grp">
+      <h3>Candidatos (${cands.length})</h3>
+      ${cands.length ? cands.map(c => {
+        const f = faltantes(c), tipo = c.vaga_codigo && c.protocolo?.startsWith('C') ? 'clt' : 'pj';
+        return `<div class="doc">
+          <span class="ic">${tipo === 'clt' ? '👤' : '🧾'}</span>
+          <div class="t"><b>${es(c.nome_social || c.nome)}</b>
+            <span>${es(c.protocolo)} · ${es(ST_LABEL[c.status] || c.status)}
+              ${f.length ? ` · <b style="color:var(--warn)">faltam ${f.length} doc.</b>` : ' · documentação completa'}</span></div>
+          <button class="btn btn-sm btn-ghost" onclick="irParaCandidato('${tipo}','${c.id}')">Ver</button>
+        </div>`; }).join('')
+        : '<div class="sub">Nenhum candidato informou este código ainda.</div>'}
+    </div>
+
+    <div class="grp"><h3>Mover para</h3>
+      <div class="acoes">
+        ${ETAPAS.filter(e => e.k !== 'solicitada').map(e =>
+          `<button class="btn btn-sm ${v.etapa === e.k ? 'btn-primary' : 'btn-ghost'}"
+             onclick="moverEtapa('${v.id}','${e.k}')">${e.t}</button>`).join('')}
+        <button class="btn btn-sm ${v.etapa === 'cancelada' ? 'btn-primary' : 'btn-ghost'}"
+          onclick="moverEtapa('${v.id}','cancelada')">Cancelar vaga</button>
+      </div>
+      <label class="lbl" style="margin-top:14px">Data de início prevista</label>
+      <input class="inp" id="v-inicio" type="text" placeholder="DD/MM/AAAA"
+             value="${v.data_inicio ? soData(v.data_inicio) : ''}"
+             onchange="salvarInicio('${v.id}', this.value)">
+    </div>`}`;
+
+  $('ov').classList.add('show');
+  $('dv').classList.add('show');
+  if (TIPO === 'vaga') pintarVagas();
+}
+
+async function copiarCodigo(btn, cod) {
+  const orig = btn.textContent;
+  try { await navigator.clipboard.writeText(cod); } catch (_) {}
+  btn.textContent = '✓ ' + cod;
+  setTimeout(() => { btn.textContent = orig; }, 2000);
+}
+
+function irParaCandidato(tipo, id) {
+  fechar();
+  trocarTipo(tipo);
+  setTimeout(() => abrir(id), 450);
+}
+
+async function moverEtapa(id, etapa) {
+  const v = VAGAS.find(x => x.id === id);
+  if (!v) return;
+  const patch = { etapa };
+  if (etapa === 'em_selecao' && !v.aprovada_em) {
+    const { data: { user } } = await cliente().auth.getUser();
+    patch.aprovada_em = new Date().toISOString();
+    patch.aprovada_por = user.id;
+  }
+  try {
+    const { data, error } = await cliente().from('vagas')
+      .update(patch).eq('id', id).select('*').single();
+    if (error) throw new Error(error.message);
+    Object.assign(v, data);
+    if (TIPO === 'funil') { pintarFunil(); fechar(); }
+    else abrirVaga(id);
+    msg('app-msg', `${v.codigo} movida para "${ET[etapa]?.t || etapa}".`, 'ok');
+    setTimeout(() => msg('app-msg', ''), 6000);
+  } catch (e) {
+    alert('Não consegui mover a vaga: ' + e.message);
+  }
+}
+
+async function salvarInicio(id, valor) {
+  try {
+    const { error } = await cliente().from('vagas')
+      .update({ data_inicio: paraISO(valor) }).eq('id', id);
+    if (error) throw new Error(error.message);
+    const v = VAGAS.find(x => x.id === id);
+    if (v) v.data_inicio = paraISO(valor);
+  } catch (e) { alert('Não consegui salvar a data: ' + e.message); }
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  FUNIL DE ADMISSÃO                                                   ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+function pintarFunil() {
+  const vivas = VAGAS.filter(v => v.etapa !== 'cancelada' && v.etapa !== 'admitido');
+  const emSelecao = VAGAS.filter(v => v.etapa === 'em_selecao')
+    .reduce((n, v) => n + (v.quantidade || 1), 0);
+  const emAdmissao = VAGAS.filter(v =>
+    ['documentos','oris','aso','programar','inicio_agendado'].includes(v.etapa)).length;
+  const comProblema = vivas.filter(v =>
+    atrasada(v) || candidatosDa(v).some(c => faltantes(c).length)).length;
+
+  const proximas = VAGAS.map(v => v.data_inicio).filter(d => d && d >= hoje()).sort();
+  const prox = proximas[0];
+  const fmt = d => {
+    if (!d) return '—';
+    const x = new Date(d + 'T12:00:00');
+    return x.toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit' })
+            .replace('.', '');
+  };
+
+  $('funil').innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><b>${emSelecao}</b><span>Vagas em seleção</span></div>
+      <div class="kpi"><b>${emAdmissao}</b><span>Vagas em admissão</span></div>
+      <div class="kpi ${comProblema ? 'al' : ''}"><b>${comProblema}</b>
+        <span>Com pendência ou atraso</span></div>
+      <div class="kpi inf"><b style="font-size:21px">${fmt(prox)}</b>
+        <span>Próxima data de admissão</span></div>
+    </div>
+    <div class="kb">
+      ${ETAPAS.map(e => {
+        const vs = VAGAS.filter(v => v.etapa === e.k);
+        return `<div class="col">
+          <div class="col-h">
+            <div style="flex:1"><b>${e.t}</b>${e.d ? `<span class="d">${e.d}</span>` : ''}</div>
+            <i style="color:${vs.length ? 'var(--gray-900)' : 'var(--gray-300)'}">${vs.length}</i>
+          </div>
+          <div class="col-b">${vs.map(cardVaga).join('')}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    ${VAGAS.some(v => v.etapa === 'cancelada')
+      ? `<div class="sub" style="margin-top:12px">
+           ${VAGAS.filter(v => v.etapa === 'cancelada').length} vaga(s) cancelada(s) —
+           aparecem na aba <b>Vagas</b>.</div>` : ''}`;
+}
+
+function cardVaga(v) {
+  const cands = candidatosDa(v);
+  const pend = cands.filter(c => faltantes(c).length).length;
+  const d = diasDesdeAprovacao(v);
+  return `<div class="vc${atrasada(v) ? ' late' : ''}" onclick="abrirVaga('${v.id}')">
+    <div class="cod">${es(v.codigo)}</div>
+    <div class="un">${es(v.confidencial ? '🔒 ' + v.unidade : v.unidade)}</div>
+    <div class="cg">${es(v.cargo)}${v.nivel ? ' · ' + es(v.nivel) : ''}
+      ${v.quantidade > 1 ? ` · ${v.quantidade} vagas` : ''}</div>
+    <div class="pe">
+      <span class="tag tag-${v.tipo_contrato === 'PJ' ? 'pj' : 'clt'}">${es(v.tipo_contrato)}</span>
+      ${cands.length ? `<span class="cand">${cands.length} cand.</span>` : ''}
+      ${pend ? `<span class="atraso">${pend} c/ pendência</span>` : ''}
+      ${d != null ? `<span class="${atrasada(v) ? 'atraso' : ''}">${d}d</span>` : ''}
+    </div>
+  </div>`;
 }
 
 /* ───────────── SESSÃO JÁ ABERTA ───────────── */
