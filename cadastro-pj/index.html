@@ -361,6 +361,23 @@
   .doc-files { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
   .doc-files:empty { display: none; }
 
+  /* ── AVISO DE PENDENCIA ── */
+  .pend { display: none; margin-top: 16px; border-radius: 10px;
+          border: 1.5px solid #f0b429; background: #fffaf0; padding: 15px 18px; }
+  .pend.show { display: block; }
+  .pend-tit { font-size: 13px; font-weight: 800; color: #92400e; margin-bottom: 7px; }
+  .pend-txt { font-size: 12.5px; color: #78350f; line-height: 1.65; }
+  .pend-txt ul { margin: 8px 0 8px 20px; }
+  .pend-txt li { font-weight: 700; padding: 1px 0; }
+  .pend-ok { display: flex; gap: 10px; align-items: flex-start; cursor: pointer;
+             margin-top: 12px; padding-top: 11px; border-top: 1px solid #fde68a;
+             font-size: 12.5px; color: #78350f; font-weight: 600; line-height: 1.45; }
+  .pend-ok input { margin-top: 2px; flex-shrink: 0; accent-color: #b45309;
+                   width: 16px; height: 16px; }
+  .doc-card.falta { border-style: dashed; }
+  .doc-opc { font-size: 10.5px; font-weight: 700; color: var(--gray-400);
+             text-transform: uppercase; letter-spacing: .05em; }
+
   /* ── PROGRESSO DO ENVIO ── */
   .envio-box {
     display: none; margin-top: 18px;
@@ -387,7 +404,7 @@
     </svg>
   </div>
   <h1>Cadastro de Prestador PJ</h1>
-  <p>Preencha as informações abaixo para concluir seu cadastro na Cabana Burger.</p>
+  <p>Preencha as informações abaixo para concluir seu cadastro no Cabana Burger.</p>
   <span class="hero-badge">🔒 Dados protegidos · Uso interno</span>
 </div>
 
@@ -692,9 +709,25 @@
 
     <div class="card">
       <div class="card-title">📎 Envio de Documentos</div>
-      <div class="card-subtitle">Anexe os documentos abaixo. Eles vão direto e em sigilo para o time de RH da Cabana Burger — não é preciso enviar nada por e-mail.</div>
+      <div class="card-subtitle">Anexe os documentos abaixo. Eles vão direto e em sigilo para o time de RH do Cabana Burger — não é preciso enviar nada por e-mail.</div>
 
       <div style="display:flex;flex-direction:column;gap:10px;" id="docs-container"><!-- montado via JS --></div>
+
+      <!-- aviso de pendencia: aparece sozinho quando falta documento -->
+      <div class="pend" id="pend-box">
+        <div class="pend-tit">⚠️ Faltam documentos</div>
+        <div class="pend-txt">
+          Você pode enviar o cadastro assim mesmo, mas
+          <strong>a admissão não prossegue enquanto estes documentos não chegarem</strong>:
+          <ul id="pend-lista"></ul>
+          Envie o que falta para <strong>alodp@cabanaburger.com.br</strong> assim que possível,
+          informando seu protocolo. O time de RH será avisado da pendência.
+        </div>
+        <label class="pend-ok">
+          <input type="checkbox" id="f-ciente-pendencia">
+          <span>Estou ciente e me comprometo a enviar os documentos que faltam para o RH.</span>
+        </label>
+      </div>
 
       <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin-top:18px;">
         <div style="font-size:12px;color:#78350f;line-height:1.7;">
@@ -710,7 +743,7 @@
       <label style="display:flex;gap:12px;cursor:pointer;align-items:flex-start;">
         <input type="checkbox" id="f-termos" style="margin-top:3px;flex-shrink:0;accent-color:var(--green);width:16px;height:16px;">
         <span style="font-size:13px;color:var(--gray-700);line-height:1.5;">
-          Declaro que as informações fornecidas são verdadeiras e autorizo o uso dos dados pessoais e dos documentos enviados para fins de cadastro e contratação pela <strong>Cabana Burger</strong>, conforme a LGPD.
+          Declaro que as informações fornecidas são verdadeiras e autorizo o uso dos dados pessoais e dos documentos enviados para fins de cadastro e contratação pelo <strong>Cabana Burger</strong>, conforme a LGPD.
         </span>
       </label>
       <div class="envio-box" id="envio-box">
@@ -737,7 +770,7 @@
       <div class="success-icon">✅</div>
       <div class="success-title">Cadastro enviado!</div>
       <div class="success-text">
-        Obrigado! Suas informações foram recebidas com sucesso pelo time de RH da Cabana Burger.
+        Obrigado! Suas informações foram recebidas com sucesso pelo time de RH do Cabana Burger.
       </div>
       <div style="margin:22px auto 6px;max-width:340px;">
         <div style="font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.08em;">Seu protocolo</div>
@@ -748,7 +781,15 @@
         ✅ Dados pessoais<br>
         ✅ Empresa PJ<br>
         ✅ Dados bancários<br>
-        ✅ <span id="out-ndocs">5</span> documentos anexados
+        <span id="out-ndocs">✅ 5 documentos anexados</span>
+      </div>
+      <div id="out-pendencia" style="display:none;max-width:420px;margin:0 auto 20px;
+           background:#fffaf0;border:1.5px solid #f0b429;border-radius:10px;
+           padding:14px 18px;text-align:left;font-size:12.5px;color:#78350f;line-height:1.6;">
+        <strong>Ainda faltam documentos.</strong>
+        <div id="out-faltantes" style="margin:6px 0 8px 18px;font-weight:700"></div>
+        Envie para <strong>alodp@cabanaburger.com.br</strong> citando o protocolo acima.
+        A admissão só prossegue depois que eles chegarem.
       </div>
       <div class="success-text">
         Em breve você receberá um contato pelo e-mail ou WhatsApp informado para os próximos passos.
@@ -793,8 +834,8 @@ const DOCS = [
     hint:'Frente e verso — pode anexar os dois arquivos' },
   { k:'residencia', ico:'🏠', nome:'Comprovante de Residência',
     hint:'Luz, água, gás ou telefone — emitido nos últimos 3 meses' },
-  { k:'foto',       ico:'🤳', nome:'Foto sua (selfie ou retrato)',
-    hint:'Recente, fundo neutro, rosto visível' },
+  { k:'foto',       ico:'📷', nome:'Foto 3x4',
+    hint:'Foto 3x4 com fundo neutro, recente, rosto descoberto e visível — mesmo padrão de foto de documento' },
 ];
 
 // ── NAVEGAÇÃO ──
@@ -875,7 +916,7 @@ function montarDocs() {
       <div class="doc-head">
         <span class="doc-ico">${d.ico}</span>
         <div class="doc-txt">
-          <div class="doc-nome">${d.nome} <span style="color:var(--danger)">*</span></div>
+          <div class="doc-nome">${d.nome}</div>
           <div class="doc-hint">${d.hint}</div>
         </div>
         <span class="doc-check">✓</span>
@@ -937,7 +978,23 @@ function renderArquivos(k) {
       <button type="button" class="rm-btn" title="Remover" onclick="removeArquivo('${k}', ${i})">&times;</button>
     </div>`).join('');
   card.classList.toggle('ok', fs.length > 0);
+  card.classList.toggle('falta', fs.length === 0);
   card.classList.remove('erro');
+  atualizarPendencia();
+}
+
+/* O aviso aparece e some sozinho conforme a pessoa anexa. */
+function atualizarPendencia() {
+  const faltam = docsFaltando();
+  const box = document.getElementById('pend-box');
+  const lista = document.getElementById('pend-lista');
+  if (!box || !lista) return;
+  box.classList.toggle('show', faltam.length > 0);
+  lista.innerHTML = faltam.map(d => `<li>${d.nome}</li>`).join('');
+  if (!faltam.length) {
+    const ck = document.getElementById('f-ciente-pendencia');
+    if (ck) ck.checked = false;
+  }
 }
 
 function escHtml(t) {
@@ -989,10 +1046,13 @@ async function submitForm() {
 
   for (let n = 1; n <= 4; n++) if (!validateSection(n)) { goToSection(n); return; }
 
+  // Documentos nao sao mais obrigatorios. Faltando algum, a pessoa precisa
+  // declarar que esta ciente de que a admissao nao anda sem eles.
   const faltam = docsFaltando();
-  if (faltam.length) {
-    faltam.forEach(d => document.getElementById('doc-' + d.k)?.classList.add('erro'));
-    return err('Faltam documentos: ' + faltam.map(d => d.nome).join(', ') + '.');
+  if (faltam.length && !document.getElementById('f-ciente-pendencia').checked) {
+    document.getElementById('pend-box').scrollIntoView({behavior:'smooth', block:'center'});
+    return err('Faltam ' + faltam.length + ' documento(s). Anexe agora, ou marque que está '
+             + 'ciente de que precisa enviá-los ao RH para a admissão prosseguir.');
   }
   if (!document.getElementById('f-termos').checked)
     return err('Você precisa aceitar os termos para continuar.');
@@ -1059,6 +1119,7 @@ async function submitForm() {
       conta:        v('f-conta'),
       tipo_conta:   v('f-tipo-conta'),
       arquivos,
+      documentos_faltantes: faltam.map(d => d.nome),
       termos_aceite: true
     }).select('protocolo').single();
     if (eIns) throw new Error('falha ao gravar o cadastro: ' + eIns.message);
@@ -1072,11 +1133,16 @@ async function submitForm() {
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
           access_key: WEB3FORMS_KEY,
-          subject:   '🆕 Novo cadastro PJ — protocolo ' + row.protocolo,
+          subject:   (faltam.length ? '⚠️ Cadastro PJ com pendência — ' : '🆕 Novo cadastro PJ — ')
+                     + 'protocolo ' + row.protocolo,
           from_name: 'Portal de Cadastro PJ',
           'Protocolo':  row.protocolo,
           'Recebido em': new Date().toLocaleString('pt-BR'),
-          'Documentos': arquivos.length + ' arquivo(s)',
+          'Documentos': arquivos.length + ' arquivo(s) anexado(s)',
+          'PENDENCIA':  faltam.length
+                          ? '⚠️ FALTAM ' + faltam.length + ': ' + faltam.map(d => d.nome).join(' · ')
+                            + ' — o candidato foi avisado de que a admissão não prossegue sem eles.'
+                          : 'Nenhuma — os 5 documentos foram anexados.',
           'Onde ver':   'Abra o painel de RH e busque pelo protocolo. Os dados e os documentos não são enviados por e-mail.'
         })
       });
@@ -1084,7 +1150,13 @@ async function submitForm() {
 
     progresso('Concluído.', 100);
     document.getElementById('out-protocolo').textContent = row.protocolo;
-    document.getElementById('out-ndocs').textContent     = arquivos.length;
+    document.getElementById('out-ndocs').textContent =
+      '✅ ' + arquivos.length + ' documento(s) anexado(s)';
+    if (faltam.length) {
+      document.getElementById('out-pendencia').style.display = 'block';
+      document.getElementById('out-faltantes').innerHTML =
+        faltam.map(d => '• ' + d.nome).join('<br>');
+    }
     document.getElementById('section-5').style.display   = 'none';
     document.getElementById('screen-success').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1235,6 +1307,7 @@ function buscarCNPJ() {
 
 // ── INICIALIZAÇÃO ──
 montarDocs();
+atualizarPendencia();
 </script>
 </body>
 </html>
