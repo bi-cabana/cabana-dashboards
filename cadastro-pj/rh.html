@@ -70,7 +70,7 @@
   tbody tr{cursor:pointer;transition:.12s}
   tbody tr:hover{background:var(--green-pale)}
   tbody tr.sel{background:var(--green-pale)}
-  tbody tr.pend td{box-shadow:inset 4px 0 0 var(--warn)}
+  tbody tr.pend td:first-child{box-shadow:inset 4px 0 0 var(--warn)}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.02em}
   .nm{font-weight:700;color:var(--gray-900)}
   .sub{font-size:11.5px;color:var(--gray-400);margin-top:2px}
@@ -164,8 +164,50 @@
     color:var(--gray-500);cursor:pointer;transition:.2s}
   .sim button.on{border-color:var(--green);background:var(--green-pale);color:var(--green-dark)}
 
-  /* ── FUNIL (kanban) ── */
+  /* ── TELA DE SOLICITAÇÃO ── */
+  #tela{display:none;max-width:860px;margin:0 auto}
+  #tela .card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:26px 28px;margin-bottom:16px}
+  #tela h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px}
+  #tela .sb{font-size:13px;color:var(--gray-500);margin-bottom:22px;line-height:1.5}
+  .volta{background:none;border:none;color:var(--gray-500);font-family:inherit;
+    font-size:13px;font-weight:600;cursor:pointer;padding:0 0 12px;display:inline-flex;gap:6px}
+  .volta:hover{color:var(--green-dark)}
+  @media(max-width:620px){
+    #tela .card{padding:20px 16px}
+    .top{padding:12px 14px;gap:10px}
+    .tipo{width:100%;overflow-x:auto}
+  }
+
+  /* ── FUNIL ── */
   #funil{display:none}
+  .fn{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:22px 24px;margin-bottom:18px}
+  .fn h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:3px}
+  .fn .leg{display:flex;gap:16px;align-items:center;margin:12px 0 18px;
+    font-size:11.5px;color:var(--gray-500);flex-wrap:wrap}
+  .fn .leg i{display:inline-block;width:11px;height:11px;border-radius:3px;
+    margin-right:6px;vertical-align:-1px}
+  .fr{display:grid;grid-template-columns:150px 1fr 96px;gap:12px;align-items:center;
+    padding:5px 0;cursor:pointer;border-radius:6px}
+  .fr:hover{background:var(--gray-50)}
+  .fr.on{background:var(--green-pale)}
+  .fr .rot{font-size:12.5px;font-weight:700;line-height:1.25;text-align:right}
+  .fr .rot span{display:block;font-size:10.5px;color:var(--gray-400);font-weight:600}
+  .fr .tr{height:26px;background:var(--gray-100);border-radius:5px;overflow:hidden;
+    display:flex;gap:2px}
+  .fr .s1{background:#3a7a2e;border-radius:5px 0 0 5px}
+  .fr .s2{background:#d97706}
+  .fr .s1:last-child,.fr .s2:last-child{border-radius:5px}
+  .fr .vz{font-size:12.5px;color:var(--gray-400);display:flex;align-items:center;
+    padding-left:9px}
+  .fr .nm{font-size:13px;font-weight:800;display:flex;align-items:baseline;gap:7px}
+  .fr .nm u{text-decoration:none;font-size:11px;color:var(--gray-400);font-weight:600}
+  .fr .nm b.al{color:var(--warn)}
+  @media(max-width:620px){
+    .fr{grid-template-columns:104px 1fr 72px;gap:8px}
+    .fr .rot{font-size:11.5px}
+  }
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
     gap:12px;margin-bottom:18px}
   .kpi{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
@@ -177,27 +219,7 @@
   .kpi.al b{color:var(--warn)}
   .kpi span{font-size:12px;color:var(--gray-500);display:block;margin-top:3px;line-height:1.4}
 
-  .kb{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
-  .col{flex:0 0 232px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
-    display:flex;flex-direction:column;max-height:calc(100vh - 290px)}
-  .col-h{padding:12px 14px;border-bottom:1px solid var(--gray-100);
-    display:flex;align-items:center;gap:8px}
-  .col-h b{font-size:12.5px;font-weight:800;flex:1;line-height:1.25}
-  .col-h i{font-style:normal;font-family:'Syne',sans-serif;font-size:19px;font-weight:800}
-  .col-h .d{display:block;font-size:10.5px;color:var(--gray-400);font-weight:600;margin-top:1px}
-  .col-b{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:9px}
-  .col-b:empty::after{content:'—';color:var(--gray-300);font-size:13px;text-align:center;padding:12px 0}
-  .vc{border:1.5px solid var(--gray-200);border-radius:9px;padding:10px 11px;
-    cursor:pointer;transition:.15s;background:#fff}
-  .vc:hover{border-color:var(--green);box-shadow:0 2px 8px rgba(0,0,0,.06)}
-  .vc.late{border-color:#fca5a5;background:#fef7f7}
-  .vc .cod{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--gray-400)}
-  .vc .un{font-size:13px;font-weight:800;margin:2px 0 1px;line-height:1.25}
-  .vc .cg{font-size:11.5px;color:var(--gray-500);line-height:1.35}
-  .vc .pe{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap;
-    font-size:10.5px;color:var(--gray-400)}
-  .vc .cand{background:var(--green-pale);color:var(--green-dark);border-radius:20px;
-    padding:1px 8px;font-weight:800}
+  .semcod{color:var(--gray-300);font-style:italic}
 
   /* WhatsApp */
   .zap{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;
@@ -283,6 +305,7 @@
     </div>
 
     <div id="funil"></div>
+    <div id="tela"></div>
 
     <div class="rodape">
       Os documentos abrem por link temporário, válido por 2 minutos, e não ficam acessíveis publicamente.<br>
@@ -318,13 +341,11 @@ const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise',
 let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
 const CACHE = {};            // linhas ja carregadas por tipo
 let PERFIL = { papel: 'rh', nome: '', unidade: null };
-let VAGAS = [], CARGOS = [], selVaga = null;
+let VAGAS = [], CARGOS = [], SIGLA = {}, selVaga = null, etapaFoco = '', buscaFunil = '';
 
-/* As 20 unidades, como aparecem no dashboard de aderência. */
-const UNIDADES = ['Alphaville','Barra Shopping RJ','Botafogo','Braz Leme','Campinas',
-  'Campo Belo','Cozinha Central','Guarulhos','Leopoldo','Matriz','Moema','Mooca',
-  'Morumbi Shopping','Morumbi Town','Niteroi','Oscar Freire','Pinheiros',
-  'Shop Eldorado','Tatuape','Villa Lobos Shopping'];
+/* Carregadas da tabela `unidades` no login — a sigla de cada uma vira o
+   prefixo do código da vaga (ELD-001). */
+let UNIDADES = [];
 
 const TURNOS = ['Abertura (08h00 às 16h20)','Intermediário (12h00 às 20h20)',
   'Fechamento (15h00 às 23h20)','Fechamento (16h00 às 00h20)',
@@ -365,8 +386,10 @@ function atrasada(v) {
 }
 /* Candidatos que informaram este código de vaga, nas duas filas. */
 function candidatosDa(v) {
+  if (!v.codigo) return [];        // vaga ainda não aprovada: não há código a cruzar
+  const cod = v.codigo.toUpperCase();
   return [].concat(CACHE.pj || [], CACHE.clt || [])
-    .filter(c => (c.vaga_codigo || '').toUpperCase() === v.codigo.toUpperCase());
+    .filter(c => (c.vaga_codigo || '').toUpperCase() === cod);
 }
 
 const $  = id => document.getElementById(id);
@@ -802,6 +825,10 @@ async function abrirApp() {
   const { data: cg } = await db.from('cargos_vaga').select('*')
     .eq('ativo', true).order('ordem');
   CARGOS = cg || [];
+  const { data: un } = await db.from('unidades').select('*')
+    .eq('ativo', true).order('ordem');
+  UNIDADES = (un || []).map(u => u.nome);
+  SIGLA = Object.fromEntries((un || []).map(u => [u.nome, u.sigla]));
 
   $('login').style.display = 'none';
   $('app').style.display   = 'block';
@@ -842,6 +869,7 @@ function ajustarUI() {
   $('bt-nova').style.display = t === 'vaga' ? '' : 'none';
   document.querySelector('.tbl').style.display = t === 'funil' ? 'none' : '';
   $('funil').style.display = t === 'funil' ? 'block' : 'none';
+  $('tela').style.display = 'none';
   // o gerente nao exporta base de candidatos
   document.querySelectorAll('.top .btn-ghost').forEach(b => {
     if (b.textContent.includes('CSV')) b.style.display = ehRH() ? '' : 'none';
@@ -1253,7 +1281,8 @@ function vagasVisiveis() {
   const q = $('busca').value.trim().toLowerCase();
   return VAGAS.filter(v => {
     if (!q) return true;
-    return [v.codigo, v.unidade, v.cargo, v.nivel, v.nome_solicitante, v.gestor_solicitante]
+    return [v.codigo, v.unidade, v.cargo, v.nivel, v.nome_solicitante,
+            v.gestor_solicitante, SIGLA[v.unidade]]
       .join(' ').toLowerCase().includes(q);
   });
 }
@@ -1266,7 +1295,8 @@ function pintarVagas() {
   $('corpo').innerHTML = rs.map(v => `
     <tr class="${selVaga === v.id ? 'sel' : ''}${atrasada(v) ? ' pend' : ''}"
         onclick="abrirVaga('${v.id}')">
-      <td class="mono">${es(v.codigo)}</td>
+      <td class="mono">${v.codigo ? es(v.codigo)
+        : '<span class="semcod">aguardando</span>'}</td>
       <td><div class="nm">${es(v.unidade)}</div>
         ${v.confidencial ? '<span class="tag tag-conf">confidencial</span>' : ''}</td>
       <td>${es(v.cargo)}${v.nivel ? `<div class="sub">${es(v.nivel)}</div>` : ''}</td>
@@ -1309,66 +1339,82 @@ function marcar(id, v) {
 const leSim = id => $('v-' + id)?.dataset.v === '1';
 
 function novaVaga() {
-  selVaga = null;
-  $('d-nome').textContent  = 'Nova solicitação de vaga';
-  $('d-proto').textContent = 'O código é gerado quando você envia';
-  $('d-body').innerHTML = `
-    <div class="msg" id="v-msg"></div>
-    <div class="grp"><h3>Quem está solicitando</h3><div class="fgrid">
-      ${campoF('nome_solicitante','Nome do solicitante <span class="req">*</span>',
-               txt('nome_solicitante','', PERFIL.nome || ''))}
-      ${campoF('cargo_solicitante','Cargo do solicitante', txt('cargo_solicitante','Ex: Gerente de Loja'))}
-      ${campoF('gestor_solicitante','Gestor do solicitante', txt('gestor_solicitante',''))}
-      ${campoF('data_solicitacao','Data da solicitação',
-        `<input class="inp" id="v-data_solicitacao" type="text" value="${soData(hoje())}" readonly
-          style="background:var(--gray-50)">`)}
-    </div></div>
+  // tela própria, não gaveta: o gerente costuma abrir isto no celular
+  fechar();
+  document.querySelector('.bar').style.display = 'none';
+  document.querySelector('.tbl').style.display = 'none';
+  $('tela').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    <div class="grp"><h3>A vaga</h3><div class="fgrid">
-      ${campoF('unidade','Unidade de trabalho <span class="req">*</span>',
-               sel('unidade', UNIDADES, PERFIL.unidade || ''))}
-      ${campoF('cargo','Cargo da vaga <span class="req">*</span>',
-               sel('cargo', CARGOS.map(c => c.cargo)))}
-      ${campoF('nivel','Nível', sel('nivel', NIVEIS))}
-      ${campoF('quantidade','Quantidade de vagas',
-        `<input class="inp" id="v-quantidade" type="number" min="1" max="20" value="1">`)}
-      ${campoF('turno','Turno <span class="req">*</span>', sel('turno', TURNOS), {span:1})}
-      ${campoF('turno_outro','Qual turno?', txt('turno_outro','Descreva o horário'))}
-      ${campoF('contrato','Tipo de contratação',
-        `<div class="inp" id="v-contrato" style="background:var(--gray-50);color:var(--gray-500)">
-           definido pelo cargo</div>`)}
-    </div></div>
+  $('tela').innerHTML = `
+    <button class="volta" onclick="voltarDaTela()">← Voltar para as vagas</button>
+    <div class="card">
+      <h2>Solicitação de vaga</h2>
+      <div class="sb">Preencha e envie. O RH aprova, e só então a vaga ganha um
+        código para passar aos candidatos.</div>
+      <div class="msg" id="v-msg"></div>
 
-    <div class="grp"><h3>Motivo</h3><div class="fgrid">
-      ${campoF('motivo','Motivo da abertura <span class="req">*</span>',
-               sel('motivo', MOTIVOS), {span:1})}
-      ${campoF('nome_substituido','Nome do substituído', txt('nome_substituido',''))}
-      ${campoF('data_desligamento','Data do desligamento',
-        txt('data_desligamento','DD/MM/AAAA'))}
-    </div></div>
+      <div class="grp"><h3>Quem está solicitando</h3><div class="fgrid">
+        ${campoF('nome_solicitante','Nome do solicitante <span class="req">*</span>',
+                 txt('nome_solicitante','', PERFIL.nome || ''))}
+        ${campoF('cargo_solicitante','Cargo do solicitante', txt('cargo_solicitante','Ex: Gerente de Loja'))}
+        ${campoF('gestor_solicitante','Gestor do solicitante', txt('gestor_solicitante',''))}
+        ${campoF('data_solicitacao','Data da solicitação',
+          `<input class="inp" id="v-data_solicitacao" type="text" value="${soData(hoje())}"
+             readonly style="background:var(--gray-50)">`)}
+      </div></div>
 
-    <div class="grp"><h3>Aprovação e indicação</h3><div class="fgrid">
-      ${campoF('confidencial','Vaga confidencial', simnao('confidencial', false),
-               {dica:'A unidade não aparece para o candidato'})}
-      ${campoF('aprovada_gestor','Aprovada com seu gestor? <span class="req">*</span>',
-               simnao('aprovada_gestor', false))}
-      ${campoF('tem_indicacao','Possui indicação para a vaga', simnao('tem_indicacao', false))}
-      ${campoF('indicado_nome','Nome do indicado', txt('indicado_nome',''))}
-      ${campoF('indicado_telefone','Telefone do indicado', txt('indicado_telefone','(11) 99999-9999'))}
-      ${campoF('observacao','Observação',
-        `<textarea class="inp" id="v-observacao" style="min-height:64px"
-           placeholder="Algo que o RH precise saber"></textarea>`, {span:1})}
-    </div></div>
+      <div class="grp"><h3>A vaga</h3><div class="fgrid">
+        ${campoF('unidade','Unidade de trabalho <span class="req">*</span>',
+                 sel('unidade', UNIDADES, PERFIL.unidade || ''))}
+        ${campoF('cargo','Cargo da vaga <span class="req">*</span>',
+                 sel('cargo', CARGOS.map(c => c.cargo)))}
+        ${campoF('nivel','Nível', sel('nivel', NIVEIS))}
+        ${campoF('contrato','Tipo de contratação',
+          `<div class="inp" id="v-contrato" style="background:var(--gray-50);color:var(--gray-500)">
+             definido pelo cargo</div>`)}
+        ${campoF('turno','Turno <span class="req">*</span>', sel('turno', TURNOS), {span:1})}
+        ${campoF('turno_outro','Qual turno?', txt('turno_outro','Descreva o horário'), {span:1})}
+      </div></div>
 
-    <div class="acoes" style="margin-top:4px">
-      <button class="btn btn-primary" id="bt-salvar" onclick="salvarVaga()">Enviar solicitação</button>
-      <button class="btn btn-ghost" onclick="fechar()">Cancelar</button>
-    </div>
-    <div class="sub" style="margin-top:10px">A vaga nasce como <b>Solicitada</b> e só
-      recebe candidatos depois que o RH aprovar.</div>`;
+      <div class="grp"><h3>Motivo</h3><div class="fgrid">
+        ${campoF('motivo','Motivo da abertura <span class="req">*</span>',
+                 sel('motivo', MOTIVOS), {span:1})}
+        ${campoF('nome_substituido','Nome do substituído', txt('nome_substituido',''))}
+        ${campoF('data_desligamento','Data do desligamento',
+          txt('data_desligamento','DD/MM/AAAA'))}
+      </div></div>
+
+      <div class="grp"><h3>Aprovação e indicação</h3><div class="fgrid">
+        ${campoF('confidencial','Vaga confidencial', simnao('confidencial', false),
+                 {dica:'A unidade não aparece para o candidato'})}
+        ${campoF('aprovada_gestor','Aprovada com seu gestor? <span class="req">*</span>',
+                 simnao('aprovada_gestor', false))}
+        ${campoF('tem_indicacao','Possui indicação para a vaga', simnao('tem_indicacao', false),
+                 {span:1})}
+        ${campoF('veio_indica_ai','Veio pelo Indica Aí?', simnao('veio_indica_ai', false))}
+        ${campoF('indicado_por','Quem indicou?', txt('indicado_por','Nome de quem indicou'))}
+        ${campoF('indicado_nome','Nome do indicado', txt('indicado_nome',''))}
+        ${campoF('indicado_telefone','Telefone do indicado', txt('indicado_telefone','(11) 99999-9999'))}
+        ${campoF('observacao','Observação',
+          `<textarea class="inp" id="v-observacao" style="min-height:70px"
+             placeholder="Algo que o RH precise saber"></textarea>`, {span:1})}
+      </div></div>
+
+      <div class="acoes" style="margin-top:18px">
+        <button class="btn btn-primary" id="bt-salvar" onclick="salvarVaga()">Enviar solicitação</button>
+        <button class="btn btn-ghost" onclick="voltarDaTela()">Cancelar</button>
+      </div>
+    </div>`;
   formMudou();
-  $('ov').classList.add('show');
-  $('dv').classList.add('show');
+}
+
+function voltarDaTela() {
+  $('tela').style.display = 'none';
+  $('tela').innerHTML = '';
+  document.querySelector('.bar').style.display = '';
+  document.querySelector('.tbl').style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* mostra e esconde o que depende de outra resposta */
@@ -1382,6 +1428,8 @@ function formMudou() {
   mostrar('nome_substituido', subst);
   mostrar('data_desligamento', subst);
   const ind = leSim('tem_indicacao');
+  mostrar('veio_indica_ai', ind);
+  mostrar('indicado_por', ind);
   mostrar('indicado_nome', ind);
   mostrar('indicado_telefone', ind);
   const ct = $('v-contrato');
@@ -1431,22 +1479,23 @@ async function salvarVaga() {
       nivel: cargoDe(val('cargo')).tem_nivel ? (val('nivel') || null) : null,
       turno: val('turno'),
       turno_outro: val('turno') === 'Outra' ? val('turno_outro') : null,
-      quantidade: Math.max(1, parseInt(val('quantidade') || '1', 10)),
       motivo: val('motivo'),
       nome_substituido: val('nome_substituido') || null,
       data_desligamento: paraISO(val('data_desligamento')),
       confidencial: leSim('confidencial'),
       aprovada_gestor: leSim('aprovada_gestor'),
       tem_indicacao: leSim('tem_indicacao'),
+      veio_indica_ai: leSim('tem_indicacao') ? leSim('veio_indica_ai') : null,
+      indicado_por: leSim('tem_indicacao') ? (val('indicado_por') || null) : null,
       indicado_nome: leSim('tem_indicacao') ? (val('indicado_nome') || null) : null,
       indicado_telefone: leSim('tem_indicacao') ? (val('indicado_telefone') || null) : null,
       observacao: val('observacao') || null,
     }).select('*').single();
     if (error) throw new Error(error.message);
     VAGAS.unshift(data);
-    fechar(); pintarVagas();
-    msg('app-msg', `Vaga ${data.codigo} solicitada. O RH vai aprovar antes de ela `
-                 + 'receber candidatos.', 'ok');
+    voltarDaTela(); pintarVagas();
+    msg('app-msg', `Solicitação enviada para ${data.unidade} · ${data.cargo}. `
+                 + 'O código da vaga é gerado quando o RH aprovar.', 'ok');
     setTimeout(() => msg('app-msg', ''), 9000);
   } catch (e) {
     bt.disabled = false; bt.textContent = 'Enviar solicitação';
@@ -1465,23 +1514,26 @@ function abrirVaga(id) {
     : `<dt>${es(k)}</dt><dd>${es(val)}</dd>`;
 
   $('d-nome').textContent  = `${v.unidade} · ${v.cargo}${v.nivel ? ' ' + v.nivel : ''}`;
-  $('d-proto').textContent = `${v.codigo} · solicitada em ${soData(v.data_solicitacao)}`;
+  $('d-proto').textContent = (v.codigo || 'sem código ainda')
+    + ` · solicitada em ${soData(v.data_solicitacao)}`;
   $('d-body').innerHTML = `
     <div class="msg" id="v-msg"></div>
 
+    ${v.codigo ? `
     <div class="copiar" style="background:#fff;border-color:var(--gray-200)">
-      <div class="t"><b>Código da vaga</b>É este número que o candidato informa no portal.</div>
+      <div class="t"><b>Código ${es(v.codigo)}</b>É este código que o candidato informa no portal.</div>
       <button class="btn btn-sm btn-primary" onclick="copiarCodigo(this, '${es(v.codigo)}')">Copiar código</button>
-    </div>
+    </div>` : ''}
 
     ${v.etapa === 'solicitada' && ehRH() ? `
     <div class="fbox">
       <b>⏳ Aguardando aprovação</b>
       <div style="font-size:11.5px;color:#78350f;margin-bottom:9px;line-height:1.5">
-        Enquanto não for aprovada, o código não funciona no portal do candidato.
+        A vaga ainda não tem código. Ele é gerado na aprovação, no formato
+        <b>${es(SIGLA[v.unidade] || '???')}-000</b>, e é o que o candidato digita no portal.
       </div>
       <div class="ac">
-        <button class="btn btn-sm btn-primary" onclick="moverEtapa('${v.id}','em_selecao')">✓ Aprovar e abrir seleção</button>
+        <button class="btn btn-sm btn-primary" onclick="moverEtapa('${v.id}','em_selecao')">✓ Aprovar e gerar código</button>
         <button class="btn btn-sm btn-ghost" onclick="moverEtapa('${v.id}','cancelada')">Recusar</button>
       </div>
     </div>` : ''}
@@ -1495,7 +1547,6 @@ function abrirVaga(id) {
       <dt>Etapa</dt><dd><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span></dd>
       ${linhaF('Contrato', v.tipo_contrato)}
       ${linhaF('Turno', turnoDe(v))}
-      ${linhaF('Quantidade', v.quantidade > 1 ? v.quantidade + ' vagas' : '1 vaga')}
       ${v.aprovada_em ? `<dt>Aprovada em</dt><dd>${dataBR(v.aprovada_em)} · ${d} dia(s) atrás</dd>` : ''}
       ${linhaF('Início previsto', soData(v.data_inicio))}
       ${v.confidencial ? '<dt>Confidencial</dt><dd>Sim — unidade oculta no portal</dd>' : ''}
@@ -1509,8 +1560,10 @@ function abrirVaga(id) {
       ${linhaF('Substituído', v.nome_substituido)}
       ${linhaF('Desligamento', soData(v.data_desligamento))}
       ${linhaF('Aprovada com o gestor', v.aprovada_gestor ? 'Sim' : 'Não')}
-      ${v.tem_indicacao ? linhaF('Indicação',
-        [v.indicado_nome, v.indicado_telefone].filter(Boolean).join(' · ')) : ''}
+      ${v.tem_indicacao ? linhaF('Indicado',
+        [v.indicado_nome, v.indicado_telefone].filter(Boolean).join(' · ') || 'sim') : ''}
+      ${v.tem_indicacao ? linhaF('Quem indicou', v.indicado_por) : ''}
+      ${v.tem_indicacao ? linhaF('Indica Aí', v.veio_indica_ai ? 'Sim' : 'Não') : ''}
       ${linhaF('Observação', v.observacao)}
     </dl></div>
 
@@ -1577,7 +1630,8 @@ async function moverEtapa(id, etapa) {
     Object.assign(v, data);
     if (TIPO === 'funil') { pintarFunil(); fechar(); }
     else abrirVaga(id);
-    msg('app-msg', `${v.codigo} movida para "${ET[etapa]?.t || etapa}".`, 'ok');
+    msg('app-msg', `${v.codigo || v.unidade} — "${ET[etapa]?.t || etapa}".`
+      + (patch.aprovada_em ? ` Código gerado: ${v.codigo}.` : ''), 'ok');
     setTimeout(() => msg('app-msg', ''), 6000);
   } catch (e) {
     alert('Não consegui mover a vaga: ' + e.message);
@@ -1598,17 +1652,31 @@ async function salvarInicio(id, valor) {
    ║  FUNIL DE ADMISSÃO                                                   ║
    ╚══════════════════════════════════════════════════════════════════════╝ */
 function pintarFunil() {
-  const vivas = VAGAS.filter(v => v.etapa !== 'cancelada' && v.etapa !== 'admitido');
-  const emSelecao = VAGAS.filter(v => v.etapa === 'em_selecao')
-    .reduce((n, v) => n + (v.quantidade || 1), 0);
-  const emAdmissao = VAGAS.filter(v =>
+  // O funil mede o caminho do processo: quantas vagas já passaram por cada
+  // etapa, não quantas estão paradas nela. Por isso é acumulado — é o que faz
+  // a figura afunilar e deixa ver onde o processo perde força.
+  const vivas = VAGAS.filter(v => v.etapa !== 'cancelada');
+  const ordem = ETAPAS.map(e => e.k);
+  const posDe = v => ordem.indexOf(v.etapa);
+
+  const linhas = ETAPAS.map((e, i) => {
+    const passaram = vivas.filter(v => posDe(v) >= i);
+    const aqui     = vivas.filter(v => v.etapa === e.k);
+    const atrasa   = aqui.filter(atrasada);
+    return { e, total: passaram.length, aqui: aqui.length, atraso: atrasa.length };
+  });
+  const base = linhas[0]?.total || 0;
+  const maior = Math.max(1, ...linhas.map(l => l.total));
+
+  const emSelecao  = vivas.filter(v => v.etapa === 'em_selecao').length;
+  const emAdmissao = vivas.filter(v =>
     ['documentos','oris','aso','programar','inicio_agendado'].includes(v.etapa)).length;
   const comProblema = vivas.filter(v =>
     atrasada(v) || candidatosDa(v).some(c => faltantes(c).length)).length;
+  const admitidos = vivas.filter(v => v.etapa === 'admitido').length;
 
   const proximas = VAGAS.map(v => v.data_inicio).filter(d => d && d >= hoje()).sort();
-  const prox = proximas[0];
-  const fmt = d => {
+  const fmtD = d => {
     if (!d) return '—';
     const x = new Date(d + 'T12:00:00');
     return x.toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit' })
@@ -1621,43 +1689,96 @@ function pintarFunil() {
       <div class="kpi"><b>${emAdmissao}</b><span>Vagas em admissão</span></div>
       <div class="kpi ${comProblema ? 'al' : ''}"><b>${comProblema}</b>
         <span>Com pendência ou atraso</span></div>
-      <div class="kpi inf"><b style="font-size:21px">${fmt(prox)}</b>
+      <div class="kpi inf"><b style="font-size:21px">${fmtD(proximas[0])}</b>
         <span>Próxima data de admissão</span></div>
     </div>
-    <div class="kb">
-      ${ETAPAS.map(e => {
-        const vs = VAGAS.filter(v => v.etapa === e.k);
-        return `<div class="col">
-          <div class="col-h">
-            <div style="flex:1"><b>${e.t}</b>${e.d ? `<span class="d">${e.d}</span>` : ''}</div>
-            <i style="color:${vs.length ? 'var(--gray-900)' : 'var(--gray-300)'}">${vs.length}</i>
+
+    <div class="fn">
+      <h3>Funil de admissão</h3>
+      <div class="sub">${base} vaga(s) no processo · ${admitidos} admitida(s) ·
+        a barra mostra quantas já chegaram a cada etapa</div>
+      <div class="leg">
+        <span><i style="background:#3a7a2e"></i>no prazo</span>
+        <span><i style="background:#d97706"></i>parada nesta etapa e atrasada</span>
+        <span style="margin-left:auto">clique numa etapa para filtrar a lista</span>
+      </div>
+      ${linhas.map(l => {
+        const larg = (l.total / maior) * 100;
+        const pAtr = l.total ? (l.atraso / l.total) * 100 : 0;
+        const conv = base ? Math.round(l.total / base * 100) : 0;
+        return `<div class="fr ${etapaFoco === l.e.k ? 'on' : ''}"
+                     onclick="focarEtapa('${l.e.k}')">
+          <div class="rot">${l.e.t}${l.e.d ? `<span>${l.e.d}</span>` : ''}</div>
+          <div style="display:flex;align-items:center">
+            <div class="tr" style="width:${Math.max(larg, l.total ? 2 : 0)}%">
+              ${l.total ? `<div class="s1" style="flex:${100 - pAtr}"></div>` : ''}
+              ${l.atraso ? `<div class="s2" style="flex:${pAtr}"></div>` : ''}
+            </div>
+            <div class="vz">${l.total ? conv + '%' : ''}</div>
           </div>
-          <div class="col-b">${vs.map(cardVaga).join('')}</div>
+          <div class="nm"><b>${l.total}</b>
+            ${l.atraso ? `<b class="al">${l.atraso} atr.</b>`
+                       : `<u>${l.aqui} aqui</u>`}</div>
         </div>`;
       }).join('')}
     </div>
-    ${VAGAS.some(v => v.etapa === 'cancelada')
-      ? `<div class="sub" style="margin-top:12px">
-           ${VAGAS.filter(v => v.etapa === 'cancelada').length} vaga(s) cancelada(s) —
-           aparecem na aba <b>Vagas</b>.</div>` : ''}`;
+
+    <div class="bar" style="margin-bottom:12px">
+      <input class="inp" id="busca-f" type="search" style="flex:1;min-width:220px"
+             placeholder="Buscar por código, unidade, cargo ou candidato…"
+             value="${es(buscaFunil)}" oninput="buscaFunil=this.value;pintarFunil()">
+      ${etapaFoco ? `<button class="chip on" onclick="focarEtapa('')">
+        ${es(ET[etapaFoco]?.t)} ✕</button>` : ''}
+      ${VAGAS.some(v => v.etapa === 'cancelada')
+        ? `<button class="chip ${etapaFoco === 'cancelada' ? 'on' : ''}"
+             onclick="focarEtapa('cancelada')">Canceladas</button>` : ''}
+    </div>
+
+    <div class="tbl"><table>
+      <thead><tr>
+        <th>Código</th><th>Unidade</th><th>Cargo</th><th>Contrato</th>
+        <th>Etapa</th><th>Dias</th><th>Candidatos</th><th>Início</th>
+      </tr></thead>
+      <tbody>${listaFunil().map(v => {
+        const c = candidatosDa(v), pend = c.filter(x => faltantes(x).length).length;
+        const d = diasDesdeAprovacao(v);
+        return `<tr class="${atrasada(v) ? 'pend' : ''}" onclick="abrirVaga('${v.id}')">
+          <td class="mono">${v.codigo ? es(v.codigo)
+            : '<span class="semcod">aguardando</span>'}</td>
+          <td><div class="nm">${v.confidencial ? '🔒 ' : ''}${es(v.unidade)}</div>
+            <div class="sub">${es(v.nome_solicitante)}</div></td>
+          <td>${es(v.cargo)}${v.nivel ? `<div class="sub">${es(v.nivel)}</div>` : ''}</td>
+          <td><span class="tag tag-${v.tipo_contrato === 'PJ' ? 'pj' : 'clt'}">${es(v.tipo_contrato)}</span></td>
+          <td><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span></td>
+          <td class="${atrasada(v) ? 'atraso' : ''}">${d == null ? '—' : d + 'd'}</td>
+          <td>${c.length ? `${c.length}${pend ? ` <span class="falta">${pend} c/ pend.</span>` : ''}`
+                         : '<span class="sub">—</span>'}</td>
+          <td>${v.data_inicio ? soData(v.data_inicio) : '—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+    ${listaFunil().length ? '' :
+      '<div class="vazio">Nenhuma vaga nesta etapa.</div>'}</div>`;
 }
 
-function cardVaga(v) {
-  const cands = candidatosDa(v);
-  const pend = cands.filter(c => faltantes(c).length).length;
-  const d = diasDesdeAprovacao(v);
-  return `<div class="vc${atrasada(v) ? ' late' : ''}" onclick="abrirVaga('${v.id}')">
-    <div class="cod">${es(v.codigo)}</div>
-    <div class="un">${es(v.confidencial ? '🔒 ' + v.unidade : v.unidade)}</div>
-    <div class="cg">${es(v.cargo)}${v.nivel ? ' · ' + es(v.nivel) : ''}
-      ${v.quantidade > 1 ? ` · ${v.quantidade} vagas` : ''}</div>
-    <div class="pe">
-      <span class="tag tag-${v.tipo_contrato === 'PJ' ? 'pj' : 'clt'}">${es(v.tipo_contrato)}</span>
-      ${cands.length ? `<span class="cand">${cands.length} cand.</span>` : ''}
-      ${pend ? `<span class="atraso">${pend} c/ pendência</span>` : ''}
-      ${d != null ? `<span class="${atrasada(v) ? 'atraso' : ''}">${d}d</span>` : ''}
-    </div>
-  </div>`;
+function listaFunil() {
+  const q = buscaFunil.trim().toLowerCase();
+  return VAGAS
+    .filter(v => etapaFoco ? v.etapa === etapaFoco : v.etapa !== 'cancelada')
+    .filter(v => {
+      if (!q) return true;
+      const cand = candidatosDa(v).map(c => c.nome).join(' ');
+      return [v.codigo, v.unidade, v.cargo, v.nivel, v.nome_solicitante, cand]
+        .join(' ').toLowerCase().includes(q);
+    })
+    .sort((a, b) => (ETAPAS.findIndex(e => e.k === a.etapa)
+                   - ETAPAS.findIndex(e => e.k === b.etapa))
+                 || (diasDesdeAprovacao(b) ?? -1) - (diasDesdeAprovacao(a) ?? -1));
+}
+
+function focarEtapa(k) {
+  etapaFoco = (etapaFoco === k) ? '' : k;
+  pintarFunil();
 }
 
 /* ───────────── SESSÃO JÁ ABERTA ───────────── */
