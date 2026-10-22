@@ -205,11 +205,11 @@
   .fn .leg i{display:inline-block;width:11px;height:11px;border-radius:3px;
     margin-right:6px;vertical-align:-1px}
   /* ── ETAPAS EM CARDS ──
-     Um card por etapa, na ordem do processo. O número grande é quanta vaga
-     está parada ali agora; embaixo, quantas já chegaram àquele ponto — é
-     esse segundo número que afunila e mostra onde o processo perde força.
-     Os dois juntos porque respondem perguntas diferentes: "onde está a
-     fila" e "quanto do que entrou chegou até aqui". */
+     Um card por etapa, na ordem do processo, com os dois números lado a
+     lado: quantas vagas já chegaram àquele ponto e quantas estão paradas
+     ali agora. São perguntas diferentes — "quanto do que entrou chegou até
+     aqui" e "onde está a fila hoje" — e nenhuma das duas se deduz da
+     outra, por isso as duas aparecem com o mesmo peso. */
   .eta{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
     gap:10px;margin-top:16px}
   .ec{background:#fff;border:1.5px solid var(--gray-200);border-radius:11px;
@@ -223,28 +223,21 @@
     color:var(--gray-300);font-variant-numeric:tabular-nums}
   .ec .nm{font-size:11.5px;font-weight:800;color:var(--gray-700);line-height:1.25;
     padding-right:14px;min-height:28px}
-  .ec .q{font-family:'Syne',sans-serif;font-size:27px;font-weight:800;
-    line-height:1.05;letter-spacing:-.5px;color:var(--gray-900)}
-  .ec.vazio .q{color:var(--gray-300)}
-  .ec .de{font-size:10.5px;color:var(--gray-400);font-weight:600;line-height:1.35}
-  .ec .at{font-size:10.5px;font-weight:800;color:var(--warn);margin-top:2px}
+  .ec .dois{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:5px}
+  .ec .n b{display:block;font-family:'Syne',sans-serif;font-size:24px;
+    font-weight:800;line-height:1.05;letter-spacing:-.5px;color:var(--gray-900)}
+  .ec .n span{display:block;font-size:9px;font-weight:800;color:var(--gray-400);
+    text-transform:uppercase;letter-spacing:.3px;margin-top:2px;line-height:1.3}
+  .ec .n.p{border-left:1px solid var(--gray-200);padding-left:9px}
+  .ec .n.p b{color:var(--green-dark)}
+  .ec .n.zero b{color:var(--gray-300)}
+  .ec .de{font-size:10.5px;color:var(--gray-400);font-weight:600;line-height:1.35;
+    margin-top:6px}
   .ec.fim{border-color:var(--green);background:#f3f9f1}
-  .ec.fim .q{color:var(--green-dark)}
   @media(max-width:620px){
-    .eta{grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px}
-    .ec .q{font-size:23px}
+    .eta{grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px}
+    .ec .n b{font-size:21px}
   }
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
-    gap:12px;margin-bottom:18px}
-  .kpi{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
-    padding:15px 18px;border-top:3px solid var(--green)}
-  .kpi.al{border-top-color:var(--warn)}
-  .kpi.inf{border-top-color:var(--gray-300)}
-  .kpi b{display:block;font-family:'Syne',sans-serif;font-size:30px;font-weight:800;
-    letter-spacing:-1px;line-height:1.1}
-  .kpi.al b{color:var(--warn)}
-  .kpi span{font-size:12px;color:var(--gray-500);display:block;margin-top:3px;line-height:1.4}
-
   .semcod{color:var(--gray-300);font-style:italic}
 
   /* ── ORDENAR POR COLUNA ── */
@@ -3079,19 +3072,11 @@ function pintarFunil() {
     const aqui = noProcesso.filter(v => v.etapa === e.k);
     return { e,
       aqui: aqui.length,
-      atraso: aqui.filter(atrasada).length,
       chegaram: noProcesso.filter(v => posDe(v) >= i).length };
   });
   const base = noProcesso.length;
 
-  const emSelecao = noProcesso.filter(v =>
-    ['divulgacao','triagem','entrevista_atracao','entrevista_gestor','proposta']
-      .includes(v.etapa)).length;
-  const emAdmissao = noProcesso.filter(v =>
-    ['documentos','oris','aso','inicio_agendado'].includes(v.etapa)).length;
   const paradas = todas.filter(vagaParada).length;
-  const comProblema = noProcesso.filter(v =>
-    atrasada(v) || candidatosDa(v).some(c => faltantes(c).length)).length;
   const admitidos = noProcesso.filter(v => v.etapa === 'admitido').length;
 
   // o que alimenta os dois filtros, contado sobre a base inteira
@@ -3101,14 +3086,6 @@ function pintarFunil() {
     const m = mesDe(v.data_solicitacao);
     porMes[m] = (porMes[m] || 0) + 1;
   });
-
-  const proximas = todas.map(v => v.data_inicio).filter(d => d && d >= hoje()).sort();
-  const fmtD = d => {
-    if (!d) return '—';
-    const x = new Date(d + 'T12:00:00');
-    return x.toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit' })
-            .replace('.', '');
-  };
 
   const caixaMulti = (id, rotulo, dica, itens, marcados, aoMarcar, aoLimpar) => `
     <div class="multi ${multiAberto === id ? 'on' : ''}" id="${id}">
@@ -3153,35 +3130,28 @@ function pintarFunil() {
           .map(mesRotulo).join(', ')) : ''}</span>
     </div>
 
-    <div class="kpis">
-      <div class="kpi"><b>${emSelecao}</b><span>Vagas em recrutamento</span></div>
-      <div class="kpi"><b>${emAdmissao}</b><span>Vagas em admissão</span></div>
-      <div class="kpi ${comProblema ? 'al' : ''}"><b>${comProblema}</b>
-        <span>Com pendência ou atraso</span></div>
-      <div class="kpi inf"><b style="font-size:21px">${fmtD(proximas[0])}</b>
-        <span>Próxima data de admissão</span></div>
-    </div>
-
     <div class="fn">
-      <h3>Funil de admissão</h3>
+      <h3>Painel Admissão</h3>
       <div class="sub">${base} vaga(s) no processo · ${admitidos} já admitida(s)${
         paradas ? ` · ${paradas} congelada(s) ou cancelada(s), fora da conta` : ''}
-        <br>O número grande é quanta vaga está parada na etapa hoje. Embaixo,
-        quantas já chegaram àquele ponto — é esse que afunila.</div>
+        <br><b>Chegaram</b> é quanta vaga já passou por aquele ponto — é o número
+        que afunila. <b>Parado aqui</b> é quanta está na etapa hoje.</div>
 
       <div class="eta">
         ${linhas.map((l, i) => {
           const conv = base ? Math.round(l.chegaram / base * 100) : 0;
           const fim = l.e.k === 'admitido';
-          return `<div class="ec ${etapaFoco === l.e.k ? 'on' : ''}
-                       ${l.aqui ? '' : 'vazio'} ${fim ? 'fim' : ''}"
+          return `<div class="ec ${etapaFoco === l.e.k ? 'on' : ''} ${fim ? 'fim' : ''}"
                        onclick="focarEtapa('${l.e.k}')" title="Filtrar a lista">
             <span class="ord">${i + 1}</span>
             <div class="nm">${es(l.e.t)}</div>
-            <div class="q">${l.aqui}</div>
-            <div class="de">${fim ? `${conv}% do que entrou`
-                                  : `${l.chegaram} chegaram · ${conv}%`}</div>
-            ${l.atraso ? `<div class="at">${l.atraso} atrasada(s)</div>` : ''}
+            <div class="dois">
+              <div class="n ${l.chegaram ? '' : 'zero'}">
+                <b>${l.chegaram}</b><span>Chegaram</span></div>
+              <div class="n p ${l.aqui ? '' : 'zero'}">
+                <b>${l.aqui}</b><span>Parado aqui</span></div>
+            </div>
+            <div class="de">${conv}% do que entrou</div>
           </div>`;
         }).join('')}
       </div>
