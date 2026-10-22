@@ -204,46 +204,35 @@
     font-size:11.5px;color:var(--gray-500);flex-wrap:wrap}
   .fn .leg i{display:inline-block;width:11px;height:11px;border-radius:3px;
     margin-right:6px;vertical-align:-1px}
-  .fr{display:grid;grid-template-columns:152px 84px 1fr;gap:12px;align-items:center;
-    padding:4px 0;cursor:pointer;border-radius:6px}
-  .fr:hover{background:var(--gray-50)}
-  .fr.on{background:var(--green-pale)}
-  .fr .rot{font-size:12.5px;font-weight:700;line-height:1.25;text-align:right}
-  .fr .rot span{display:block;font-size:10.5px;color:var(--gray-400);font-weight:600}
-  /* O total da etapa mora aqui, na origem da barra, e não dentro de nenhum
-     pedaço — foi exatamente essa confusão que fez o 70 parecer o tamanho do
-     bloco verde. Dentro da barra, cada pedaço só fala de si mesmo. */
-  .fr .tot{font-size:13px;font-weight:800;text-align:right;
-    font-variant-numeric:tabular-nums;line-height:1.2}
-  .fr .tot span{display:block;font-size:10.5px;color:var(--gray-400);font-weight:700}
-  .fr .tot.zero{color:var(--gray-300)}
-  .fr .faixa{display:flex;align-items:center;min-width:0}
-  .fr .tr{height:30px;border-radius:5px;display:flex;gap:2px;min-width:0}
-  /* flex:1 por padrão para a barra de uma cor só ocupar o trilho inteiro;
-     quando ela é dividida, o flex inline de cada pedaço manda. */
-  .fr .sb{display:flex;align-items:center;overflow:hidden;min-width:0;flex:1 1 0;
-    background:#3a7a2e}
-  /* ponta arredondada só nas duas extremidades da barra; onde os pedaços se
-     encostam a quina é reta, e quem separa é o vão de 2px */
-  .fr .tr > :first-child{border-radius:5px 0 0 5px}
-  .fr .tr > :last-child{border-radius:0 5px 5px 0}
-  .fr .tr > :only-child{border-radius:5px}
-  /* O número mora dentro da própria barra. A cor do texto é escolhida pela
-     luminância do preenchimento — branco no verde, tinta escura no âmbar —
-     porque branco sobre #d97706 não passa no contraste de texto. */
-  .fr .lb{font-size:12.5px;font-weight:800;white-space:nowrap;padding:0 11px;
-    font-variant-numeric:tabular-nums}
-  .fr .sb .lb{color:#fff}
-  .fr .lb.fim{margin-left:auto}
-  /* etapa sem ninguém: nenhuma barra, só o zero */
-  .fr .fora{font-size:12.5px;font-weight:800;color:var(--gray-300);white-space:nowrap;
-    font-variant-numeric:tabular-nums;padding-left:2px}
-  .fr .tr + .fora{padding-left:10px;color:var(--gray-500)}
+  /* ── ETAPAS EM CARDS ──
+     Um card por etapa, na ordem do processo. O número grande é quanta vaga
+     está parada ali agora; embaixo, quantas já chegaram àquele ponto — é
+     esse segundo número que afunila e mostra onde o processo perde força.
+     Os dois juntos porque respondem perguntas diferentes: "onde está a
+     fila" e "quanto do que entrou chegou até aqui". */
+  .eta{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
+    gap:10px;margin-top:16px}
+  .ec{background:#fff;border:1.5px solid var(--gray-200);border-radius:11px;
+    padding:12px 13px;cursor:pointer;transition:.15s;position:relative;
+    display:flex;flex-direction:column;gap:2px}
+  .ec:hover{border-color:var(--green);transform:translateY(-1px);
+    box-shadow:0 4px 14px rgba(0,0,0,.07)}
+  .ec.on{border-color:var(--green);background:var(--green-pale);
+    box-shadow:0 0 0 3px rgba(74,143,58,.16)}
+  .ec .ord{position:absolute;top:10px;right:11px;font-size:10px;font-weight:800;
+    color:var(--gray-300);font-variant-numeric:tabular-nums}
+  .ec .nm{font-size:11.5px;font-weight:800;color:var(--gray-700);line-height:1.25;
+    padding-right:14px;min-height:28px}
+  .ec .q{font-family:'Syne',sans-serif;font-size:27px;font-weight:800;
+    line-height:1.05;letter-spacing:-.5px;color:var(--gray-900)}
+  .ec.vazio .q{color:var(--gray-300)}
+  .ec .de{font-size:10.5px;color:var(--gray-400);font-weight:600;line-height:1.35}
+  .ec .at{font-size:10.5px;font-weight:800;color:var(--warn);margin-top:2px}
+  .ec.fim{border-color:var(--green);background:#f3f9f1}
+  .ec.fim .q{color:var(--green-dark)}
   @media(max-width:620px){
-    .fr{grid-template-columns:104px 62px 1fr;gap:8px}
-    .fr .rot{font-size:11.5px}
-    .fr .tot{font-size:12px}
-    .fr .lb{font-size:11.5px;padding:0 8px}
+    .eta{grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px}
+    .ec .q{font-size:23px}
   }
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
     gap:12px;margin-bottom:18px}
@@ -552,7 +541,7 @@ let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
 const CACHE = {};            // linhas ja carregadas por tipo
 let PERFIL = { papel: 'rh', nome: '', unidade: null, regiao: null }, MEU_ID = null;
 let VAGAS = [], CARGOS = [], SIGLA = {}, selVaga = null, etapaFoco = '', buscaFunil = '';
-let statusFoco = '', unidadesFoco = [], multiAberto = false;
+let statusFoco = '', unidadesFoco = [], mesesFoco = [], multiAberto = '';
 /* A base de regras e os feriados, carregados no login. A reserva abaixo só
    existe para o painel não quebrar enquanto o 25_sla_regras.sql não roda. */
 let SLA = {}, FERIADOS = new Map(), ENTREVISTAS = [];
@@ -599,22 +588,22 @@ const NIVEIS = ['Júnior','Pleno','Sênior'];
    corridos (`sla`), porque D1-D7 não muda com o cargo. */
 const ETAPAS = [
   { k:'solicitada',         t:'Solicitada',               d:'aguardando aprovação' },
-  { k:'divulgacao',         t:'Alinhamento / Divulgação', d:'', fase:'entrega' },
+  { k:'divulgacao',         t:'Abertura Vaga',            d:'', fase:'entrega' },
   { k:'triagem',            t:'Triagem de currículo',     d:'', fase:'entrega' },
-  { k:'entrevista_atracao', t:'Entrevista c/ Atração',    d:'', fase:'entrega' },
+  { k:'entrevista_atracao', t:'Entrevista RH',            d:'', fase:'entrega' },
   { k:'entrevista_gestor',  t:'Entrevista c/ Gestor',     d:'', fase:'gestor' },
   { k:'proposta',           t:'Em proposta',              d:'', fase:'admissao' },
   { k:'documentos',         t:'Documentos',               d:'', sla:1 },
   { k:'oris',               t:'Lançamento no Oris',       d:'', sla:2 },
   { k:'aso',                t:'ASO',                      d:'', sla:3 },
-  { k:'inicio_agendado',    t:'Início agendado',          d:'', sla:7 },
+  { k:'inicio_agendado',    t:'Agenda Admissão',          d:'', sla:7 },
   { k:'admitido',           t:'Admitido',                 d:'' },
 ];
 const ET = Object.fromEntries(ETAPAS.map(e => [e.k, e]));
-/* O funil para em "Início agendado". Admitido não é etapa de funil: é a
-   saída dele — quem foi admitido cumpriu o processo e não está mais sendo
-   acompanhado. Continua existindo como etapa da vaga, só não é desenhado. */
-const ETAPAS_FUNIL = ETAPAS.filter(e => e.k !== 'admitido');
+/* O funil mostra o caminho inteiro, da solicitação até a admissão. Quem foi
+   admitido fica: é o resultado do processo, e sem ele não dá para ver
+   quanto do que entrou chegou ao fim. */
+const ETAPAS_FUNIL = ETAPAS;
 
 /* Onde a vaga está no funil é a etapa. O que aconteceu com ela é o status —
    congelar ou cancelar não faz a vaga voltar no funil, faz ela parar onde
@@ -3073,41 +3062,45 @@ async function addFeriado() {
    ║  FUNIL DE ADMISSÃO                                                   ║
    ╚══════════════════════════════════════════════════════════════════════╝ */
 function pintarFunil() {
-  // O funil mede o caminho do processo: quantas vagas já passaram por cada
-  // etapa, não quantas estão paradas nela. Por isso é acumulado — é o que faz
-  // a figura afunilar e deixa ver onde o processo perde força.
-  // Só conta vaga aberta: admitida saiu pela porta da frente, congelada e
-  // cancelada saíram pela lateral. Nenhuma das três ainda está em processo.
-  const todas = VAGAS.filter(v =>
-    !unidadesFoco.length || unidadesFoco.includes(v.unidade));
-  const vivas = todas.filter(v => vagaViva(v) && v.etapa !== 'admitido');
+  /* Duas leituras convivem, porque o RH usa as duas: "onde está a fila
+     hoje" (quantas estão paradas na etapa) e "quanto do que entrou chegou
+     até aqui" (quantas já passaram). Em barra elas competiam pelo mesmo
+     comprimento e se confundiam; em card cada uma tem a sua linha. */
+  const todas = VAGAS
+    .filter(v => !unidadesFoco.length || unidadesFoco.includes(v.unidade))
+    .filter(v => !mesesFoco.length || mesesFoco.includes(mesDe(v.data_solicitacao)));
+  // congelada e cancelada saem: pararam no meio e não são nem fila nem resultado
+  const noProcesso = todas.filter(noFunil);
   const ordem = ETAPAS.map(e => e.k);
   const posDe = v => ordem.indexOf(v.etapa);
 
-  /* A barra é quanta vaga está parada na etapa agora — não quanta já passou
-     por ela. É a leitura que o RH usa no dia a dia: onde está a fila. O
-     percentual é a fatia da etapa dentro do total aberto. */
   const linhas = ETAPAS_FUNIL.map(e => {
-    const aqui = vivas.filter(v => v.etapa === e.k).length;
-    return { e, total: aqui, aqui };
+    const i = ordem.indexOf(e.k);
+    const aqui = noProcesso.filter(v => v.etapa === e.k);
+    return { e,
+      aqui: aqui.length,
+      atraso: aqui.filter(atrasada).length,
+      chegaram: noProcesso.filter(v => posDe(v) >= i).length };
   });
-  const base = vivas.length;
-  const maior = Math.max(1, ...linhas.map(l => l.total));
+  const base = noProcesso.length;
 
-  // as duas metades do funil: recrutamento até a proposta, admissão daí em diante
-  const emSelecao  = vivas.filter(v =>
+  const emSelecao = noProcesso.filter(v =>
     ['divulgacao','triagem','entrevista_atracao','entrevista_gestor','proposta']
       .includes(v.etapa)).length;
-  const emAdmissao = vivas.filter(v =>
+  const emAdmissao = noProcesso.filter(v =>
     ['documentos','oris','aso','inicio_agendado'].includes(v.etapa)).length;
   const paradas = todas.filter(vagaParada).length;
-  const comProblema = vivas.filter(v =>
+  const comProblema = noProcesso.filter(v =>
     atrasada(v) || candidatosDa(v).some(c => faltantes(c).length)).length;
-  const admitidos = todas.filter(v => v.etapa === 'admitido').length;
+  const admitidos = noProcesso.filter(v => v.etapa === 'admitido').length;
 
-  // as unidades que de fato têm vaga, com quantas cada uma tem
-  const porUnidade = {};
-  VAGAS.forEach(v => { porUnidade[v.unidade] = (porUnidade[v.unidade] || 0) + 1; });
+  // o que alimenta os dois filtros, contado sobre a base inteira
+  const porUnidade = {}, porMes = {};
+  VAGAS.forEach(v => {
+    porUnidade[v.unidade] = (porUnidade[v.unidade] || 0) + 1;
+    const m = mesDe(v.data_solicitacao);
+    porMes[m] = (porMes[m] || 0) + 1;
+  });
 
   const proximas = todas.map(v => v.data_inicio).filter(d => d && d >= hoje()).sort();
   const fmtD = d => {
@@ -3117,35 +3110,47 @@ function pintarFunil() {
             .replace('.', '');
   };
 
+  const caixaMulti = (id, rotulo, dica, itens, marcados, aoMarcar, aoLimpar) => `
+    <div class="multi ${multiAberto === id ? 'on' : ''}" id="${id}">
+      <button class="bt" onclick="abrirMulti(event, '${id}')">${es(rotulo)}<i>▼</i></button>
+      <div class="cx" onclick="event.stopPropagation()">
+        <div class="acima">${marcados.length
+          ? `<button class="btn btn-sm btn-ghost" onclick="${aoLimpar}()">Limpar seleção</button>`
+          : es(dica)}</div>
+        ${itens.map(([v, texto, n]) => `<label>
+          <input type="checkbox" value="${es(v)}" ${marcados.includes(v) ? 'checked' : ''}
+            onchange="${aoMarcar}(this.value, this.checked)">
+          ${es(texto)}<u>${n}</u></label>`).join('')}
+      </div>
+    </div>`;
+
+  const lojas = Object.keys(porUnidade)
+    .sort((x, y) => (unidadesFoco.includes(y) - unidadesFoco.includes(x))
+                 || x.localeCompare(y, 'pt-BR'))
+    .map(u => [u, u, porUnidade[u]]);
+  const meses = Object.keys(porMes).sort().reverse()
+    .map(m => [m, mesRotulo(m), porMes[m]]);
+
   $('funil').innerHTML = `
     <div class="bar" style="margin-bottom:14px">
-      <div class="multi ${multiAberto ? 'on' : ''}" id="m-uni">
-        <button class="bt" onclick="abrirMulti(event)">${es(
-          !unidadesFoco.length ? `Todas as unidades (${VAGAS.length})`
-          : unidadesFoco.length === 1
-            ? `${unidadesFoco[0]} (${porUnidade[unidadesFoco[0]] || 0})`
-            : `${unidadesFoco.length} unidades (${todas.length})`)}<i>▼</i></button>
-        <div class="cx" onclick="event.stopPropagation()">
-          <div class="acima">
-            ${unidadesFoco.length
-              ? `<button class="btn btn-sm btn-ghost" onclick="limparUnidades()"
-                  >Limpar seleção</button>`
-              : 'Marque uma ou mais lojas'}
-          </div>
-          ${Object.keys(porUnidade)
-            // as marcadas sobem para o topo: com 19 lojas, procurar o que já
-            // foi escolhido no meio da lista é trabalho à toa
-            .sort((x, y) => (unidadesFoco.includes(y) - unidadesFoco.includes(x))
-                         || x.localeCompare(y, 'pt-BR'))
-            .map(u => `<label>
-            <input type="checkbox" value="${es(u)}"
-              ${unidadesFoco.includes(u) ? 'checked' : ''}
-              onchange="marcarUnidade(this.value, this.checked)">
-            ${es(u)}<u>${porUnidade[u]}</u></label>`).join('')}
-        </div>
-      </div>
-      ${unidadesFoco.length > 1 ? `<span class="sub"
-        >${es(unidadesFoco.slice().sort().join(' · '))}</span>` : ''}
+      ${caixaMulti('m-uni',
+        !unidadesFoco.length ? `Todas as unidades (${VAGAS.length})`
+        : unidadesFoco.length === 1
+          ? `${unidadesFoco[0]} (${porUnidade[unidadesFoco[0]] || 0})`
+          : `${unidadesFoco.length} unidades`,
+        'Marque uma ou mais lojas', lojas, unidadesFoco,
+        'marcarUnidade', 'limparUnidades')}
+
+      ${caixaMulti('m-mes',
+        !mesesFoco.length ? `Todo o período (${VAGAS.length})`
+        : mesesFoco.length === 1 ? mesRotulo(mesesFoco[0])
+        : `${mesesFoco.length} meses`,
+        'Marque um ou mais meses', meses, mesesFoco,
+        'marcarMes', 'limparMeses')}
+
+      <span class="sub">${todas.length} vaga(s) no recorte${
+        mesesFoco.length ? ' · solicitadas em ' + es(mesesFoco.slice().sort()
+          .map(mesRotulo).join(', ')) : ''}</span>
     </div>
 
     <div class="kpis">
@@ -3159,32 +3164,27 @@ function pintarFunil() {
 
     <div class="fn">
       <h3>Funil de admissão</h3>
-      <div class="sub">${base} vaga(s) abertas no processo${admitidos
-        ? ` · ${admitidos} já admitida(s), fora do funil` : ''} ·
-        a barra é quanta vaga está parada em cada etapa hoje</div>
-      <div class="leg">
-        ${paradas ? `<span style="color:var(--gray-400)">${paradas} congelada(s)
-          ou cancelada(s), também fora</span>` : ''}
-        <span style="margin-left:auto">clique numa etapa para filtrar a lista</span>
+      <div class="sub">${base} vaga(s) no processo · ${admitidos} já admitida(s)${
+        paradas ? ` · ${paradas} congelada(s) ou cancelada(s), fora da conta` : ''}
+        <br>O número grande é quanta vaga está parada na etapa hoje. Embaixo,
+        quantas já chegaram àquele ponto — é esse que afunila.</div>
+
+      <div class="eta">
+        ${linhas.map((l, i) => {
+          const conv = base ? Math.round(l.chegaram / base * 100) : 0;
+          const fim = l.e.k === 'admitido';
+          return `<div class="ec ${etapaFoco === l.e.k ? 'on' : ''}
+                       ${l.aqui ? '' : 'vazio'} ${fim ? 'fim' : ''}"
+                       onclick="focarEtapa('${l.e.k}')" title="Filtrar a lista">
+            <span class="ord">${i + 1}</span>
+            <div class="nm">${es(l.e.t)}</div>
+            <div class="q">${l.aqui}</div>
+            <div class="de">${fim ? `${conv}% do que entrou`
+                                  : `${l.chegaram} chegaram · ${conv}%`}</div>
+            ${l.atraso ? `<div class="at">${l.atraso} atrasada(s)</div>` : ''}
+          </div>`;
+        }).join('')}
       </div>
-      ${linhas.map(l => {
-        const larg = (l.total / maior) * 100;
-        const conv = base ? Math.round(l.total / base * 100) : 0;
-        const pecas = l.aqui
-          ? [['sb', l.aqui, `${l.aqui} nesta etapa`, l.aqui]] : [];
-        return `<div class="fr ${etapaFoco === l.e.k ? 'on' : ''}"
-                     onclick="focarEtapa('${l.e.k}')">
-          <div class="rot">${l.e.t}${l.e.d ? `<span>${l.e.d}</span>` : ''}</div>
-          <div class="tot ${l.total ? '' : 'zero'}">${l.total}
-            <span>${l.total ? conv + '%' : '—'}</span></div>
-          <div class="faixa">
-            ${l.total ? `<div class="tr" style="width:${larg}%">${pecas.map(
-              ([c, n, txt, curto]) => `<div class="${c}" style="flex:${n}"
-                ><span class="lb" data-curto="${curto}">${txt}</span></div>`).join('')}
-            </div>` : ''}
-          </div>
-        </div>`;
-      }).join('')}
     </div>
 
     <div class="bar" style="margin-bottom:12px">
@@ -3228,35 +3228,15 @@ function pintarFunil() {
       '<div class="vazio">Nenhuma vaga nesta etapa.</div>'}</div>`;
 
   tabelaOrdenavel($('funil').querySelector('.tbl table'), 'funil');
-  requestAnimationFrame(ajustarRotulosFunil);
-}
-
-/* Rótulo dentro da barra só vale se couber inteiro: cortado pela metade é
-   pior do que ausente. Então mede depois de desenhar e vai encurtando —
-   "70 · 100%" vira "70", e se nem isso couber sai da barra e vira texto
-   cinza ao lado dela. O mesmo para o "39 atrasada(s)", que some de vez
-   quando o pedaço âmbar é estreito: a cor e a legenda continuam dizendo. */
-function ajustarRotulosFunil() {
-  document.querySelectorAll('#funil .fr').forEach(fr => {
-    const fora = fr.querySelector('.fora');
-    fr.querySelectorAll('.lb').forEach(lb => {
-      const cabe = () => lb.scrollWidth <= lb.parentElement.clientWidth;
-      if (cabe()) return;
-      lb.textContent = lb.dataset.curto;
-      if (cabe()) return;
-      const principal = !lb.classList.contains('fim');
-      lb.remove();
-      if (principal && fora) fora.textContent = lb.dataset.curto;
-    });
-  });
 }
 
 function listaFunil() {
   const q = buscaFunil.trim().toLowerCase();
   return VAGAS
     .filter(v => !unidadesFoco.length || unidadesFoco.includes(v.unidade))
-    .filter(v => statusFoco ? statusDe(v) === statusFoco
-                            : (vagaViva(v) && v.etapa !== 'admitido'))
+    .filter(v => !mesesFoco.length || mesesFoco.includes(mesDe(v.data_solicitacao)))
+    // os admitidos voltaram para os cards, então voltam para a lista também
+    .filter(v => statusFoco ? statusDe(v) === statusFoco : noFunil(v))
     .filter(v => !etapaFoco || v.etapa === etapaFoco)
     .filter(v => {
       if (!q) return true;
@@ -3277,10 +3257,11 @@ function focarEtapa(k) {
 /* O menu fica aberto entre um clique e outro: marcar três lojas não deveria
    custar três aberturas. Como pintarFunil() reescreve o bloco inteiro, quem
    guarda esse estado é a variável, não o DOM. */
-function abrirMulti(ev) {
+function abrirMulti(ev, id) {
   ev.stopPropagation();
-  multiAberto = !multiAberto;
-  $('m-uni')?.classList.toggle('on', multiAberto);
+  multiAberto = (multiAberto === id) ? '' : id;
+  ['m-uni', 'm-mes'].forEach(x =>
+    $(x)?.classList.toggle('on', multiAberto === x));
 }
 function marcarUnidade(u, marcada) {
   unidadesFoco = marcada ? unidadesFoco.concat([u])
@@ -3288,16 +3269,26 @@ function marcarUnidade(u, marcada) {
   etapaFoco = '';
   pintarFunil();
 }
-function limparUnidades() {
-  unidadesFoco = [];
+function marcarMes(m, marcada) {
+  mesesFoco = marcada ? mesesFoco.concat([m]) : mesesFoco.filter(x => x !== m);
   etapaFoco = '';
   pintarFunil();
 }
+function limparUnidades() { unidadesFoco = []; etapaFoco = ''; pintarFunil(); }
+function limparMeses()    { mesesFoco = [];    etapaFoco = ''; pintarFunil(); }
+
 document.addEventListener('click', () => {
   if (!multiAberto) return;
-  multiAberto = false;
-  $('m-uni')?.classList.remove('on');
+  multiAberto = '';
+  ['m-uni', 'm-mes'].forEach(x => $(x)?.classList.remove('on'));
 });
+
+/* O mês da solicitação, que é o que o filtro de período recorta. Guarda-se
+   'AAAA-MM' para ordenar certo e mostra-se 'out/2026' para ler. */
+const MES_CURTO = ['jan','fev','mar','abr','mai','jun',
+                   'jul','ago','set','out','nov','dez'];
+const mesDe = d => (d ? String(d).slice(0, 7) : '');
+const mesRotulo = m => m ? `${MES_CURTO[+m.slice(5, 7) - 1]}/${m.slice(0, 4)}` : 'sem data';
 
 function focarStatus(k) {
   statusFoco = (statusFoco === k) ? '' : k;
