@@ -145,7 +145,7 @@
   .et-entrevista_gestor{background:#fef2f2;color:#b91c1c}
   .et-proposta{background:#fefce8;color:#a16207}
   .et-documentos{background:#fffbeb;color:#b45309}
-  .et-oris,.et-aso,.et-programar{background:#eff6ff;color:#1d4ed8}
+  .et-oris,.et-aso{background:#eff6ff;color:#1d4ed8}
   .et-inicio_agendado{background:#ecfeff;color:#0e7490}
   .et-admitido{background:var(--green-pale);color:var(--green-dark)}
   .et-cancelada{background:#f3f4f6;color:var(--gray-400)}
@@ -216,11 +216,8 @@
   .fr .tr{height:30px;border-radius:5px;display:flex;gap:2px;min-width:0}
   /* flex:1 por padrão para a barra de uma cor só ocupar o trilho inteiro;
      quando ela é dividida, o flex inline de cada pedaço manda. */
-  .fr .s0,.fr .s1{display:flex;align-items:center;overflow:hidden;
-    min-width:0;flex:1 1 0}
-  /* verde: já saiu desta etapa. cinza: está parada nela agora */
-  .fr .s0{background:#3a7a2e}
-  .fr .s1{background:#e6e6e0}
+  .fr .sb{display:flex;align-items:center;overflow:hidden;min-width:0;flex:1 1 0;
+    background:#3a7a2e}
   /* ponta arredondada só nas duas extremidades da barra; onde os pedaços se
      encostam a quina é reta, e quem separa é o vão de 2px */
   .fr .tr > :first-child{border-radius:5px 0 0 5px}
@@ -231,8 +228,7 @@
      porque branco sobre #d97706 não passa no contraste de texto. */
   .fr .lb{font-size:12.5px;font-weight:800;white-space:nowrap;padding:0 11px;
     font-variant-numeric:tabular-nums}
-  .fr .s0 .lb{color:#fff}
-  .fr .s1 .lb{color:var(--gray-700)}
+  .fr .sb .lb{color:#fff}
   .fr .lb.fim{margin-left:auto}
   /* etapa sem ninguém: nenhuma barra, só o zero */
   .fr .fora{font-size:12.5px;font-weight:800;color:var(--gray-300);white-space:nowrap;
@@ -256,6 +252,28 @@
   .kpi span{font-size:12px;color:var(--gray-500);display:block;margin-top:3px;line-height:1.4}
 
   .semcod{color:var(--gray-300);font-style:italic}
+  /* ── ENTREVISTAS ── */
+  .ent{display:flex;align-items:flex-start;gap:11px;padding:10px 12px;
+    border:1.5px solid var(--gray-200);border-radius:9px;margin-bottom:7px}
+  .ent.av{border-color:var(--green);background:var(--green-pale)}
+  .ent .q{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+    white-space:nowrap;color:var(--gray-900);padding-top:1px}
+  .ent .t{flex:1;min-width:0}
+  .ent .t b{display:block;font-size:13px}
+  .ent .t span{font-size:11px;color:var(--gray-500);display:block;margin-top:2px;
+    line-height:1.45}
+  .ent .x{border:none;background:none;cursor:pointer;color:var(--gray-300);
+    font-size:15px;line-height:1;padding:2px 4px}
+  .ent .x:hover{color:var(--danger)}
+  .agd{border:1.5px dashed var(--gray-200);border-radius:9px;padding:12px 13px;
+    margin-bottom:8px}
+  .agd .l{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .agd .inp{padding:8px 11px;font-size:13px}
+
+  /* o código da vaga embaixo do protocolo, na lista de candidatos */
+  .vcod{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;
+    color:var(--green-dark);background:var(--green-pale);border-radius:5px;
+    padding:1px 6px;display:inline-block;margin-top:3px}
 
   /* ── FILTRO DE VÁRIAS UNIDADES ── */
   .multi{position:relative}
@@ -443,9 +461,9 @@ let VAGAS = [], CARGOS = [], SIGLA = {}, selVaga = null, etapaFoco = '', buscaFu
 let statusFoco = '', unidadesFoco = [], multiAberto = false;
 /* A base de regras e os feriados, carregados no login. A reserva abaixo só
    existe para o painel não quebrar enquanto o 25_sla_regras.sql não roda. */
-let SLA = {}, FERIADOS = new Map();
+let SLA = {}, FERIADOS = new Map(), ENTREVISTAS = [];
 const SLA_RESERVA = { cargo:'Padrão', aprovacao:2, entrega:10, gestor:4,
-  proposta:3, documentos:1, oris:2, aso:3, programar:4, inicio:7, fechamento:25 };
+  proposta:3, documentos:1, oris:2, aso:3, inicio:7, fechamento:25 };
 let AVISO_SETUP = '';
 
 /* Carregadas da tabela `unidades` no login — a sigla de cada uma vira o
@@ -492,11 +510,10 @@ const ETAPAS = [
   { k:'entrevista_atracao', t:'Entrevista c/ Atração',    d:'', fase:'entrega' },
   { k:'entrevista_gestor',  t:'Entrevista c/ Gestor',     d:'', fase:'gestor' },
   { k:'proposta',           t:'Em proposta',              d:'', fase:'admissao' },
-  { k:'documentos',         t:'Documentos',               d:'até D1', sla:1 },
-  { k:'oris',               t:'Lançamento no Oris',       d:'até D2', sla:2 },
-  { k:'aso',                t:'ASO',                      d:'até D3', sla:3 },
-  { k:'programar',          t:'Programar admissão',       d:'até D4', sla:4 },
-  { k:'inicio_agendado',    t:'Início agendado',          d:'até D7', sla:7 },
+  { k:'documentos',         t:'Documentos',               d:'', sla:1 },
+  { k:'oris',               t:'Lançamento no Oris',       d:'', sla:2 },
+  { k:'aso',                t:'ASO',                      d:'', sla:3 },
+  { k:'inicio_agendado',    t:'Início agendado',          d:'', sla:7 },
   { k:'admitido',           t:'Admitido',                 d:'' },
 ];
 const ET = Object.fromEntries(ETAPAS.map(e => [e.k, e]));
@@ -579,7 +596,7 @@ const CAMPO_ETAPA = {
   solicitada:'aprovacao',   divulgacao:'entrega',  triagem:'entrega',
   entrevista_atracao:'entrega', entrevista_gestor:'gestor',
   proposta:'proposta',      documentos:'documentos', oris:'oris',
-  aso:'aso',                programar:'programar', inicio_agendado:'inicio',
+  aso:'aso',                inicio_agendado:'inicio',
   admitido:null,
 };
 /* Divulgação, triagem e entrevista com Atração dividem UM prazo só — o de
@@ -691,7 +708,8 @@ const TIPOS = {
     ],
 
     colunas: [
-      { t:'Protocolo', v: r => `<span class="mono">${es(r.protocolo)}</span>` },
+      { t:'Protocolo', v: r => `<span class="mono">${es(r.protocolo)}</span>`
+          + (r.vaga_codigo ? `<div class="vcod">${es(r.vaga_codigo)}</div>` : '') },
       { t:'Nome',      v: r => `<div class="nm">${es(r.nome_social || r.nome)}</div>` +
                                (r.nome_social ? `<div class="sub">${es(r.nome)}</div>` : '') },
       { t:'CPF',       v: r => `<span class="mono">${es(r.cpf)}</span>` },
@@ -769,7 +787,8 @@ const TIPOS = {
     ],
 
     colunas: [
-      { t:'Protocolo', v: r => `<span class="mono">${es(r.protocolo)}</span>` },
+      { t:'Protocolo', v: r => `<span class="mono">${es(r.protocolo)}</span>`
+          + (r.vaga_codigo ? `<div class="vcod">${es(r.vaga_codigo)}</div>` : '') },
       { t:'Nome',      v: r => `<div class="nm">${es(r.nome_social || r.nome)}</div>` +
                                (r.nome_social ? `<div class="sub">${es(r.nome)}</div>` : '') },
       { t:'CPF',       v: r => `<span class="mono">${es(r.cpf)}</span>` },
@@ -1163,6 +1182,9 @@ async function carregar() {
         .order('criado_em', { ascending:false }).limit(2000);
       if (error) throw new Error(error.message);
       VAGAS = data || [];
+      const { data: ag } = await db.from('entrevistas').select('*')
+        .order('data').order('hora');
+      ENTREVISTAS = ag || [];
       // o funil precisa dos candidatos dos dois lados para contar
       if (TIPO === 'funil' && ehRH()) {
         for (const t of ['pj', 'clt']) {
@@ -1237,7 +1259,9 @@ function abrir(id) {
   if (!r) return;
   selId = id;
   $('d-nome').textContent  = r.nome_social ? `${r.nome_social} (${r.nome})` : r.nome;
-  $('d-proto').textContent = `${cfg.rotulo} · ${r.protocolo} · recebido em ${dataBR(r.criado_em)}`;
+  $('d-proto').textContent = `${cfg.rotulo} · ${r.protocolo}`
+    + (r.vaga_codigo ? ` · vaga ${r.vaga_codigo}` : '')
+    + ` · recebido em ${dataBR(r.criado_em)}`;
 
   const linhasVT = (r.vt_linhas || []).map(l =>
     `${es(l.empresa)} — R$ ${es(l.valor)} × ${es(l.qtd)}/dia${l.codigo ? ' · ' + es(l.codigo) : ''}`)
@@ -1907,6 +1931,8 @@ function abrirVaga(id) {
       </div>
     </div>` : ''}
 
+    ${blocoEntrevistas(v)}
+
     <div class="grp"><h3>Solicitação</h3><dl class="kv">
       ${linhaF('Solicitante', v.nome_solicitante)}
       ${linhaF('Cargo do solicitante', v.cargo_solicitante)}
@@ -2006,9 +2032,28 @@ function irParaCandidato(tipo, id) {
   setTimeout(() => abrir(id), 450);
 }
 
+/* As entrevistas de uma vaga, da mais próxima para a mais distante. */
+function entrevistasDa(v) {
+  return ENTREVISTAS.filter(e => e.vaga_id === v.id)
+    .sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+}
+
 async function moverEtapa(id, etapa) {
   const v = VAGAS.find(x => x.id === id);
   if (!v) return;
+  /* Mover para a entrevista sem ter agendado nada deixaria a etapa dizendo
+     uma coisa que não aconteceu. Em vez de bloquear com um aviso seco, o
+     painel abre o agendamento — é o que a pessoa ia fazer em seguida. */
+  if (etapa === 'entrevista_gestor' && !entrevistasDa(v).length) {
+    abrirVaga(id);
+    setTimeout(() => {
+      mostrarAgenda(true);
+      msg('v-msg', 'Agende a primeira entrevista — data, horário e nome do '
+        + 'candidato. Ao salvar, a vaga entra na etapa.', 'err');
+      $('ag-data')?.focus();
+    }, 60);
+    return;
+  }
   const patch = { etapa, etapa_desde: new Date().toISOString() };
   if (etapa === 'admitido') patch.status = 'fechada';
   // o código nasce aqui: é a primeira vez que a vaga sai de "solicitada"
@@ -2030,6 +2075,170 @@ async function moverEtapa(id, etapa) {
   } catch (e) {
     alert('Não consegui mover a vaga: ' + e.message);
   }
+}
+
+function blocoEntrevistas(v) {
+  const ags = entrevistasDa(v);
+  /* Vaga admitida, congelada ou cancelada não recebe agendamento novo — o
+     que já foi marcado continua à vista, como histórico. */
+  const podeMexer = ehRH() && vagaViva(v) && v.etapa !== 'admitido';
+  if (!ags.length && !podeMexer) return '';
+  const ultimo = ags.filter(e => e.avisado_em)
+    .sort((a, b) => b.avisado_em.localeCompare(a.avisado_em))[0];
+  return `
+    <div class="grp"><h3>Entrevistas com o gestor${ags.length ? ` (${ags.length})` : ''}</h3>
+      ${ags.map(e => `<div class="ent ${e.avisado_em ? 'av' : ''}">
+        <div class="q">${soData(e.data)}<br>${es(String(e.hora).slice(0, 5))}</div>
+        <div class="t"><b>${es(e.candidato)}</b>
+          <span>${e.avisado_em
+            ? `gestor avisado em ${dataBR(e.avisado_em)}`
+            : 'gestor ainda não avisado'}${e.observacao
+            ? ' · ' + es(e.observacao) : ''}</span></div>
+        ${podeMexer ? `<button class="x" onclick="apagarEntrevista('${e.id}')"
+          title="Cancelar esta entrevista">&times;</button>` : ''}
+      </div>`).join('')}
+
+      ${!podeMexer ? '' : `
+      <div class="agd" id="fm-ag" style="display:none">
+        <div class="l">
+          <input class="inp" id="ag-data" type="text" placeholder="DD/MM/AAAA"
+                 style="width:128px" oninput="dicaDia()">
+          <input class="inp" id="ag-hora" type="time" style="width:112px" value="10:00">
+          <input class="inp" id="ag-cand" type="text" placeholder="Nome do candidato"
+                 style="flex:1;min-width:180px">
+        </div>
+        <div class="l">
+          <input class="inp" id="ag-obs" type="text" style="flex:1;min-width:200px"
+                 placeholder="Observação para o gestor (opcional)">
+          <button class="btn btn-sm btn-primary"
+                  onclick="salvarEntrevista('${v.id}', this)">Salvar</button>
+          <button class="btn btn-sm btn-ghost" onclick="mostrarAgenda(false)">Cancelar</button>
+        </div>
+        <div class="sub" id="ag-dica"></div>
+      </div>
+
+      <div class="acoes">
+        <button class="btn btn-sm btn-ghost" onclick="mostrarAgenda(true)"
+          >+ Agendar ${ags.length ? 'outra' : 'entrevista'}</button>
+        ${ags.length ? `<button class="btn btn-sm btn-primary"
+          onclick="avisarGestor('${v.id}', this)"
+          >${ultimo ? 'Avisar o gestor de novo' : 'Avisar o gestor por e-mail'}</button>` : ''}
+      </div>
+      ${ags.length ? `<div class="sub" style="margin-top:7px;line-height:1.5">
+        O aviso abre a mensagem já pronta no seu e-mail, endereçada ao gestor
+        que pediu a vaga, com todos os horários de uma vez. Você confere e
+        envia.</div>` : ''}`}
+    </div>`;
+}
+
+function mostrarAgenda(abrir) {
+  const f = $('fm-ag');
+  if (f) f.style.display = abrir ? 'block' : 'none';
+  if (abrir) $('ag-cand')?.focus();
+}
+
+/* Marcar entrevista em dia não útil não é proibido, mas quase sempre é
+   engano de digitação — então o painel comenta em vez de bloquear. */
+function dicaDia() {
+  const d = diaDe(paraISO($('ag-data')?.value || ''));
+  const el = $('ag-dica');
+  if (!el) return;
+  if (!d) { el.textContent = ''; return; }
+  const nome = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][d.getDay()];
+  const fer = FERIADOS.get(iso(d));
+  el.textContent = fer ? `${nome} · ${fer.nome} — tem certeza?`
+                 : ehDiaUtil(d) ? nome
+                 : `${nome} — fim de semana, tem certeza?`;
+}
+
+async function salvarEntrevista(vagaId, bt) {
+  const v = VAGAS.find(x => x.id === vagaId);
+  const data = paraISO($('ag-data').value);
+  const hora = $('ag-hora').value;
+  const cand = $('ag-cand').value.trim();
+  if (!data) return msg('v-msg', 'Informe a data no formato DD/MM/AAAA.', 'err');
+  if (!hora) return msg('v-msg', 'Informe o horário.', 'err');
+  if (!cand) return msg('v-msg', 'Informe o nome do candidato.', 'err');
+  bt.disabled = true; bt.textContent = 'Salvando…';
+  try {
+    const db = cliente();
+    const { data: { user } } = await db.auth.getUser();
+    const { data: nova, error } = await db.from('entrevistas').insert({
+      vaga_id: vagaId, candidato: cand, data, hora,
+      observacao: $('ag-obs').value.trim() || null, criado_por: user.id,
+    }).select('*').single();
+    if (error) throw new Error(error.message);
+    ENTREVISTAS.push(nova);
+    // primeira entrevista marcada já leva a vaga para a etapa
+    if (v && v.etapa !== 'entrevista_gestor'
+          && entrevistasDa(v).length === 1 && v.etapa !== 'admitido') {
+      await moverEtapa(vagaId, 'entrevista_gestor');
+    } else {
+      abrirVaga(vagaId);
+    }
+    msg('v-msg', `Entrevista de ${cand} marcada para ${soData(data)} às `
+      + `${hora}. Falta avisar o gestor.`, 'ok');
+  } catch (e) {
+    bt.disabled = false; bt.textContent = 'Salvar';
+    msg('v-msg', 'Não consegui salvar: ' + e.message, 'err');
+  }
+}
+
+async function apagarEntrevista(id) {
+  const e = ENTREVISTAS.find(x => x.id === id);
+  if (!e) return;
+  try {
+    const { error } = await cliente().from('entrevistas').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    ENTREVISTAS = ENTREVISTAS.filter(x => x.id !== id);
+    abrirVaga(e.vaga_id);
+    msg('v-msg', `Entrevista de ${e.candidato} cancelada.`, 'ok');
+  } catch (err) { alert('Não consegui cancelar: ' + err.message); }
+}
+
+/* O e-mail do gestor vem do cadastro de usuário dele. Vaga importada da
+   planilha não tem usuário vinculado — aí o RH digita uma vez, e o endereço
+   fica guardado junto da entrevista para a próxima. */
+async function avisarGestor(vagaId, bt) {
+  const v = VAGAS.find(x => x.id === vagaId);
+  const ags = entrevistasDa(v);
+  if (!v || !ags.length) return;
+  bt.disabled = true;
+  try {
+    const { data } = await cliente().rpc('gestor_da_vaga', { p_vaga: vagaId });
+    const g = (data || [])[0] || {};
+    let email = g.email || ags.find(e => e.email_gestor)?.email_gestor || '';
+    if (!email) {
+      email = (prompt('O gestor desta vaga ainda não tem usuário no painel.\n'
+        + 'Qual o e-mail de ' + (g.nome || v.nome_solicitante) + '?', '') || '').trim();
+      if (!email) return;
+    }
+    const assunto = `Entrevistas — ${v.codigo || v.unidade} · ${v.cargo}`;
+    const corpo = [
+      `Olá, ${(g.nome || v.nome_solicitante || '').split(' ')[0]}.`, '',
+      `Seguem as entrevistas marcadas para a vaga ${v.codigo || ''} `
+        + `(${v.unidade} · ${v.cargo}${v.nivel ? ' ' + v.nivel : ''}):`, '',
+      ...ags.map(e => `• ${soData(e.data)} às ${String(e.hora).slice(0, 5)} — `
+        + e.candidato + (e.observacao ? ` (${e.observacao})` : '')), '',
+      'Qualquer ajuste de horário, é só responder este e-mail.', '',
+      'Obrigado!',
+    ].join('\n');
+    location.href = 'mailto:' + encodeURIComponent(email)
+      + '?subject=' + encodeURIComponent(assunto)
+      + '&body=' + encodeURIComponent(corpo);
+
+    const agora = new Date().toISOString();
+    const { error } = await cliente().from('entrevistas')
+      .update({ avisado_em: agora, email_gestor: email })
+      .in('id', ags.map(e => e.id));
+    if (error) throw new Error(error.message);
+    ags.forEach(e => { e.avisado_em = agora; e.email_gestor = email; });
+    abrirVaga(vagaId);
+    msg('v-msg', `Mensagem aberta para ${email}. Marquei como avisado — se `
+      + 'não chegou a enviar, use "Avisar o gestor de novo".', 'ok');
+  } catch (e) {
+    alert('Não consegui avisar: ' + e.message);
+  } finally { bt.disabled = false; }
 }
 
 /* O status é o que aconteceu com a vaga; a etapa é onde ela parou. Separar
@@ -2084,7 +2293,6 @@ const COLUNAS_SLA = [
   ['documentos', 'Documentos'],
   ['oris',       'Oris'],
   ['aso',        'ASO'],
-  ['programar',  'Programar'],
   ['inicio',     'Início'],
   ['fechamento', 'Fechamento'],
 ];
@@ -2131,7 +2339,6 @@ function pintarSLA() {
         <div><b>Documentos</b> — o candidato subir a documentação no portal.</div>
         <div><b>Oris</b> — lançar a admissão no Oris.</div>
         <div><b>ASO</b> — o exame admissional.</div>
-        <div><b>Programar</b> — programar a data de entrada.</div>
         <div><b>Início</b> — da programação até o primeiro dia.</div>
         <div><b>Fechamento</b> — o total, da aprovação até admitir. Corre em
           paralelo: estourar ele já é atraso, mesmo sem nenhuma etapa ter
@@ -2227,17 +2434,14 @@ function pintarFunil() {
   const ordem = ETAPAS.map(e => e.k);
   const posDe = v => ordem.indexOf(v.etapa);
 
-  /* Quem chegou a uma etapa ou parou nela, ou seguiu adiante — as duas coisas
-     somam o total, e é só isso que a barra divide. O funil responde "até onde
-     o processo chega", não "quem está atrasado": prazo é assunto da lista
-     embaixo, do KPI de pendências e da ficha de cada vaga. */
+  /* A barra é quanta vaga está parada na etapa agora — não quanta já passou
+     por ela. É a leitura que o RH usa no dia a dia: onde está a fila. O
+     percentual é a fatia da etapa dentro do total aberto. */
   const linhas = ETAPAS_FUNIL.map(e => {
-    const i        = ordem.indexOf(e.k);
-    const chegaram = vivas.filter(v => posDe(v) >= i).length;
-    const aqui     = vivas.filter(v => v.etapa === e.k).length;
-    return { e, total: chegaram, aqui: aqui, adiante: chegaram - aqui };
+    const aqui = vivas.filter(v => v.etapa === e.k).length;
+    return { e, total: aqui, aqui };
   });
-  const base = linhas[0]?.total || 0;
+  const base = vivas.length;
   const maior = Math.max(1, ...linhas.map(l => l.total));
 
   // as duas metades do funil: recrutamento até a proposta, admissão daí em diante
@@ -2245,7 +2449,7 @@ function pintarFunil() {
     ['divulgacao','triagem','entrevista_atracao','entrevista_gestor','proposta']
       .includes(v.etapa)).length;
   const emAdmissao = vivas.filter(v =>
-    ['documentos','oris','aso','programar','inicio_agendado'].includes(v.etapa)).length;
+    ['documentos','oris','aso','inicio_agendado'].includes(v.etapa)).length;
   const paradas = todas.filter(vagaParada).length;
   const comProblema = vivas.filter(v =>
     atrasada(v) || candidatosDa(v).some(c => faltantes(c).length)).length;
@@ -2307,25 +2511,17 @@ function pintarFunil() {
       <h3>Funil de admissão</h3>
       <div class="sub">${base} vaga(s) abertas no processo${admitidos
         ? ` · ${admitidos} já admitida(s), fora do funil` : ''} ·
-        o comprimento da barra é quantas chegaram à etapa, e a parte colorida
-        é quantas estão paradas nela agora</div>
+        a barra é quanta vaga está parada em cada etapa hoje</div>
       <div class="leg">
         ${paradas ? `<span style="color:var(--gray-400)">${paradas} congelada(s)
           ou cancelada(s), também fora</span>` : ''}
-        <span><i style="background:#3a7a2e"></i>já seguiu adiante</span>
-        <span><i style="background:#e6e6e0"></i>parada nesta etapa</span>
         <span style="margin-left:auto">clique numa etapa para filtrar a lista</span>
       </div>
       ${linhas.map(l => {
         const larg = (l.total / maior) * 100;
         const conv = base ? Math.round(l.total / base * 100) : 0;
-        // Cada pedaço carrega o próprio número. O total da etapa fica fora da
-        // barra, na coluna ao lado do nome, porque ele descreve a barra
-        // inteira e não teria onde morar sem mentir sobre um pedaço.
-        const pecas = [
-          ['s0', l.adiante, `${l.adiante} seguiram`, l.adiante],
-          ['s1', l.aqui,    `${l.aqui} aqui`,        l.aqui],
-        ].filter(p => p[1] > 0);
+        const pecas = l.aqui
+          ? [['sb', l.aqui, `${l.aqui} nesta etapa`, l.aqui]] : [];
         return `<div class="fr ${etapaFoco === l.e.k ? 'on' : ''}"
                      onclick="focarEtapa('${l.e.k}')">
           <div class="rot">${l.e.t}${l.e.d ? `<span>${l.e.d}</span>` : ''}</div>
