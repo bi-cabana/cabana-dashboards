@@ -269,6 +269,31 @@
   }
   .semcod{color:var(--gray-300);font-style:italic}
 
+  /* ── FILTRAR POR COLUNA ──
+     O funil mora numa barra acima da tabela, porque lá o filtro é do painel
+     inteiro. Aqui ele é da coluna, então mora na coluna: o cabeçalho diz o
+     que está filtrando e por quanto, sem uma segunda barra para ler. */
+  th.fcol{position:relative}
+  th .fbt{border:none;background:none;cursor:pointer;padding:1px 3px;margin-left:3px;
+    font-family:inherit;font-size:10px;font-weight:800;color:var(--gray-300);
+    border-radius:4px;line-height:1;vertical-align:1px}
+  th .fbt:hover{color:var(--green-dark);background:var(--gray-100)}
+  th .fbt.on{color:#fff;background:var(--green);padding:2px 6px}
+  th .cx{display:none;position:absolute;z-index:45;top:calc(100% + 5px);left:0;
+    width:286px;max-height:340px;overflow:auto;background:#fff;border-radius:11px;
+    box-shadow:0 12px 34px rgba(0,0,0,.17);border:1px solid var(--gray-200);
+    padding:8px;text-transform:none;letter-spacing:0;font-weight:400;
+    color:var(--gray-900)}
+  th.aberta .cx{display:block}
+  th .cx label{display:flex;align-items:center;gap:9px;padding:7px 9px;
+    border-radius:7px;font-size:12.5px;cursor:pointer;font-weight:500}
+  th .cx label:hover{background:var(--gray-50)}
+  th .cx label u{text-decoration:none;margin-left:auto;color:var(--gray-400);
+    font-size:11px;font-variant-numeric:tabular-nums}
+  th .cx .acima{display:flex;gap:7px;align-items:center;padding:3px 6px 9px;
+    border-bottom:1px solid var(--gray-100);margin-bottom:6px;font-size:11.5px;
+    color:var(--gray-400);font-weight:500}
+
   /* ── ORDENAR POR COLUNA ── */
   th.ord{cursor:pointer;user-select:none;position:relative;padding-right:16px}
   th.ord:hover{color:var(--green-dark)}
@@ -575,7 +600,7 @@ let statusFoco = '', unidadesFoco = [], mesesFoco = [], multiAberto = '';
    existe para o painel não quebrar enquanto o 25_sla_regras.sql não roda. */
 let SLA = {}, FERIADOS = new Map(), ENTREVISTAS = [];
 const SLA_RESERVA = { cargo:'Padrão', aprovacao:2, entrega:10, gestor:4,
-  proposta:3, documentos:1, oris:2, aso:3, inicio:7, fechamento:25 };
+  proposta:3, documentos:1, aso:3, oris:2, inicio:7, fechamento:25 };
 let AVISO_SETUP = '';
 
 /* Carregadas da tabela `unidades` no login — a sigla de cada uma vira o
@@ -623,8 +648,8 @@ const ETAPAS = [
   { k:'entrevista_gestor',  t:'Entrevista c/ Gestor',     d:'', fase:'gestor' },
   { k:'proposta',           t:'Em proposta',              d:'', fase:'admissao' },
   { k:'documentos',         t:'Documentos',               d:'', sla:1 },
-  { k:'oris',               t:'Lançamento no Oris',       d:'', sla:2 },
   { k:'aso',                t:'ASO',                      d:'', sla:3 },
+  { k:'oris',               t:'Lançamento no Oris',       d:'', sla:2 },
   { k:'inicio_agendado',    t:'Agenda Admissão',          d:'', sla:7 },
   { k:'admitido',           t:'Admitido',                 d:'' },
 ];
@@ -663,6 +688,16 @@ const ehRegional  = () => PERFIL.papel === 'regional';
 const ehDiretoria = () => PERFIL.papel === 'diretoria';
 const podeAbrirVaga = () => ehRH() || ehGerente() || ehRegional();
 const vePrazos      = () => ehRH() || ehDiretoria();
+/* Mexer no cadastro do candidato — dar baixa em pendência, recusar
+   documento, mudar status — é o mesmo que a RLS já permite (pode_editar()
+   = só o RH). O botão existia para todo mundo e falhava no banco: erro de
+   Postgres na cara de quem nunca teve a permissão. Agora a tela combina
+   com o banco. */
+const podeMexerDoc = () => ehRH();
+/* Falar com o candidato é outra conversa, e é por isso que tem regra
+   própria: o gerente da loja não aborda candidato pelo WhatsApp — o canal
+   é do RH, que é quem responde pelo processo e pelos dados pessoais. */
+const podeFalarComCandidato = () => !ehGerente();
 /* Na planilha a regional se repetia em toda linha da mesma loja. Aqui ela é
    propriedade da loja, e o painel só consulta. */
 const regionalDe = u => {
@@ -720,8 +755,8 @@ function regraDe(v) { return SLA[v.cargo] || SLA['Padrão'] || SLA_RESERVA; }
 const CAMPO_ETAPA = {
   solicitada:'aprovacao',   divulgacao:'entrega',  triagem:'entrega',
   entrevista_atracao:'entrega', entrevista_gestor:'gestor',
-  proposta:'proposta',      documentos:'documentos', oris:'oris',
-  aso:'aso',                inicio_agendado:'inicio',
+  proposta:'proposta',      documentos:'documentos', aso:'aso',
+  oris:'oris',              inicio_agendado:'inicio',
   admitido:null,
 };
 /* Divulgação, triagem e entrevista com Atração dividem UM prazo só — o de
@@ -1104,6 +1139,8 @@ function faltantes(r) {
 /* ───────────── WHATSAPP ─────────────
    Monta o link wa.me com o número cadastrado e uma mensagem já escrita:
    quem fala, qual o protocolo e, havendo pendência, o que falta. */
+const SO_RH = 'Só o RH altera o cadastro do candidato. '
+            + 'Você está vendo em modo leitura.';
 const ICONE_ZAP = '<svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.767.967-.94 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.019-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.414z"/></svg>';
 
 function telDe(r) {
@@ -1131,6 +1168,8 @@ function textoZap(r) {
 
 function zap(id, ev) {
   if (ev) ev.stopPropagation();
+  if (!podeFalarComCandidato())
+    return alert('O contato com o candidato é feito pelo RH.');
   const r = linhas.find(x => x.id === id);
   if (!r) return;
   const tel = telDe(r);
@@ -1140,6 +1179,7 @@ function zap(id, ev) {
 }
 
 function botaoZap(r, rotulo) {
+  if (!podeFalarComCandidato()) return '';
   const tel = telDe(r);
   if (!tel) return `<button class="zap off" disabled title="sem telefone válido">`
                  + `${ICONE_ZAP}${rotulo || ''}</button>`;
@@ -1413,6 +1453,93 @@ async function copiarPortal(bt, url) {
 }
 
 /* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  FILTRAR POR COLUNA                                                  ║
+   ║                                                                      ║
+   ║  Cada coluna filtrável guarda a lista do que está marcado. Lista     ║
+   ║  vazia quer dizer "tudo", e não "nada": é o que todo mundo espera    ║
+   ║  de um filtro recém-aberto, e evita a tela em branco no primeiro     ║
+   ║  clique.                                                             ║
+   ║                                                                      ║
+   ║  As opções saem das vagas que o usuário enxerga, não de uma lista    ║
+   ║  fixa: um gerente de uma loja só vê a loja dele, e cargo que         ║
+   ║  ninguém pediu não aparece para ser marcado à toa.                   ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const COLUNAS_FILTRO = [
+  { col:'Unidade', campo:'unidade', v: x => x.unidade || '—' },
+  { col:'Cargo',   campo:'cargo',   v: x => x.cargo   || '—' },
+  { col:'Turno',   campo:'turno',   v: x => turnoDe(x) },
+];
+let FCOL = {}, fcolAberta = '';
+
+const passaFiltroCol = v => COLUNAS_FILTRO.every(c =>
+  !(FCOL[c.campo] || []).length || FCOL[c.campo].includes(c.v(v)));
+
+function abrirFcol(ev, campo) {
+  ev.stopPropagation();
+  fcolAberta = (fcolAberta === campo) ? '' : campo;
+  marcarFcol();
+}
+function marcarFcol() {
+  document.querySelectorAll('th.fcol').forEach(th =>
+    th.classList.toggle('aberta', th.dataset.campo === fcolAberta));
+}
+function marcarValorCol(campo, valor, marcado) {
+  const atual = FCOL[campo] || [];
+  FCOL[campo] = marcado ? atual.concat([valor]) : atual.filter(x => x !== valor);
+  pintarVagas();
+}
+function limparCol(campo) {
+  FCOL[campo] = [];
+  pintarVagas();
+}
+function limparTodosFiltrosCol() {
+  FCOL = {}; fcolAberta = '';
+  pintarVagas();
+}
+
+/* Um clique fora fecha a caixa. O clique no cabeçalho também ordena, por
+   isso o botão do filtro para o evento antes de subir. */
+document.addEventListener('click', () => {
+  if (!fcolAberta) return;
+  fcolAberta = '';
+  marcarFcol();
+});
+
+/* Monta o <th> da coluna filtrável. As opções e as contagens vêm da base
+   já filtrada pelas OUTRAS colunas: marcar "Tatuapé" faz a lista de cargos
+   mostrar só os cargos do Tatuapé, que é como um filtro cruzado deve se
+   comportar. A própria coluna não se filtra, senão o que você acabou de
+   marcar seria a única opção restante. */
+function cabecalhoFiltro(c, base) {
+  const marcados = FCOL[c.campo] || [];
+  const conta = {};
+  base.filter(v => COLUNAS_FILTRO.every(o =>
+        o.campo === c.campo || !(FCOL[o.campo] || []).length
+        || FCOL[o.campo].includes(o.v(v))))
+      .forEach(v => { const k = c.v(v); conta[k] = (conta[k] || 0) + 1; });
+  // o que está marcado continua na lista mesmo se zerou, senão não dá para
+  // desmarcar o que acabou de esvaziar a tabela
+  marcados.forEach(k => { if (!(k in conta)) conta[k] = 0; });
+  const itens = Object.keys(conta).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+  return `<th class="fcol" data-campo="${c.campo}">${es(c.col)}<button class="fbt
+      ${marcados.length ? 'on' : ''}" onclick="abrirFcol(event, '${c.campo}')"
+      title="Filtrar por ${es(c.col.toLowerCase())}"
+      >${marcados.length ? marcados.length : '▼'}</button>
+    <div class="cx" onclick="event.stopPropagation()">
+      <div class="acima">${marcados.length
+        ? `<button class="btn btn-sm btn-ghost" onclick="limparCol('${c.campo}')"
+             >Limpar</button>`
+        : `Marque um ou mais`}</div>
+      ${itens.map(k => `<label><input type="checkbox"
+        ${marcados.includes(k) ? 'checked' : ''}
+        onchange="marcarValorCol('${c.campo}', this.dataset.v, this.checked)"
+        data-v="${es(k)}">${es(k)}<u>${conta[k]}</u></label>`).join('')}
+      ${itens.length ? '' : '<div class="acima" style="border:none">nada para filtrar</div>'}
+    </div></th>`;
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
    ║  ORDENAR POR COLUNA                                                  ║
    ║                                                                      ║
    ║  Trabalha sobre as linhas já desenhadas, lendo o texto da célula —   ║
@@ -1464,7 +1591,9 @@ function tabelaOrdenavel(tabela, chave) {
   [...tabela.tHead.rows[0].cells].forEach((th, i) => {
     if (!th.textContent.trim()) return;      // coluna sem título não ordena
     th.classList.add('ord');
-    th.onclick = () => {
+    th.onclick = (ev) => {
+      // clicar dentro da caixa do filtro não é pedido de ordenação
+      if (ev.target.closest('.cx, .fbt')) return;
       const o = ORDEM[chave] || (ORDEM[chave] = { col: null, asc: true });
       if (o.col === i) o.asc = !o.asc; else { o.col = i; o.asc = true; }
       marcarCabecalho(tabela, chave);
@@ -1597,10 +1726,11 @@ function abrir(id) {
         O candidato declarou ciência de que a admissão não prossegue sem eles.
         Quando chegar por e-mail, salve na pasta do SharePoint e baixe a pendência aqui.
       </div>
-      <div class="ac">${f.map(n => `<button class="mini"
+      ${!podeMexerDoc() && !podeFalarComCandidato() ? '' : `
+      <div class="ac">${!podeMexerDoc() ? '' : f.map(n => `<button class="mini"
         onclick="resolverFalta('${r.id}', ${JSON.stringify(n).replace(/"/g,'&quot;')})"
         >✓ recebi ${es(n)}</button>`).join('')}
-        ${botaoZap(r, 'Cobrar no WhatsApp')}</div>
+        ${botaoZap(r, 'Cobrar no WhatsApp')}</div>`}
     </div>`}
 
     <div class="grp">
@@ -1616,7 +1746,7 @@ function abrir(id) {
                 ${a.recusado ? `<div class="mot">Recusado — ${es(a.motivo || 'sem motivo')}</div>` : ''}
               </div>
               <button class="btn btn-sm btn-primary" onclick="baixar(${i}, this)">Abrir</button>
-              ${a.recusado
+              ${!podeMexerDoc() ? '' : a.recusado
                 ? `<button class="btn-rec" onclick="desfazerRecusa('${r.id}', ${i})"
                      title="Voltar atrás na recusa">Desfazer</button>`
                 : `<button class="btn-rec" onclick="pedirRecusa(${i})"
@@ -1662,13 +1792,13 @@ function abrir(id) {
       <h3>Tratativa</h3>
       <div class="msg" id="d-msg"></div>
       <label class="lbl">Observação interna</label>
-      <textarea class="inp" id="d-obs"
+      <textarea class="inp" id="d-obs" ${podeMexerDoc() ? '' : 'disabled'}
         placeholder="Ex.: comprovante ilegível, pedir reenvio">${es(r.observacao || '')}</textarea>
-      <div class="acoes">
+      ${podeMexerDoc() ? `<div class="acoes">
         ${Object.entries(ST_LABEL).map(([k, v]) =>
           `<button class="btn btn-sm ${r.status === k ? 'btn-primary' : 'btn-ghost'}"
                    onclick="mudarStatus('${r.id}','${k}')">${v}</button>`).join('')}
-      </div>
+      </div>` : `<div class="sub" style="margin-top:9px">${SO_RH}</div>`}
       ${r.tratado_em ? `<div class="sub" style="margin-top:10px">Última tratativa em ${dataBR(r.tratado_em)}</div>` : ''}
       <div class="sub" style="margin-top:6px">${r.sincronizado_em
         ? 'No SharePoint desde ' + dataBR(r.sincronizado_em)
@@ -1707,6 +1837,7 @@ async function baixar(i, btn) {
 }
 
 async function mudarStatus(id, novo) {
+  if (!podeMexerDoc()) return alert(SO_RH);
   const obs = $('d-obs').value.trim();
   try {
     const db = cliente();
@@ -1739,6 +1870,7 @@ function pedirRecusa(i, fechando) {
 }
 
 async function confirmarRecusa(id, i) {
+  if (!podeMexerDoc()) return alert(SO_RH);
   const r = linhas.find(x => x.id === id);
   const a = r?.arquivos?.[i];
   if (!a) return;
@@ -1768,6 +1900,7 @@ async function confirmarRecusa(id, i) {
 }
 
 async function desfazerRecusa(id, i) {
+  if (!podeMexerDoc()) return alert(SO_RH);
   const r = linhas.find(x => x.id === id);
   const a = r?.arquivos?.[i];
   if (!a) return;
@@ -1794,6 +1927,7 @@ async function desfazerRecusa(id, i) {
 /* Baixa de pendência: o documento chegou por fora (e-mail, WhatsApp) e o RH
    tira da lista. O arquivo em si vai para a pasta do SharePoint na mão. */
 async function resolverFalta(id, nome) {
+  if (!podeMexerDoc()) return alert(SO_RH);
   const r = linhas.find(x => x.id === id);
   if (!r) return;
   const resto = faltantes(r).filter(n => n !== nome);
@@ -1887,7 +2021,9 @@ function exportarCSV() {
 const cargoDe = c => CARGOS.find(x => x.cargo === c) || {};
 const turnoDe = v => v.turno === 'Outra' ? (v.turno_outro || 'Outra') : (v.turno || '—');
 
-function vagasVisiveis() {
+/* A busca escrita e os filtros de coluna se somam: quem digitou "Tatuapé"
+   e marcou "Atendente de Salão" quer as duas coisas ao mesmo tempo. */
+function vagasBuscadas() {
   const q = $('busca').value.trim().toLowerCase();
   return VAGAS.filter(v => {
     if (!q) return true;
@@ -1896,12 +2032,19 @@ function vagasVisiveis() {
       .join(' ').toLowerCase().includes(q);
   });
 }
+function vagasVisiveis() {
+  return vagasBuscadas().filter(passaFiltroCol);
+}
 
 function pintarVagas() {
-  const rs = vagasVisiveis();
+  const base = vagasBuscadas();
+  const rs = base.filter(passaFiltroCol);
+  const porColuna = Object.fromEntries(COLUNAS_FILTRO.map(c => [c.col, c]));
   $('cab').innerHTML = ['Código','Unidade','Cargo','Turno','Contrato',
                         'Solicitante','Pedido em','Etapa','Status']
-    .map(t => `<th>${t}</th>`).join('');
+    .map(t => porColuna[t] ? cabecalhoFiltro(porColuna[t], base) : `<th>${t}</th>`)
+    .join('');
+  marcarFcol();
   $('corpo').innerHTML = rs.map(v => `
     <tr class="${selVaga === v.id ? 'sel' : ''}${atrasada(v) ? ' pend' : ''}${vagaParada(v) ? ' parada' : ''}"
         onclick="abrirVaga('${v.id}')">
@@ -1921,6 +2064,12 @@ function pintarVagas() {
     </tr>`).join('');
   $('vazio').style.display = rs.length ? 'none' : 'block';
   tabelaOrdenavel($('cab').closest('table'), 'vaga');
+  const comFiltro = COLUNAS_FILTRO.some(c => (FCOL[c.campo] || []).length);
+  $('vazio').innerHTML = !rs.length && comFiltro
+    ? `Nenhuma vaga com esse filtro. <button class="btn btn-sm btn-ghost"
+         onclick="limparTodosFiltrosCol()">Limpar filtros</button>`
+    : '';
+  if ($('vazio').innerHTML) return;
   $('vazio').textContent = VAGAS.length
     ? 'Nenhuma vaga corresponde à busca.'
     : (ehRH() || ehDiretoria() ? 'Nenhuma vaga solicitada ainda.'
@@ -2961,8 +3110,8 @@ const COLUNAS_SLA = [
   ['gestor',     'Gestor'],
   ['proposta',   'Proposta'],
   ['documentos', 'Documentos'],
-  ['oris',       'Oris'],
   ['aso',        'ASO'],
+  ['oris',       'Oris'],
   ['inicio',     'Início'],
   ['fechamento', 'Fechamento'],
 ];
