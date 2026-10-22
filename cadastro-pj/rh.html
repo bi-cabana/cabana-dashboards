@@ -218,9 +218,9 @@
      quando ela é dividida, o flex inline de cada pedaço manda. */
   .fr .s0,.fr .s1{display:flex;align-items:center;overflow:hidden;
     min-width:0;flex:1 1 0}
-  /* cinza: já saiu desta etapa. verde: está parada nela agora */
-  .fr .s0{background:#e6e6e0}
-  .fr .s1{background:#3a7a2e}
+  /* verde: já saiu desta etapa. cinza: está parada nela agora */
+  .fr .s0{background:#3a7a2e}
+  .fr .s1{background:#e6e6e0}
   /* ponta arredondada só nas duas extremidades da barra; onde os pedaços se
      encostam a quina é reta, e quem separa é o vão de 2px */
   .fr .tr > :first-child{border-radius:5px 0 0 5px}
@@ -231,8 +231,8 @@
      porque branco sobre #d97706 não passa no contraste de texto. */
   .fr .lb{font-size:12.5px;font-weight:800;white-space:nowrap;padding:0 11px;
     font-variant-numeric:tabular-nums}
-  .fr .s0 .lb{color:var(--gray-700)}
-  .fr .s1 .lb{color:#fff}
+  .fr .s0 .lb{color:#fff}
+  .fr .s1 .lb{color:var(--gray-700)}
   .fr .lb.fim{margin-left:auto}
   /* etapa sem ninguém: nenhuma barra, só o zero */
   .fr .fora{font-size:12.5px;font-weight:800;color:var(--gray-300);white-space:nowrap;
@@ -2026,8 +2026,8 @@ function pintarFunil() {
       <div class="leg">
         ${paradas ? `<span style="color:var(--gray-400)">${paradas} congelada(s)
           ou cancelada(s), também fora</span>` : ''}
-        <span><i style="background:#e6e6e0"></i>já seguiu adiante</span>
-        <span><i style="background:#3a7a2e"></i>parada nesta etapa</span>
+        <span><i style="background:#3a7a2e"></i>já seguiu adiante</span>
+        <span><i style="background:#e6e6e0"></i>parada nesta etapa</span>
         <span style="margin-left:auto">clique numa etapa para filtrar a lista</span>
       </div>
       ${linhas.map(l => {
