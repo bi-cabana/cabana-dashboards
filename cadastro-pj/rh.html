@@ -257,6 +257,60 @@
 
   .semcod{color:var(--gray-300);font-style:italic}
 
+  /* ── FILTRO DE VÁRIAS UNIDADES ── */
+  .multi{position:relative}
+  .multi .bt{display:flex;align-items:center;gap:8px;min-width:250px;cursor:pointer;
+    text-align:left;background:#fff;border:1.5px solid var(--gray-200);
+    border-radius:9px;padding:10px 13px;font-family:inherit;font-size:13.5px;
+    font-weight:600;color:var(--gray-900)}
+  .multi .bt:hover{border-color:var(--green)}
+  .multi .bt i{margin-left:auto;font-style:normal;color:var(--gray-400);font-size:10px}
+  .multi .cx{display:none;position:absolute;z-index:40;top:calc(100% + 6px);left:0;
+    width:304px;max-height:360px;overflow:auto;background:#fff;border-radius:11px;
+    box-shadow:0 12px 34px rgba(0,0,0,.17);border:1px solid var(--gray-200);padding:8px}
+  .multi.on .cx{display:block}
+  .multi .cx label{display:flex;align-items:center;gap:9px;padding:7px 9px;
+    border-radius:7px;font-size:13px;cursor:pointer}
+  .multi .cx label:hover{background:var(--gray-50)}
+  .multi .cx label u{text-decoration:none;margin-left:auto;color:var(--gray-400);
+    font-size:11.5px;font-variant-numeric:tabular-nums}
+  .multi .cx .acima{display:flex;gap:7px;align-items:center;padding:3px 6px 9px;
+    border-bottom:1px solid var(--gray-100);margin-bottom:6px;font-size:11.5px;
+    color:var(--gray-400)}
+
+  /* ── REGRAS DE SLA ── */
+  #sla{display:none}
+  .slac{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:22px 24px;margin-bottom:18px}
+  .slac h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:3px}
+  .slat{overflow-x:auto;margin-top:16px}
+  .slat table{border-collapse:collapse;min-width:880px;width:100%}
+  .slat th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--gray-400);font-weight:800;text-align:center;padding:0 6px 9px;
+    white-space:nowrap}
+  .slat th:first-child{text-align:left}
+  .slat td{padding:4px 6px;border-top:1px solid var(--gray-100);text-align:center}
+  .slat td:first-child{font-size:13px;font-weight:700;white-space:nowrap;
+    padding-right:14px;text-align:left}
+  .slat tr.padrao td:first-child{color:var(--gray-500);font-style:italic}
+  .slat input{width:60px;padding:7px 6px;text-align:center;font-family:inherit;
+    font-size:13px;font-weight:700;border:1.5px solid var(--gray-200);
+    border-radius:7px;background:#fff;font-variant-numeric:tabular-nums}
+  .slat input:focus{outline:none;border-color:var(--green)}
+  .slat input.ok{border-color:var(--green);background:var(--green-pale)}
+  .slad{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+    gap:3px 20px;margin-top:16px;font-size:11.5px;color:var(--gray-500);line-height:1.55}
+  .slad b{color:var(--gray-700)}
+  .fer{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .fer .f{display:inline-flex;align-items:center;gap:8px;background:var(--gray-50);
+    border:1px solid var(--gray-200);border-radius:20px;padding:5px 7px 5px 12px;
+    font-size:11.5px;white-space:nowrap}
+  .fer .f.fac{background:#fffbeb;border-color:#fde68a}
+  .fer .f u{text-decoration:none;color:var(--gray-400)}
+  .fer .f button{border:none;background:none;cursor:pointer;color:var(--gray-300);
+    font-size:14px;line-height:1;padding:0 2px}
+  .fer .f button:hover{color:var(--danger)}
+
   /* WhatsApp */
   .zap{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;
     border:none;background:#25D366;color:#fff;font-family:inherit;font-size:12px;
@@ -312,6 +366,7 @@
       <button data-t="clt"             onclick="trocarTipo('clt')">Admissão CLT</button>
       <button data-t="vaga"            onclick="trocarTipo('vaga')">Vagas</button>
       <button data-t="funil"           onclick="trocarTipo('funil')">Funil de Admissão</button>
+      <button data-t="sla"             onclick="trocarTipo('sla')">Regras de SLA</button>
     </div>
     <span class="who" id="who"></span>
     <button class="btn btn-sm btn-ghost" onclick="exportarCSV()">Baixar CSV</button>
@@ -341,6 +396,7 @@
     </div>
 
     <div id="funil"></div>
+    <div id="sla"></div>
     <div id="tela"></div>
 
     <div class="rodape">
@@ -384,7 +440,12 @@ let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
 const CACHE = {};            // linhas ja carregadas por tipo
 let PERFIL = { papel: 'rh', nome: '', unidade: null }, MEU_ID = null;
 let VAGAS = [], CARGOS = [], SIGLA = {}, selVaga = null, etapaFoco = '', buscaFunil = '';
-let statusFoco = '', unidadeFoco = '';
+let statusFoco = '', unidadesFoco = [], multiAberto = false;
+/* A base de regras e os feriados, carregados no login. A reserva abaixo só
+   existe para o painel não quebrar enquanto o 25_sla_regras.sql não roda. */
+let SLA = {}, FERIADOS = new Map();
+const SLA_RESERVA = { cargo:'Padrão', aprovacao:2, entrega:10, gestor:4,
+  proposta:3, documentos:1, oris:2, aso:3, programar:4, inicio:7, fechamento:25 };
 let AVISO_SETUP = '';
 
 /* Carregadas da tabela `unidades` no login — a sigla de cada uma vira o
@@ -469,49 +530,99 @@ const regionalDe = u => {
 const hoje = () => new Date().toISOString().slice(0, 10);
 
 /* Dias corridos desde a aprovação — é o relógio do funil. */
-function diasDesdeAprovacao(v) {
-  if (!v.aprovada_em) return null;
-  return Math.floor((Date.now() - new Date(v.aprovada_em)) / 86400000);
+/* ───────────── DIAS ÚTEIS ─────────────
+   Todo prazo de SLA é contado em dia útil: uma vaga aberta na sexta não fica
+   atrasada no domingo. Fim de semana e os feriados da tabela `feriados` não
+   contam. A mesma conta existe no banco, em public.dias_uteis(), para quem
+   quiser conferir por SQL. */
+
+/* Aceita '2026-09-28' e timestamp com fuso, e devolve sempre o meio-dia da
+   data local. O meio-dia evita o clássico: '2026-09-28' lido como UTC vira
+   dia 27 às 21h no horário de Brasília, e a conta sai um dia errada. */
+function diaDe(x) {
+  if (!x) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(x));
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], 12);
+  const d = new Date(x);
+  return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12);
 }
-/* As metas do cargo, da aba "Metas SLA". Quando o cargo não está na tabela,
-   vale a linha "Padrão" da planilha. */
-function metasDe(v) {
-  const c = CARGOS.find(x => x.cargo === v.cargo) || {};
-  return { entrega:    c.meta_entrega    ?? 10,
-           gestor:     c.meta_gestor     ?? 4,
-           admissao:   c.meta_admissao   ?? 10,
-           fechamento: c.meta_fechamento ?? 25 };
+function iso(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+       + '-' + String(d.getDate()).padStart(2, '0');
 }
-function diasNaEtapa(v) {
-  const base = v.etapa_desde || v.aprovada_em;
-  return base ? Math.floor((Date.now() - new Date(base)) / 86400000) : null;
+const ehDiaUtil = d => d.getDay() !== 0 && d.getDay() !== 6 && !FERIADOS.has(iso(d));
+
+/* Quantos dias úteis se passaram, sem contar o dia de partida. Abriu sexta e
+   hoje é segunda: 1. */
+function diasUteis(de, ate) {
+  const a = diaDe(de);
+  if (!a) return null;
+  const b = diaDe(ate) || diaDe(new Date());
+  if (b <= a) return 0;
+  let n = 0;
+  const d = new Date(a);
+  for (let guarda = 0; guarda < 4000; guarda++) {
+    d.setDate(d.getDate() + 1);
+    if (d > b) break;
+    if (ehDiaUtil(d)) n++;
+  }
+  return n;
 }
-/* Prazo da etapa em que a vaga está agora, em dias. */
-function prazoDa(v) {
-  const e = ET[v.etapa];
-  if (!e) return null;
-  if (e.sla != null) return e.sla;
-  return e.fase ? metasDe(v)[e.fase] : null;
+function diasDesdeAprovacao(v) { return diasUteis(v.aprovada_em, null); }
+
+/* ───────────── OS PRAZOS ─────────────
+   Vêm da tabela sla_regras: uma linha por cargo, uma coluna por etapa. Cargo
+   sem linha própria usa a linha "Padrão". */
+function regraDe(v) { return SLA[v.cargo] || SLA['Padrão'] || SLA_RESERVA; }
+
+const CAMPO_ETAPA = {
+  solicitada:'aprovacao',   divulgacao:'entrega',  triagem:'entrega',
+  entrevista_atracao:'entrega', entrevista_gestor:'gestor',
+  proposta:'proposta',      documentos:'documentos', oris:'oris',
+  aso:'aso',                programar:'programar', inicio_agendado:'inicio',
+  admitido:null,
+};
+/* Divulgação, triagem e entrevista com Atração dividem UM prazo só — o de
+   entregar candidatos ao gestor. Por isso o relógio delas conta da aprovação
+   e não de quando a vaga entrou na etapa: é o mesmo "Prazo SLA de entrega"
+   da planilha, que também é um só para o bloco inteiro. */
+const BLOCO_ENTREGA = ['divulgacao', 'triagem', 'entrevista_atracao'];
+
+function relogioDe(v) {
+  const campo = CAMPO_ETAPA[v.etapa];
+  if (!campo) return null;
+  const limite = regraDe(v)[campo];
+  if (limite == null) return null;
+  const desde = campo === 'aprovacao'      ? (v.data_solicitacao || v.criado_em)
+              : BLOCO_ENTREGA.includes(v.etapa) ? v.aprovada_em
+              : (v.etapa_desde || v.aprovada_em);
+  const dias = diasUteis(desde, null);
+  return { campo, limite, dias, desde,
+           rotulo: campo === 'entrega' ? 'entregar candidatos ao gestor'
+                                       : `"${ET[v.etapa]?.t || v.etapa}"` };
 }
+function prazoDa(v) { return relogioDe(v)?.limite ?? null; }
+function diasNaEtapa(v) { return relogioDe(v)?.dias ?? null; }
+
 /* Dois relógios correm ao mesmo tempo: o da etapa atual e o da vaga inteira.
    Estourar qualquer um dos dois é atraso. O segundo existe porque uma vaga
    pode nunca estourar uma etapa e mesmo assim levar três meses para fechar. */
 function atrasada(v) {
   if (!vagaViva(v)) return false;
-  const ag = diasDesdeAprovacao(v);
-  if (ag != null && ag > metasDe(v).fechamento) return true;
-  const p = prazoDa(v), d = diasNaEtapa(v);
-  return p != null && d != null && d > p;
+  const total = diasUteis(v.aprovada_em, null);
+  if (total != null && total > regraDe(v).fechamento) return true;
+  const r = relogioDe(v);
+  return !!(r && r.dias != null && r.dias > r.limite);
 }
 function porqueAtrasada(v) {
-  const ag = diasDesdeAprovacao(v), m = metasDe(v);
-  const p = prazoDa(v), d = diasNaEtapa(v);
-  if (ag != null && ag > m.fechamento)
-    return `${ag} dias de vaga aberta, e a meta de fechamento para `
-         + `${es(v.cargo)} é de ${m.fechamento}.`;
-  if (p != null && d != null && d > p)
-    return `${d} dias parada em "${es(ET[v.etapa].t)}", e o prazo desta `
-         + `etapa para ${es(v.cargo)} é de ${p} dia(s).`;
+  const total = diasUteis(v.aprovada_em, null), g = regraDe(v);
+  if (total != null && total > g.fechamento)
+    return `${total} dias úteis de vaga aberta, e a meta de fechamento para `
+         + `${es(v.cargo)} é de ${g.fechamento}.`;
+  const r = relogioDe(v);
+  if (r && r.dias != null && r.dias > r.limite)
+    return `${r.dias} dias úteis até ${r.rotulo}, e o prazo para `
+         + `${es(v.cargo)} é de ${r.limite}.`;
   return '';
 }
 /* Candidatos que informaram este código de vaga, nas duas filas. */
@@ -953,6 +1064,15 @@ async function abrirApp() {
   }
 
   // lista de cargos, para o formulário e para o tipo de contrato
+  const { data: sr } = await db.from('sla_regras').select('*').order('ordem');
+  SLA = Object.fromEntries((sr || []).map(r => [r.cargo, r]));
+  if (!Object.keys(SLA).length)
+    AVISO_SETUP = 'A base de regras de SLA ainda não existe no banco. Estou '
+      + 'usando prazos de reserva. Rode o 25_sla_regras.sql no SQL Editor.';
+
+  const { data: fd } = await db.from('feriados').select('*').order('data');
+  FERIADOS = new Map((fd || []).map(f => [f.data, f]));
+
   const { data: mv } = await db.from('motivos_vaga').select('motivo')
     .eq('ativo', true).order('ordem');
   if ((mv || []).length) MOTIVOS = mv.map(x => x.motivo);
@@ -1015,8 +1135,10 @@ function ajustarUI() {
                  : 'Buscar por nome, CPF, PIS, RG ou protocolo…';
   document.querySelectorAll('.chip').forEach(c => c.style.display = cadastro ? '' : 'none');
   $('bt-nova').style.display = t === 'vaga' ? '' : 'none';
-  document.querySelector('.tbl').style.display = t === 'funil' ? 'none' : '';
+  document.querySelector('.tbl').style.display =
+    (t === 'funil' || t === 'sla') ? 'none' : '';
   $('funil').style.display = t === 'funil' ? 'block' : 'none';
+  $('sla').style.display   = t === 'sla'   ? 'block' : 'none';
   $('tela').style.display = 'none';
   // o gerente nao exporta base de candidatos
   document.querySelectorAll('.top .btn-ghost').forEach(b => {
@@ -1028,6 +1150,7 @@ function ajustarUI() {
 
 /* ───────────── LISTA ───────────── */
 async function carregar() {
+  if (TIPO === 'sla') { pintarSLA(); return; }
   // o aviso de banco incompleto sobrevive ao recarregamento da lista
   msg('app-msg', (TIPO === 'vaga' || TIPO === 'funil') ? AVISO_SETUP : '');
   $('vazio').textContent = 'Carregando…';
@@ -1086,6 +1209,7 @@ function visiveis() {
 function pintar() {
   if (TIPO === 'vaga')  return pintarVagas();
   if (TIPO === 'funil') return pintarFunil();
+  if (TIPO === 'sla')   return pintarSLA();
   const cfg = T(), rs = visiveis();
   $('cab').innerHTML = cfg.colunas.map(c => `<th>${es(c.t)}</th>`).join('')
     + '<th>Documentos</th><th>Recebido</th><th>Status</th><th></th>';
@@ -1457,7 +1581,7 @@ function pintarVagas() {
         ${v.gestor_solicitante ? `<div class="sub">gestor: ${es(v.gestor_solicitante)}</div>` : ''}</td>
       <td>${soData(v.data_solicitacao)}</td>
       <td><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span>
-        ${atrasada(v) ? `<div class="sub atraso">${diasDesdeAprovacao(v)}d · atrasada</div>` : ''}</td>
+        ${atrasada(v) ? `<div class="sub atraso">${diasDesdeAprovacao(v)} du · atrasada</div>` : ''}</td>
       <td><span class="st st-${es(statusDe(v))}">${es(STATUS_VAGA[statusDe(v)])}</span></td>
     </tr>`).join('');
   $('vazio').style.display = rs.length ? 'none' : 'block';
@@ -1749,14 +1873,16 @@ function abrirVaga(id) {
 
     <div class="grp"><h3>Situação</h3><dl class="kv">
       <dt>Etapa</dt><dd><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span>
-        ${prazoDa(v) != null ? `<span class="sub"> · prazo de ${prazoDa(v)} dia(s)`
-          + `${diasNaEtapa(v) != null ? `, está há ${diasNaEtapa(v)}` : ''}</span>` : ''}</dd>
+        ${(() => { const r = relogioDe(v); return r
+          ? `<span class="sub"> · prazo de ${r.limite} dia(s) útil(eis) para `
+            + `${r.rotulo}${r.dias != null ? `, já são ${r.dias}` : ''}</span>` : ''; })()}</dd>
       <dt>Status</dt><dd><span class="st st-${es(statusDe(v))}">${es(STATUS_VAGA[statusDe(v)])}</span>
         ${v.congelada_motivo ? `<span class="sub"> · ${es(v.congelada_motivo)}</span>` : ''}</dd>
       ${linhaF('Contrato', v.tipo_contrato)}
       ${linhaF('Regional', regionalDe(v.unidade))}
       ${linhaF('Turno', turnoDe(v))}
-      ${v.aprovada_em ? `<dt>Aprovada em</dt><dd>${dataBR(v.aprovada_em)} · ${d} dia(s) atrás</dd>` : ''}
+      ${v.aprovada_em ? `<dt>Aprovada em</dt><dd>${dataBR(v.aprovada_em)} ·
+        ${d} dia(s) útil(eis) atrás</dd>` : ''}
       ${linhaF('Início previsto', soData(v.data_inicio))}
       ${v.confidencial ? '<dt>Confidencial</dt><dd>Sim — unidade oculta no portal</dd>' : ''}
     </dl></div>
@@ -1946,6 +2072,147 @@ async function salvarInicio(id, valor) {
 }
 
 /* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  REGRAS DE SLA                                                       ║
+   ║  Os prazos saíram do código e do Excel e viraram tabela no banco.    ║
+   ║  Mudar um prazo aqui vale na hora, sem republicar nada.              ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const COLUNAS_SLA = [
+  ['aprovacao',  'Aprovação'],
+  ['entrega',    'Entrega'],
+  ['gestor',     'Gestor'],
+  ['proposta',   'Proposta'],
+  ['documentos', 'Documentos'],
+  ['oris',       'Oris'],
+  ['aso',        'ASO'],
+  ['programar',  'Programar'],
+  ['inicio',     'Início'],
+  ['fechamento', 'Fechamento'],
+];
+
+function pintarSLA() {
+  const regras = Object.values(SLA).sort((a, b) => (a.ordem || 99) - (b.ordem || 99));
+  const feriados = [...FERIADOS.values()].sort((a, b) => a.data.localeCompare(b.data));
+  const hoje0 = hoje();
+
+  if (!regras.length) {
+    $('sla').innerHTML = `<div class="slac"><h3>Regras de SLA</h3>
+      <div class="sub">A tabela <b>sla_regras</b> ainda não existe no banco.
+      Rode o <b>25_sla_regras.sql</b> no SQL Editor do Supabase e recarregue
+      esta página.</div></div>`;
+    return;
+  }
+
+  $('sla').innerHTML = `
+    <div class="slac">
+      <h3>Prazos por cargo</h3>
+      <div class="sub">Todos em <b>dias úteis</b> — fim de semana e feriado não
+        contam. Editar aqui vale na hora, para o funil e para a lista.
+        ${ehRH() ? '' : 'Só o RH pode alterar.'}</div>
+
+      <div class="slat"><table>
+        <thead><tr><th>Cargo</th>
+          ${COLUNAS_SLA.map(([, t]) => `<th>${t}</th>`).join('')}
+        </tr></thead>
+        <tbody>${regras.map(r => `<tr class="${r.cargo === 'Padrão' ? 'padrao' : ''}">
+          <td>${es(r.cargo)}</td>
+          ${COLUNAS_SLA.map(([k]) => `<td><input type="number" min="0" max="365"
+            value="${r[k]}" ${ehRH() ? '' : 'disabled'}
+            onchange="salvarRegra('${es(r.cargo).replace(/'/g, "\\'")}','${k}',this)"
+            ></td>`).join('')}
+        </tr>`).join('')}</tbody>
+      </table></div>
+
+      <div class="slad">
+        <div><b>Aprovação</b> — da solicitação até o RH aprovar a vaga.</div>
+        <div><b>Entrega</b> — da aprovação até entregar candidatos ao gestor.
+          É um prazo só para divulgação, triagem e entrevista com Atração.</div>
+        <div><b>Gestor</b> — quanto o gestor tem para dar o retorno.</div>
+        <div><b>Proposta</b> — quanto a vaga pode ficar em proposta.</div>
+        <div><b>Documentos</b> — o candidato subir a documentação no portal.</div>
+        <div><b>Oris</b> — lançar a admissão no Oris.</div>
+        <div><b>ASO</b> — o exame admissional.</div>
+        <div><b>Programar</b> — programar a data de entrada.</div>
+        <div><b>Início</b> — da programação até o primeiro dia.</div>
+        <div><b>Fechamento</b> — o total, da aprovação até admitir. Corre em
+          paralelo: estourar ele já é atraso, mesmo sem nenhuma etapa ter
+          estourado.</div>
+      </div>
+      <div class="sub" style="margin-top:14px">A linha <b>Padrão</b> vale para
+        qualquer cargo que não tenha linha própria.</div>
+    </div>
+
+    <div class="slac">
+      <h3>Feriados</h3>
+      <div class="sub">São os dias que a contagem pula, além de sábado e
+        domingo. Carnaval e Corpus Christi são ponto facultativo, não feriado
+        nacional — estão aqui porque o escritório costuma parar, e podem sair
+        se o RH trabalha nesses dias.</div>
+      <div class="fer">
+        ${feriados.map(f => `<span class="f ${f.tipo === 'facultativo' ? 'fac' : ''}
+          ${f.data < hoje0 ? 'ja' : ''}">
+          <b>${soData(f.data)}</b> <u>${es(f.nome)}</u>
+          ${ehRH() ? `<button onclick="removerFeriado('${f.data}')"
+            title="Tirar da lista">✕</button>` : ''}</span>`).join('')}
+      </div>
+      ${ehRH() ? `<div class="bar" style="margin-top:14px">
+        <input class="inp" id="fer-data" type="text" placeholder="DD/MM/AAAA"
+               style="max-width:150px">
+        <input class="inp" id="fer-nome" type="text" placeholder="Nome do feriado"
+               style="max-width:260px">
+        <button class="btn btn-sm btn-ghost" onclick="addFeriado()">Adicionar</button>
+      </div>` : ''}
+      <div class="msg" id="sla-msg"></div>
+    </div>`;
+}
+
+async function salvarRegra(cargo, campo, el) {
+  const r = SLA[cargo];
+  if (!r) return;
+  const n = parseInt(el.value, 10);
+  if (!Number.isFinite(n) || n < 0 || n > 365) { el.value = r[campo]; return; }
+  if (n === r[campo]) return;
+  el.disabled = true;
+  try {
+    const { error } = await cliente().from('sla_regras')
+      .update({ [campo]: n }).eq('cargo', cargo);
+    if (error) throw new Error(error.message);
+    r[campo] = n;
+    el.classList.add('ok');
+    setTimeout(() => el.classList.remove('ok'), 1400);
+  } catch (e) {
+    el.value = r[campo];
+    alert('Não consegui salvar: ' + e.message
+        + '\n\nSó o RH pode mudar as regras de SLA.');
+  } finally { el.disabled = false; }
+}
+
+async function removerFeriado(data) {
+  try {
+    const { error } = await cliente().from('feriados').delete().eq('data', data);
+    if (error) throw new Error(error.message);
+    FERIADOS.delete(data);
+    pintarSLA();
+    msg('sla-msg', `${soData(data)} saiu da lista. A contagem de dias úteis já mudou.`, 'ok');
+  } catch (e) { alert('Não consegui remover: ' + e.message); }
+}
+
+async function addFeriado() {
+  const data = paraISO($('fer-data').value), nome = $('fer-nome').value.trim();
+  if (!data) return msg('sla-msg', 'Informe a data no formato DD/MM/AAAA.', 'err');
+  if (!nome)  return msg('sla-msg', 'Dê um nome ao feriado.', 'err');
+  try {
+    const { data: d, error } = await cliente().from('feriados')
+      .insert({ data, nome, tipo: 'local' }).select('*').single();
+    if (error) throw new Error(error.message);
+    FERIADOS.set(d.data, d);
+    pintarSLA();
+    msg('sla-msg', `${soData(d.data)} entrou na lista.`, 'ok');
+  } catch (e) {
+    msg('sla-msg', 'Não consegui adicionar: ' + e.message, 'err');
+  }
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
    ║  FUNIL DE ADMISSÃO                                                   ║
    ╚══════════════════════════════════════════════════════════════════════╝ */
 function pintarFunil() {
@@ -1954,7 +2221,8 @@ function pintarFunil() {
   // a figura afunilar e deixa ver onde o processo perde força.
   // Só conta vaga aberta: admitida saiu pela porta da frente, congelada e
   // cancelada saíram pela lateral. Nenhuma das três ainda está em processo.
-  const todas = VAGAS.filter(v => !unidadeFoco || v.unidade === unidadeFoco);
+  const todas = VAGAS.filter(v =>
+    !unidadesFoco.length || unidadesFoco.includes(v.unidade));
   const vivas = todas.filter(v => vagaViva(v) && v.etapa !== 'admitido');
   const ordem = ETAPAS.map(e => e.k);
   const posDe = v => ordem.indexOf(v.etapa);
@@ -1997,15 +2265,33 @@ function pintarFunil() {
 
   $('funil').innerHTML = `
     <div class="bar" style="margin-bottom:14px">
-      <select class="inp" id="f-uni" style="max-width:280px"
-              onchange="focarUnidade(this.value)">
-        <option value="">Todas as unidades (${VAGAS.length})</option>
-        ${Object.keys(porUnidade).sort().map(u =>
-          `<option value="${es(u)}"${unidadeFoco === u ? ' selected' : ''}
-            >${es(u)} (${porUnidade[u]})</option>`).join('')}
-      </select>
-      ${unidadeFoco ? `<button class="chip on" onclick="focarUnidade('')"
-        >${es(unidadeFoco)} ✕</button>` : ''}
+      <div class="multi ${multiAberto ? 'on' : ''}" id="m-uni">
+        <button class="bt" onclick="abrirMulti(event)">${es(
+          !unidadesFoco.length ? `Todas as unidades (${VAGAS.length})`
+          : unidadesFoco.length === 1
+            ? `${unidadesFoco[0]} (${porUnidade[unidadesFoco[0]] || 0})`
+            : `${unidadesFoco.length} unidades (${todas.length})`)}<i>▼</i></button>
+        <div class="cx" onclick="event.stopPropagation()">
+          <div class="acima">
+            ${unidadesFoco.length
+              ? `<button class="btn btn-sm btn-ghost" onclick="limparUnidades()"
+                  >Limpar seleção</button>`
+              : 'Marque uma ou mais lojas'}
+          </div>
+          ${Object.keys(porUnidade)
+            // as marcadas sobem para o topo: com 19 lojas, procurar o que já
+            // foi escolhido no meio da lista é trabalho à toa
+            .sort((x, y) => (unidadesFoco.includes(y) - unidadesFoco.includes(x))
+                         || x.localeCompare(y, 'pt-BR'))
+            .map(u => `<label>
+            <input type="checkbox" value="${es(u)}"
+              ${unidadesFoco.includes(u) ? 'checked' : ''}
+              onchange="marcarUnidade(this.value, this.checked)">
+            ${es(u)}<u>${porUnidade[u]}</u></label>`).join('')}
+        </div>
+      </div>
+      ${unidadesFoco.length > 1 ? `<span class="sub"
+        >${es(unidadesFoco.slice().sort().join(' · '))}</span>` : ''}
     </div>
 
     <div class="kpis">
@@ -2070,7 +2356,7 @@ function pintarFunil() {
     <div class="tbl"><table>
       <thead><tr>
         <th>Código</th><th>Unidade</th><th>Cargo</th><th>Contrato</th>
-        <th>Etapa</th><th>Status</th><th>Dias</th><th>Candidatos</th><th>Início</th>
+        <th>Etapa</th><th>Status</th><th>Dias úteis</th><th>Candidatos</th><th>Início</th>
       </tr></thead>
       <tbody>${listaFunil().map(v => {
         const c = candidatosDa(v), pend = c.filter(x => faltantes(x).length).length;
@@ -2085,7 +2371,7 @@ function pintarFunil() {
           <td><span class="tag tag-${v.tipo_contrato === 'PJ' ? 'pj' : 'clt'}">${es(v.tipo_contrato)}</span></td>
           <td><span class="et et-${es(v.etapa)}">${es(ET[v.etapa]?.t || v.etapa)}</span></td>
           <td><span class="st st-${es(statusDe(v))}">${es(STATUS_VAGA[statusDe(v)])}</span></td>
-          <td class="${atrasada(v) ? 'atraso' : ''}">${d == null ? '—' : d + 'd'}</td>
+          <td class="${atrasada(v) ? 'atraso' : ''}">${d == null ? '—' : d + ' du'}</td>
           <td>${c.length ? `${c.length}${pend ? ` <span class="falta">${pend} c/ pend.</span>` : ''}`
                          : '<span class="sub">—</span>'}</td>
           <td>${v.data_inicio ? soData(v.data_inicio) : '—'}</td>
@@ -2121,7 +2407,7 @@ function ajustarRotulosFunil() {
 function listaFunil() {
   const q = buscaFunil.trim().toLowerCase();
   return VAGAS
-    .filter(v => !unidadeFoco || v.unidade === unidadeFoco)
+    .filter(v => !unidadesFoco.length || unidadesFoco.includes(v.unidade))
     .filter(v => statusFoco ? statusDe(v) === statusFoco
                             : (vagaViva(v) && v.etapa !== 'admitido'))
     .filter(v => !etapaFoco || v.etapa === etapaFoco)
@@ -2141,11 +2427,30 @@ function focarEtapa(k) {
   pintarFunil();
 }
 
-function focarUnidade(u) {
-  unidadeFoco = u;
+/* O menu fica aberto entre um clique e outro: marcar três lojas não deveria
+   custar três aberturas. Como pintarFunil() reescreve o bloco inteiro, quem
+   guarda esse estado é a variável, não o DOM. */
+function abrirMulti(ev) {
+  ev.stopPropagation();
+  multiAberto = !multiAberto;
+  $('m-uni')?.classList.toggle('on', multiAberto);
+}
+function marcarUnidade(u, marcada) {
+  unidadesFoco = marcada ? unidadesFoco.concat([u])
+                         : unidadesFoco.filter(x => x !== u);
   etapaFoco = '';
   pintarFunil();
 }
+function limparUnidades() {
+  unidadesFoco = [];
+  etapaFoco = '';
+  pintarFunil();
+}
+document.addEventListener('click', () => {
+  if (!multiAberto) return;
+  multiAberto = false;
+  $('m-uni')?.classList.remove('on');
+});
 
 function focarStatus(k) {
   statusFoco = (statusFoco === k) ? '' : k;
