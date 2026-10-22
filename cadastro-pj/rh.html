@@ -199,27 +199,40 @@
     font-size:11.5px;color:var(--gray-500);flex-wrap:wrap}
   .fn .leg i{display:inline-block;width:11px;height:11px;border-radius:3px;
     margin-right:6px;vertical-align:-1px}
-  .fr{display:grid;grid-template-columns:152px 1fr;gap:12px;align-items:center;
+  .fr{display:grid;grid-template-columns:152px 84px 1fr;gap:12px;align-items:center;
     padding:4px 0;cursor:pointer;border-radius:6px}
   .fr:hover{background:var(--gray-50)}
   .fr.on{background:var(--green-pale)}
   .fr .rot{font-size:12.5px;font-weight:700;line-height:1.25;text-align:right}
   .fr .rot span{display:block;font-size:10.5px;color:var(--gray-400);font-weight:600}
+  /* O total da etapa mora aqui, na origem da barra, e não dentro de nenhum
+     pedaço — foi exatamente essa confusão que fez o 70 parecer o tamanho do
+     bloco verde. Dentro da barra, cada pedaço só fala de si mesmo. */
+  .fr .tot{font-size:13px;font-weight:800;text-align:right;
+    font-variant-numeric:tabular-nums;line-height:1.2}
+  .fr .tot span{display:block;font-size:10.5px;color:var(--gray-400);font-weight:700}
+  .fr .tot.zero{color:var(--gray-300)}
   .fr .faixa{display:flex;align-items:center;min-width:0}
   .fr .tr{height:30px;border-radius:5px;display:flex;gap:2px;min-width:0}
   /* flex:1 por padrão para a barra de uma cor só ocupar o trilho inteiro;
      quando ela é dividida, o flex inline de cada pedaço manda. */
-  .fr .s1,.fr .s2{display:flex;align-items:center;overflow:hidden;min-width:0;flex:1 1 0}
-  .fr .s1{background:#3a7a2e;border-radius:5px 0 0 5px}
-  .fr .s2{background:#d97706;border-radius:0 5px 5px 0}
-  /* ponta arredondada só nas extremidades da barra; onde os dois pedaços se
+  .fr .s0,.fr .s1,.fr .s2{display:flex;align-items:center;overflow:hidden;
+    min-width:0;flex:1 1 0}
+  /* cinza: já saiu desta etapa. verde e âmbar: está parada nela agora */
+  .fr .s0{background:#e6e6e0}
+  .fr .s1{background:#3a7a2e}
+  .fr .s2{background:#d97706}
+  /* ponta arredondada só nas duas extremidades da barra; onde os pedaços se
      encostam a quina é reta, e quem separa é o vão de 2px */
-  .fr .s1:last-child,.fr .s2:first-child{border-radius:5px}
+  .fr .tr > :first-child{border-radius:5px 0 0 5px}
+  .fr .tr > :last-child{border-radius:0 5px 5px 0}
+  .fr .tr > :only-child{border-radius:5px}
   /* O número mora dentro da própria barra. A cor do texto é escolhida pela
      luminância do preenchimento — branco no verde, tinta escura no âmbar —
      porque branco sobre #d97706 não passa no contraste de texto. */
   .fr .lb{font-size:12.5px;font-weight:800;white-space:nowrap;padding:0 11px;
     font-variant-numeric:tabular-nums}
+  .fr .s0 .lb{color:var(--gray-700)}
   .fr .s1 .lb{color:#fff}
   .fr .s2 .lb{color:#422006}
   .fr .lb.fim{margin-left:auto}
@@ -228,8 +241,9 @@
     font-variant-numeric:tabular-nums;padding-left:2px}
   .fr .tr + .fora{padding-left:10px;color:var(--gray-500)}
   @media(max-width:620px){
-    .fr{grid-template-columns:104px 1fr;gap:8px}
+    .fr{grid-template-columns:104px 62px 1fr;gap:8px}
     .fr .rot{font-size:11.5px}
+    .fr .tot{font-size:12px}
     .fr .lb{font-size:11.5px;padding:0 8px}
   }
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
@@ -372,7 +386,7 @@ let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
 const CACHE = {};            // linhas ja carregadas por tipo
 let PERFIL = { papel: 'rh', nome: '', unidade: null }, MEU_ID = null;
 let VAGAS = [], CARGOS = [], SIGLA = {}, selVaga = null, etapaFoco = '', buscaFunil = '';
-let statusFoco = '';
+let statusFoco = '', unidadeFoco = '';
 let AVISO_SETUP = '';
 
 /* Carregadas da tabela `unidades` no login — a sigla de cada uma vira o
@@ -1942,16 +1956,22 @@ function pintarFunil() {
   // a figura afunilar e deixa ver onde o processo perde força.
   // Só conta vaga aberta: admitida saiu pela porta da frente, congelada e
   // cancelada saíram pela lateral. Nenhuma das três ainda está em processo.
-  const vivas = VAGAS.filter(v => vagaViva(v) && v.etapa !== 'admitido');
+  const todas = VAGAS.filter(v => !unidadeFoco || v.unidade === unidadeFoco);
+  const vivas = todas.filter(v => vagaViva(v) && v.etapa !== 'admitido');
   const ordem = ETAPAS.map(e => e.k);
   const posDe = v => ordem.indexOf(v.etapa);
 
+  /* Quem chegou a uma etapa ou parou nela, ou seguiu adiante — as duas coisas
+     somam o total, e é isso que a barra divide. O desenho antigo pintava de
+     verde "o total menos as atrasadas", que não é quantidade de coisa
+     nenhuma: na triagem dava 31, quando na etapa havia 42. */
   const linhas = ETAPAS_FUNIL.map(e => {
     const i        = ordem.indexOf(e.k);
-    const passaram = vivas.filter(v => posDe(v) >= i);
+    const chegaram = vivas.filter(v => posDe(v) >= i).length;
     const aqui     = vivas.filter(v => v.etapa === e.k);
-    const atrasa   = aqui.filter(atrasada);
-    return { e, total: passaram.length, aqui: aqui.length, atraso: atrasa.length };
+    const atraso   = aqui.filter(atrasada).length;
+    return { e, total: chegaram, aqui: aqui.length, atraso: atraso,
+             prazo: aqui.length - atraso, adiante: chegaram - aqui.length };
   });
   const base = linhas[0]?.total || 0;
   const maior = Math.max(1, ...linhas.map(l => l.total));
@@ -1962,12 +1982,16 @@ function pintarFunil() {
       .includes(v.etapa)).length;
   const emAdmissao = vivas.filter(v =>
     ['documentos','oris','aso','programar','inicio_agendado'].includes(v.etapa)).length;
-  const paradas = VAGAS.filter(vagaParada).length;
+  const paradas = todas.filter(vagaParada).length;
   const comProblema = vivas.filter(v =>
     atrasada(v) || candidatosDa(v).some(c => faltantes(c).length)).length;
-  const admitidos = VAGAS.filter(v => v.etapa === 'admitido').length;
+  const admitidos = todas.filter(v => v.etapa === 'admitido').length;
 
-  const proximas = VAGAS.map(v => v.data_inicio).filter(d => d && d >= hoje()).sort();
+  // as unidades que de fato têm vaga, com quantas cada uma tem
+  const porUnidade = {};
+  VAGAS.forEach(v => { porUnidade[v.unidade] = (porUnidade[v.unidade] || 0) + 1; });
+
+  const proximas = todas.map(v => v.data_inicio).filter(d => d && d >= hoje()).sort();
   const fmtD = d => {
     if (!d) return '—';
     const x = new Date(d + 'T12:00:00');
@@ -1976,6 +2000,18 @@ function pintarFunil() {
   };
 
   $('funil').innerHTML = `
+    <div class="bar" style="margin-bottom:14px">
+      <select class="inp" id="f-uni" style="max-width:280px"
+              onchange="focarUnidade(this.value)">
+        <option value="">Todas as unidades (${VAGAS.length})</option>
+        ${Object.keys(porUnidade).sort().map(u =>
+          `<option value="${es(u)}"${unidadeFoco === u ? ' selected' : ''}
+            >${es(u)} (${porUnidade[u]})</option>`).join('')}
+      </select>
+      ${unidadeFoco ? `<button class="chip on" onclick="focarUnidade('')"
+        >${es(unidadeFoco)} ✕</button>` : ''}
+    </div>
+
     <div class="kpis">
       <div class="kpi"><b>${emSelecao}</b><span>Vagas em recrutamento</span></div>
       <div class="kpi"><b>${emAdmissao}</b><span>Vagas em admissão</span></div>
@@ -1989,40 +2025,37 @@ function pintarFunil() {
       <h3>Funil de admissão</h3>
       <div class="sub">${base} vaga(s) abertas no processo${admitidos
         ? ` · ${admitidos} já admitida(s), fora do funil` : ''} ·
-        a barra mostra quantas já chegaram a cada etapa</div>
+        o comprimento da barra é quantas chegaram à etapa, e a parte colorida
+        é quantas estão paradas nela agora</div>
       <div class="leg">
         ${paradas ? `<span style="color:var(--gray-400)">${paradas} congelada(s)
           ou cancelada(s), também fora</span>` : ''}
-        <span><i style="background:#3a7a2e"></i>no prazo</span>
-        <span><i style="background:#d97706"></i>parada nesta etapa e atrasada</span>
+        <span><i style="background:#e6e6e0"></i>já seguiu adiante</span>
+        <span><i style="background:#3a7a2e"></i>parada aqui, no prazo</span>
+        <span><i style="background:#d97706"></i>parada aqui, atrasada</span>
         <span style="margin-left:auto">clique numa etapa para filtrar a lista</span>
       </div>
       ${linhas.map(l => {
         const larg = (l.total / maior) * 100;
-        const pAtr = l.total ? (l.atraso / l.total) * 100 : 0;
         const conv = base ? Math.round(l.total / base * 100) : 0;
-        const prim = `${l.total} · ${conv}%`;
-        // Três desenhos possíveis: tudo no prazo, tudo atrasado, ou os dois.
-        // Quando a barra é inteira de uma cor, o número principal mora nela;
-        // quando é dividida, o principal fica no verde e o atraso no âmbar.
-        let dentro;
-        if (!l.total)            dentro = '';
-        else if (!l.atraso)      dentro = `<div class="s1"><span class="lb"
-                                     data-curto="${l.total}">${prim}</span></div>`;
-        else if (l.atraso === l.total)
-                                 dentro = `<div class="s2"><span class="lb"
-                                     data-curto="${l.total}">${prim}</span></div>`;
-        else                     dentro = `<div class="s1" style="flex:${100 - pAtr}">
-                                     <span class="lb" data-curto="${l.total}">${prim}</span></div>
-                                   <div class="s2" style="flex:${pAtr}">
-                                     <span class="lb fim" data-curto="${l.atraso}"
-                                       >${l.atraso} atrasada(s)</span></div>`;
+        // Cada pedaço carrega o próprio número. O total da etapa fica fora da
+        // barra, na coluna ao lado do nome, porque ele descreve a barra
+        // inteira e não teria onde morar sem mentir sobre um pedaço.
+        const pecas = [
+          ['s0', l.adiante, `${l.adiante} seguiram`,     l.adiante],
+          ['s1', l.prazo,   `${l.prazo} no prazo`,       l.prazo],
+          ['s2', l.atraso,  `${l.atraso} atrasada(s)`,   l.atraso],
+        ].filter(p => p[1] > 0);
         return `<div class="fr ${etapaFoco === l.e.k ? 'on' : ''}"
                      onclick="focarEtapa('${l.e.k}')">
           <div class="rot">${l.e.t}${l.e.d ? `<span>${l.e.d}</span>` : ''}</div>
+          <div class="tot ${l.total ? '' : 'zero'}">${l.total}
+            <span>${l.total ? conv + '%' : '—'}</span></div>
           <div class="faixa">
-            ${l.total ? `<div class="tr" style="width:${larg}%">${dentro}</div>` : ''}
-            <span class="fora">${l.total ? '' : '0'}</span>
+            ${l.total ? `<div class="tr" style="width:${larg}%">${pecas.map(
+              ([c, n, txt, curto]) => `<div class="${c}" style="flex:${n}"
+                ><span class="lb" data-curto="${curto}">${txt}</span></div>`).join('')}
+            </div>` : ''}
           </div>
         </div>`;
       }).join('')}
@@ -2094,6 +2127,7 @@ function ajustarRotulosFunil() {
 function listaFunil() {
   const q = buscaFunil.trim().toLowerCase();
   return VAGAS
+    .filter(v => !unidadeFoco || v.unidade === unidadeFoco)
     .filter(v => statusFoco ? statusDe(v) === statusFoco
                             : (vagaViva(v) && v.etapa !== 'admitido'))
     .filter(v => !etapaFoco || v.etapa === etapaFoco)
@@ -2110,6 +2144,12 @@ function listaFunil() {
 
 function focarEtapa(k) {
   etapaFoco = (etapaFoco === k) ? '' : k;
+  pintarFunil();
+}
+
+function focarUnidade(u) {
+  unidadeFoco = u;
+  etapaFoco = '';
   pintarFunil();
 }
 
