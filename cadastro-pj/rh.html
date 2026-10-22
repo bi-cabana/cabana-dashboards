@@ -410,14 +410,17 @@
     <input class="inp" id="in-senha" type="password" autocomplete="current-password"
            placeholder="••••••••" style="margin-bottom:20px">
     <button class="btn btn-primary" id="btn-login" style="width:100%" onclick="entrar()">Entrar</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:10px"
+            onclick="esqueciSenha()">Esqueci minha senha</button>
   </div>
 </div>
 
 <div id="trocar">
   <div class="cartao">
-    <h1>Crie a sua senha</h1>
-    <p>Você entrou com a senha provisória, que o RH conhece. Escolha agora uma
-       que só você saiba — é ela que vai valer daqui para a frente.</p>
+    <h1 id="tr-tit">Crie a sua senha</h1>
+    <p id="tr-sub">Você entrou com a senha provisória, que o RH conhece.
+       Escolha agora uma que só você saiba — é ela que vai valer daqui para
+       a frente.</p>
     <div class="msg err" id="tr-msg"></div>
     <label class="lbl">Nova senha</label>
     <input class="inp" id="tr-s1" type="password" autocomplete="new-password"
@@ -430,6 +433,8 @@
       Não pode ser a provisória.</div>
     <button class="btn btn-primary" id="tr-bt" style="width:100%"
             onclick="salvarSenhaNova()">Salvar e entrar</button>
+    <button class="btn btn-ghost" id="tr-cancela" style="width:100%;margin-top:9px;
+            display:none" onclick="fecharTrocaSenha()">Cancelar</button>
   </div>
 </div>
 
@@ -448,6 +453,7 @@
     <span class="who" id="who"></span>
     <button class="btn btn-sm btn-ghost" onclick="exportarCSV()">Baixar CSV</button>
     <button class="btn btn-sm btn-ghost" onclick="carregar()">Atualizar</button>
+    <button class="btn btn-sm btn-ghost" onclick="abrirTrocaSenha()">Trocar senha</button>
     <button class="btn btn-sm btn-ghost" onclick="sair()">Sair</button>
   </div>
 
@@ -1105,6 +1111,7 @@ function cliente() {
   if (SUPABASE_URL.startsWith('COLE_AQUI'))
     throw new Error('painel ainda não configurado (SUPABASE_URL / SUPABASE_ANON).');
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  escutarRecuperacao(sb);
   return sb;
 }
 
@@ -1150,8 +1157,7 @@ async function abrirApp() {
      ela protege é o começo, não o sistema. */
   if (p.trocou_senha === false) {
     $('login').style.display = 'none';
-    $('trocar').classList.add('show');
-    $('tr-s1').focus();
+    telaSenha('primeiro');
     return;
   }
   $('who').textContent = (p.nome || user?.email || '')
@@ -1218,6 +1224,75 @@ async function sair() {
   location.reload();
 }
 
+/* A mesma tela serve a três situações, e o texto muda porque elas são
+   diferentes para quem está lendo: a primeira é obrigatória, a segunda veio
+   de um link de e-mail, a terceira a pessoa escolheu fazer. */
+let MODO_SENHA = 'primeiro';
+
+function telaSenha(modo) {
+  MODO_SENHA = modo;
+  const t = {
+    primeiro: ['Crie a sua senha',
+      'Você entrou com a senha provisória, que o RH conhece. Escolha agora '
+      + 'uma que só você saiba — é ela que vai valer daqui para a frente.'],
+    recuperacao: ['Defina uma senha nova',
+      'Você chegou pelo link que pediu por e-mail. Escolha a senha nova.'],
+    voluntaria: ['Trocar a sua senha',
+      'A senha atual deixa de valer assim que você salvar.'],
+  }[modo];
+  $('tr-tit').textContent = t[0];
+  $('tr-sub').textContent = t[1];
+  $('tr-bt').textContent = modo === 'voluntaria' ? 'Salvar' : 'Salvar e entrar';
+  $('tr-cancela').style.display = modo === 'voluntaria' ? '' : 'none';
+  msg('tr-msg', '');
+  $('tr-s1').value = ''; $('tr-s2').value = '';
+  $('trocar').classList.add('show');
+  $('tr-s1').focus();
+}
+
+function abrirTrocaSenha() { telaSenha('voluntaria'); }
+function fecharTrocaSenha() { $('trocar').classList.remove('show'); }
+
+/* O link de recuperação devolve a pessoa ao painel já com sessão aberta.
+   É este evento que avisa, e sem ele a pessoa cairia na tela normal sem
+   entender por que não pediram a senha nova. */
+function escutarRecuperacao(db) {
+  db.auth.onAuthStateChange((evento) => {
+    if (evento === 'PASSWORD_RECOVERY') {
+      $('login').style.display = 'none';
+      $('app').style.display = 'none';
+      telaSenha('recuperacao');
+    }
+  });
+}
+
+/* O Supabase só entrega e-mail de recuperação se o projeto tiver um servidor
+   de e-mail próprio configurado. Sem isso ele recusa endereços que não sejam
+   da equipe do projeto — e nenhum gerente é. Por isso a mensagem de erro
+   aponta para o RH, que sempre consegue resetar. */
+async function esqueciSenha() {
+  const email = ($('in-email').value || '').trim().toLowerCase();
+  if (!email) {
+    msg('login-msg', 'Escreva o seu e-mail acima e clique de novo.', 'err');
+    $('in-email').focus();
+    return;
+  }
+  const bt = event.target; bt.disabled = true; bt.textContent = 'Enviando…';
+  try {
+    const db = cliente();
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: location.href.split('#')[0],
+    });
+    if (error) throw new Error(error.message);
+    msg('login-msg', 'Se este e-mail tiver acesso ao painel, o link de '
+      + 'recuperação chega em alguns minutos. Confira o lixo eletrônico.', 'ok');
+  } catch (e) {
+    msg('login-msg', 'Não consegui enviar o e-mail (' + e.message + '). '
+      + 'Peça ao RH para gerar uma senha provisória — na aba Acessos, '
+      + 'botão Resetar senha.', 'err');
+  } finally { bt.disabled = false; bt.textContent = 'Esqueci minha senha'; }
+}
+
 async function salvarSenhaNova() {
   const a = $('tr-s1').value, b = $('tr-s2').value;
   const erro = t => { msg('tr-msg', t, 'err'); return false; };
@@ -1231,6 +1306,13 @@ async function salvarSenhaNova() {
     const { error } = await db.auth.updateUser({ password: a });
     if (error) throw new Error(error.message);
     await db.rpc('marcar_senha_trocada');
+    if (MODO_SENHA === 'voluntaria') {
+      fecharTrocaSenha();
+      bt.disabled = false; bt.textContent = 'Salvar';
+      msg('app-msg', 'Senha trocada. A antiga não vale mais.', 'ok');
+      setTimeout(() => msg('app-msg', AVISO_SETUP), 6000);
+      return;
+    }
     /* Recarrega em vez de seguir daqui. A trava interrompe o login antes de
        o painel buscar lojas, cargos e regras de SLA — seguir em frente
        entregaria uma tela sem nenhum desses. A sessão já está aberta, então
