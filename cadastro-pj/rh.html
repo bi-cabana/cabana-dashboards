@@ -258,6 +258,13 @@
 
   .semcod{color:var(--gray-300);font-style:italic}
 
+  /* ── ORDENAR POR COLUNA ── */
+  th.ord{cursor:pointer;user-select:none;position:relative;padding-right:16px}
+  th.ord:hover{color:var(--green-dark)}
+  th.ord::after{content:'↕';position:absolute;right:4px;opacity:.25;font-size:10px}
+  th.ord.asc::after{content:'↑';opacity:1;color:var(--green-dark)}
+  th.ord.desc::after{content:'↓';opacity:1;color:var(--green-dark)}
+
   /* ── LINK DO PORTAL DE CADASTRO ── */
   .plink{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;
     border-radius:var(--radius);box-shadow:var(--shadow);padding:13px 18px;
@@ -1385,6 +1392,69 @@ async function copiarPortal(bt, url) {
   setTimeout(() => { bt.textContent = 'Copiar link'; }, 2000);
 }
 
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  ORDENAR POR COLUNA                                                  ║
+   ║                                                                      ║
+   ║  Trabalha sobre as linhas já desenhadas, lendo o texto da célula —   ║
+   ║  por isso serve a qualquer tabela do painel sem que o renderizador   ║
+   ║  dela saiba que isto existe, e sem repetir regra de ordenação em     ║
+   ║  cada lugar. A escolha fica guardada por tabela e é reaplicada       ║
+   ║  depois de cada redesenho.                                           ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+let ORDEM = {};
+
+/* Devolve [grupo, valor]. O grupo existe para vazio e "—" irem sempre para
+   o fim, subindo ou descendo: linha sem dado no meio da lista atrapalha
+   nos dois sentidos. */
+function chaveCelula(td) {
+  const t = (td?.textContent || '').replace(/\s+/g, ' ').trim();
+  if (!t || t === '—' || t === '-') return [3, ''];
+  const d = t.match(/^(\d{2})\/(\d{2})\/(\d{4})/);          // 22/10/2026
+  if (d) return [1, +(d[3] + d[2] + d[1])];
+  const n = t.match(/^-?\d[\d.]*(,\d+)?/);                   // 17 du, 1.234, 9,5
+  if (n && /^[-\d.,]/.test(t))
+    return [1, parseFloat(n[0].replace(/\./g, '').replace(',', '.'))];
+  return [2, t.toLowerCase()];
+}
+
+function aplicarOrdem(tabela, chave) {
+  const o = ORDEM[chave];
+  const tb = tabela?.tBodies?.[0];
+  if (!o || o.col == null || !tb) return;
+  [...tb.rows]
+    .map(l => [chaveCelula(l.cells[o.col]), l])
+    .sort((a, b) => {
+      if (a[0][0] !== b[0][0]) return a[0][0] - b[0][0];
+      const r = a[0][1] < b[0][1] ? -1 : a[0][1] > b[0][1] ? 1 : 0;
+      return o.asc ? r : -r;
+    })
+    .forEach(([, l]) => tb.appendChild(l));
+}
+
+function marcarCabecalho(tabela, chave) {
+  const o = ORDEM[chave] || {};
+  [...(tabela.tHead?.rows?.[0]?.cells || [])].forEach((th, i) => {
+    th.classList.toggle('asc',  o.col === i && o.asc);
+    th.classList.toggle('desc', o.col === i && !o.asc);
+  });
+}
+
+function tabelaOrdenavel(tabela, chave) {
+  if (!tabela || !tabela.tHead) return;
+  [...tabela.tHead.rows[0].cells].forEach((th, i) => {
+    if (!th.textContent.trim()) return;      // coluna sem título não ordena
+    th.classList.add('ord');
+    th.onclick = () => {
+      const o = ORDEM[chave] || (ORDEM[chave] = { col: null, asc: true });
+      if (o.col === i) o.asc = !o.asc; else { o.col = i; o.asc = true; }
+      marcarCabecalho(tabela, chave);
+      aplicarOrdem(tabela, chave);
+    };
+  });
+  marcarCabecalho(tabela, chave);
+  aplicarOrdem(tabela, chave);
+}
+
 /* ───────────── LISTA ───────────── */
 async function carregar() {
   if (TIPO === 'sla')    { pintarSLA(); return; }
@@ -1471,6 +1541,7 @@ function pintar() {
   $('vazio').textContent = linhas.length
     ? 'Nenhum cadastro corresponde ao filtro.'
     : `Nenhum cadastro de ${cfg.rotulo} recebido ainda.`;
+  tabelaOrdenavel($('cab').closest('table'), TIPO);
 }
 
 /* ───────────── DETALHE ───────────── */
@@ -1829,6 +1900,7 @@ function pintarVagas() {
       <td><span class="st st-${es(statusDe(v))}">${es(STATUS_VAGA[statusDe(v)])}</span></td>
     </tr>`).join('');
   $('vazio').style.display = rs.length ? 'none' : 'block';
+  tabelaOrdenavel($('cab').closest('table'), 'vaga');
   $('vazio').textContent = VAGAS.length
     ? 'Nenhuma vaga corresponde à busca.'
     : (ehRH() || ehDiretoria() ? 'Nenhuma vaga solicitada ainda.'
@@ -2512,6 +2584,7 @@ async function salvarInicio(id, valor) {
    ║  para o RH repassar, e obrigar a troca no primeiro acesso.           ║
    ╚══════════════════════════════════════════════════════════════════════╝ */
 let ACESSOS = [], ULTIMO_ACESSO = {}, SEM_FUNCAO = '';
+let LOJAS = [], REGIONAIS = [], SEM_UNIDADES = '';
 /* A senha provisória fica aqui, e não só no DOM: a tela se redesenha
    inteira quando a lista recarrega, e uma senha que some antes de ser
    copiada esta perdida — nao da para consultar depois, so gerar outra. */
@@ -2524,6 +2597,14 @@ async function carregarAcessos() {
     const { data, error } = await db.rpc('lista_acessos');
     if (error) throw new Error(error.message);
     ACESSOS = data || [];
+
+    const [lu, lr] = await Promise.all([
+      db.rpc('lista_unidades'), db.rpc('lista_regionais')]);
+    LOJAS = lu.data || [];
+    REGIONAIS = lr.data || [];
+    SEM_UNIDADES = (lu.error || lr.error)
+      ? 'Para mover loja de regional, rode o <b>30_unidades.sql</b> no SQL Editor.'
+      : '';
     // o último acesso mora no Authentication, que o painel não alcança
     try {
       const r = await db.functions.invoke('gestao-acessos', { body: { acao:'listar' } });
@@ -2658,7 +2739,82 @@ function pintarAcessos() {
         Quando alguém não conseguir entrar, use <b>Resetar senha</b>: sai uma
         provisória nova, aparece aqui uma vez, e a pessoa troca ao entrar.
       </div>
-    </div>`;
+    </div>
+
+    ${cardLojas()}`;
+}
+
+/* Mover loja de regional muda quem enxerga o quê: o alcance do coordenador
+   sai daqui, não de uma lista à parte. Por isso este card mora junto dos
+   acessos e não numa aba própria. */
+function cardLojas() {
+  if (SEM_UNIDADES) return `<div class="slac" style="border-top:3px solid var(--warn)">
+    <h3>Lojas e regionais</h3>
+    <div class="sub" style="line-height:1.6">${SEM_UNIDADES}</div></div>`;
+
+  const semRegional = LOJAS.filter(l => !l.regiao).length;
+  const semCoord = REGIONAIS.filter(r => !r.coordenador);
+
+  return `<div class="slac">
+    <h3>Lojas e regionais</h3>
+    <div class="sub">Mudar a regional de uma loja muda quem a enxerga: o
+      coordenador daquela regional passa a ver as vagas e os candidatos dela,
+      e o anterior deixa de ver. O gerente da loja não é afetado.</div>
+
+    ${semRegional ? `<div class="fbox" style="margin-top:12px"><b>⚠️ ${semRegional}
+      loja(s) sem regional</b><div style="font-size:11.5px;color:#78350f;line-height:1.5">
+      Elas só aparecem para o RH e para a diretoria — nenhum coordenador as
+      enxerga.</div></div>` : ''}
+    ${semCoord.length ? `<div class="sub" style="margin-top:10px;line-height:1.5">
+      Sem coordenador cadastrado: <b>${semCoord.map(r => es(r.regiao)).join(', ')}</b>.
+      As lojas dessas regionais ficam visíveis só para RH e diretoria.</div>` : ''}
+
+    <div class="acw" style="margin-top:14px"><table>
+      <thead><tr><th>Loja</th><th>Sigla</th><th>Regional</th>
+        <th>Coordenador</th><th>Vagas</th></tr></thead>
+      <tbody>${LOJAS.map(l => `<tr class="${l.regiao ? '' : 'off'}">
+        <td><b>${es(l.nome)}</b></td>
+        <td class="em">${es(l.sigla)}</td>
+        <td><select class="sel" onchange="moverLoja('${es(l.nome).replace(/'/g, "\\'")}', this)">
+          <option value=""${l.regiao ? '' : ' selected'}>— sem regional —</option>
+          ${REGIONAIS.map(r => `<option value="${es(r.regiao)}"${
+            r.regiao === l.regiao ? ' selected' : ''}>${es(r.regiao)}</option>`).join('')}
+        </select></td>
+        <td>${l.coordenador ? es(l.coordenador)
+          : '<span class="sub">ninguém</span>'}</td>
+        <td>${l.vagas}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <div class="msg" id="lj-msg"></div>
+  </div>`;
+}
+
+/* O coordenador da loja não é digitado: vem de quem responde pela regional
+   no cadastro de acesso. Guardar o nome na loja e o papel no acesso faria
+   os dois divergirem no primeiro remanejamento. */
+async function moverLoja(nome, el) {
+  const nova = el.value || null;
+  const loja = LOJAS.find(l => l.nome === nome);
+  if (!loja) return;
+  const coord = REGIONAIS.find(r => r.regiao === nova)?.coordenador || null;
+  el.disabled = true;
+  try {
+    const { error } = await cliente().from('unidades')
+      .update({ regiao: nova, coord_regional: coord }).eq('nome', nome);
+    if (error) throw new Error(error.message);
+    loja.regiao = nova; loja.coordenador = coord;
+    // o resto do painel lê daqui para montar filtro e mostrar a regional
+    if (REGIONAL[nome]) REGIONAL[nome] = { regiao: nova || '', coord: coord || '' };
+    pintarAcessos();
+    msg('lj-msg', nova
+      ? `${nome} agora é da ${nova}${coord ? ' — ' + coord + ' passa a enxergar' : ''}.`
+      : `${nome} ficou sem regional: só o RH e a diretoria enxergam.`, 'ok');
+    setTimeout(() => msg('lj-msg', ''), 7000);
+  } catch (e) {
+    el.disabled = false;
+    alert('Não consegui mover: ' + e.message);
+    pintarAcessos();
+  }
 }
 
 /* As regionais que existem de fato, tiradas das lojas cadastradas. */
@@ -3071,6 +3227,7 @@ function pintarFunil() {
     ${listaFunil().length ? '' :
       '<div class="vazio">Nenhuma vaga nesta etapa.</div>'}</div>`;
 
+  tabelaOrdenavel($('funil').querySelector('.tbl table'), 'funil');
   requestAnimationFrame(ajustarRotulosFunil);
 }
 
