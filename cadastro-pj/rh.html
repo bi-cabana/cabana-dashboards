@@ -296,6 +296,44 @@
     border-bottom:1px solid var(--gray-100);margin-bottom:6px;font-size:11.5px;
     color:var(--gray-400)}
 
+  /* ── TROCA DE SENHA OBRIGATÓRIA ── */
+  #trocar{display:none;position:fixed;inset:0;z-index:90;background:var(--green-dark);
+    align-items:center;justify-content:center;padding:20px}
+  #trocar.show{display:flex}
+  #trocar .cartao{background:#fff;border-radius:16px;padding:34px 32px;width:100%;
+    max-width:430px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  #trocar h1{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;margin-bottom:6px}
+  #trocar p{font-size:13px;color:var(--gray-500);line-height:1.55;margin-bottom:20px}
+  #trocar .reg{font-size:11.5px;color:var(--gray-400);line-height:1.6;margin:10px 0 18px}
+
+  /* ── GESTÃO DE ACESSOS ── */
+  #acesso{display:none}
+  .acw{overflow-x:auto;margin-top:16px}
+  .acw table{border-collapse:collapse;min-width:980px;width:100%}
+  .acw th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--gray-400);font-weight:800;text-align:left;padding:0 10px 9px;
+    white-space:nowrap}
+  .acw td{padding:7px 10px;border-top:1px solid var(--gray-100);font-size:13px;
+    vertical-align:middle}
+  .acw tr.off td{opacity:.45}
+  .acw .sel{padding:6px 8px;font-size:12.5px;border:1.5px solid var(--gray-200);
+    border-radius:7px;background:#fff;font-family:inherit;max-width:190px}
+  .acw .sel:focus{outline:none;border-color:var(--green)}
+  .acw .em{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--gray-500)}
+  .acw .acoes{display:flex;gap:6px;white-space:nowrap}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;
+    font-weight:800;white-space:nowrap}
+  .pill-prov{background:#fffbeb;color:#92400e}
+  .pill-ok{background:var(--green-pale);color:var(--green-dark)}
+  .pill-off{background:#fef2f2;color:#b91c1c}
+  .senha-nova{background:#ecfdf5;border:2px solid var(--green);border-radius:11px;
+    padding:16px 18px;margin-bottom:16px}
+  .senha-nova b{display:block;font-size:13px;margin-bottom:7px}
+  .senha-nova .v{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;
+    letter-spacing:.04em;background:#fff;border-radius:8px;padding:10px 14px;
+    display:inline-block;margin-right:9px;user-select:all}
+  .senha-nova .av{font-size:11.5px;color:#065f46;margin-top:9px;line-height:1.55}
+
   /* ── REGRAS DE SLA ── */
   #sla{display:none}
   .slac{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
@@ -375,6 +413,26 @@
   </div>
 </div>
 
+<div id="trocar">
+  <div class="cartao">
+    <h1>Crie a sua senha</h1>
+    <p>Você entrou com a senha provisória, que o RH conhece. Escolha agora uma
+       que só você saiba — é ela que vai valer daqui para a frente.</p>
+    <div class="msg err" id="tr-msg"></div>
+    <label class="lbl">Nova senha</label>
+    <input class="inp" id="tr-s1" type="password" autocomplete="new-password"
+           placeholder="••••••••" style="margin-bottom:12px">
+    <label class="lbl">Repita a nova senha</label>
+    <input class="inp" id="tr-s2" type="password" autocomplete="new-password"
+           placeholder="••••••••" style="margin-bottom:6px"
+           onkeydown="if(event.key==='Enter')salvarSenhaNova()">
+    <div class="reg">Pelo menos 8 caracteres, com letra e número.
+      Não pode ser a provisória.</div>
+    <button class="btn btn-primary" id="tr-bt" style="width:100%"
+            onclick="salvarSenhaNova()">Salvar e entrar</button>
+  </div>
+</div>
+
 <!-- ══════════ APP ══════════ -->
 <div id="app">
   <div class="top">
@@ -385,6 +443,7 @@
       <button data-t="vaga"            onclick="trocarTipo('vaga')">Vagas</button>
       <button data-t="funil"           onclick="trocarTipo('funil')">Funil de Admissão</button>
       <button data-t="sla"             onclick="trocarTipo('sla')">Regras de SLA</button>
+      <button data-t="acesso"          onclick="trocarTipo('acesso')">Acessos</button>
     </div>
     <span class="who" id="who"></span>
     <button class="btn btn-sm btn-ghost" onclick="exportarCSV()">Baixar CSV</button>
@@ -415,6 +474,7 @@
 
     <div id="funil"></div>
     <div id="sla"></div>
+    <div id="acesso"></div>
     <div id="tela"></div>
 
     <div class="rodape">
@@ -1077,9 +1137,23 @@ async function abrirApp() {
     throw new Error('Este usuário existe, mas não está autorizado. '
                   + 'Peça para incluírem você na tabela rh_autorizado.');
   }
+  if (p.ativo === false) {
+    await db.auth.signOut();
+    throw new Error('Este acesso está desligado. Fale com o RH.');
+  }
   PERFIL = p;
   const { data: { user } } = await db.auth.getUser();
   MEU_ID = user?.id || null;
+
+  /* Quem ainda está na senha provisória não passa daqui. A trava é de tela,
+     e é o suficiente: a senha provisória é conhecida pelo RH, então o que
+     ela protege é o começo, não o sistema. */
+  if (p.trocou_senha === false) {
+    $('login').style.display = 'none';
+    $('trocar').classList.add('show');
+    $('tr-s1').focus();
+    return;
+  }
   $('who').textContent = (p.nome || user?.email || '')
     + ' · ' + (PAPEIS[p.papel] || p.papel)
     + (p.unidade ? ' · ' + p.unidade
@@ -1090,6 +1164,11 @@ async function abrirApp() {
      banco para a loja ou a regional deles. */
   if (!vePrazos()) {
     document.querySelectorAll('#sw-tipo button[data-t=sla]')
+      .forEach(b => b.style.display = 'none');
+  }
+  // quem administra acesso é só o RH
+  if (!ehRH()) {
+    document.querySelectorAll('#sw-tipo button[data-t=acesso]')
       .forEach(b => b.style.display = 'none');
   }
 
@@ -1139,6 +1218,31 @@ async function sair() {
   location.reload();
 }
 
+async function salvarSenhaNova() {
+  const a = $('tr-s1').value, b = $('tr-s2').value;
+  const erro = t => { msg('tr-msg', t, 'err'); return false; };
+  if (a.length < 8)              return erro('Use pelo menos 8 caracteres.');
+  if (!/[a-zA-Z]/.test(a) || !/[0-9]/.test(a))
+                                 return erro('Misture letra e número.');
+  if (a !== b)                   return erro('As duas não são iguais.');
+  const bt = $('tr-bt'); bt.disabled = true; bt.textContent = 'Salvando…';
+  try {
+    const db = cliente();
+    const { error } = await db.auth.updateUser({ password: a });
+    if (error) throw new Error(error.message);
+    await db.rpc('marcar_senha_trocada');
+    /* Recarrega em vez de seguir daqui. A trava interrompe o login antes de
+       o painel buscar lojas, cargos e regras de SLA — seguir em frente
+       entregaria uma tela sem nenhum desses. A sessão já está aberta, então
+       o recarregamento entra direto, agora pelo caminho normal. */
+    bt.textContent = 'Pronto, entrando…';
+    location.reload();
+  } catch (e) {
+    bt.disabled = false; bt.textContent = 'Salvar e entrar';
+    erro('Não consegui trocar: ' + e.message);
+  }
+}
+
 /* ───────────── TIPO ───────────── */
 function trocarTipo(t) {
   if (t === TIPO) return;
@@ -1166,9 +1270,10 @@ function ajustarUI() {
   document.querySelectorAll('.chip').forEach(c => c.style.display = cadastro ? '' : 'none');
   $('bt-nova').style.display = (t === 'vaga' && podeAbrirVaga()) ? '' : 'none';
   document.querySelector('.tbl').style.display =
-    (t === 'funil' || t === 'sla') ? 'none' : '';
-  $('funil').style.display = t === 'funil' ? 'block' : 'none';
-  $('sla').style.display   = t === 'sla'   ? 'block' : 'none';
+    (t === 'funil' || t === 'sla' || t === 'acesso') ? 'none' : '';
+  $('funil').style.display  = t === 'funil'  ? 'block' : 'none';
+  $('sla').style.display    = t === 'sla'    ? 'block' : 'none';
+  $('acesso').style.display = t === 'acesso' ? 'block' : 'none';
   $('tela').style.display = 'none';
   // o gerente nao exporta base de candidatos
   document.querySelectorAll('.top .btn-ghost').forEach(b => {
@@ -1181,7 +1286,8 @@ function ajustarUI() {
 
 /* ───────────── LISTA ───────────── */
 async function carregar() {
-  if (TIPO === 'sla') { pintarSLA(); return; }
+  if (TIPO === 'sla')    { pintarSLA(); return; }
+  if (TIPO === 'acesso') { carregarAcessos(); return; }
   // o aviso de banco incompleto sobrevive ao recarregamento da lista
   msg('app-msg', (TIPO === 'vaga' || TIPO === 'funil') ? AVISO_SETUP : '');
   $('vazio').textContent = 'Carregando…';
@@ -1243,7 +1349,8 @@ function visiveis() {
 function pintar() {
   if (TIPO === 'vaga')  return pintarVagas();
   if (TIPO === 'funil') return pintarFunil();
-  if (TIPO === 'sla')   return pintarSLA();
+  if (TIPO === 'sla')    return pintarSLA();
+  if (TIPO === 'acesso') return pintarAcessos();
   const cfg = T(), rs = visiveis();
   $('cab').innerHTML = cfg.colunas.map(c => `<th>${es(c.t)}</th>`).join('')
     + '<th>Documentos</th><th>Recebido</th><th>Status</th><th></th>';
@@ -2293,6 +2400,277 @@ async function salvarInicio(id, valor) {
     const v = VAGAS.find(x => x.id === id);
     if (v) v.data_inicio = paraISO(valor);
   } catch (e) { alert('Não consegui salvar a data: ' + e.message); }
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  GESTÃO DE ACESSOS                                                   ║
+   ║                                                                      ║
+   ║  Senha não se mostra, porque senha não é guardada: o banco só tem o  ║
+   ║  hash, que é caminho de ida. O que esta tela faz é o que resolve o   ║
+   ║  problema de verdade — gerar uma provisória nova, mostrar UMA vez    ║
+   ║  para o RH repassar, e obrigar a troca no primeiro acesso.           ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+let ACESSOS = [], ULTIMO_ACESSO = {}, SEM_FUNCAO = '';
+/* A senha provisória fica aqui, e não só no DOM: a tela se redesenha
+   inteira quando a lista recarrega, e uma senha que some antes de ser
+   copiada esta perdida — nao da para consultar depois, so gerar outra. */
+let SENHA_MOSTRADA = null;
+
+async function carregarAcessos() {
+  $('acesso').innerHTML = '<div class="slac"><div class="sub">Carregando…</div></div>';
+  try {
+    const db = cliente();
+    const { data, error } = await db.rpc('lista_acessos');
+    if (error) throw new Error(error.message);
+    ACESSOS = data || [];
+    // o último acesso mora no Authentication, que o painel não alcança
+    try {
+      const r = await db.functions.invoke('gestao-acessos', { body: { acao:'listar' } });
+      if (r.error) throw r.error;
+      ULTIMO_ACESSO = r.data?.ultimo_acesso || {};
+      SEM_FUNCAO = '';
+    } catch (_) {
+      ULTIMO_ACESSO = {};
+      SEM_FUNCAO = 'A função <b>gestao-acessos</b> ainda não foi publicada no '
+        + 'Supabase. Sem ela dá para editar perfil e desligar acesso, mas não '
+        + 'dá para criar login, resetar senha nem apagar — essas três precisam '
+        + 'da chave secreta, que não pode ficar nesta página. O arquivo e o '
+        + 'passo a passo estão no <b>edge-gestao-acessos.ts</b>.';
+    }
+    pintarAcessos();
+  } catch (e) {
+    $('acesso').innerHTML = `<div class="slac"><h3>Acessos</h3>
+      <div class="sub">Não consegui carregar: ${es(e.message)}.<br>
+      Se a função <b>lista_acessos</b> não existe, rode o
+      <b>29_gestao_acessos.sql</b> no SQL Editor.</div></div>`;
+  }
+}
+
+function pintarAcessos() {
+  const prov = ACESSOS.filter(a => !a.trocou_senha && a.ativo).length;
+  const fmtAcesso = id => {
+    const d = ULTIMO_ACESSO[id];
+    if (d === undefined) return '<span class="sub">—</span>';
+    if (!d) return '<span class="sub">nunca entrou</span>';
+    return dataBR(d);
+  };
+  /* Se a pessoa está numa loja ou regional que saiu do cadastro, o valor
+     entra na lista mesmo assim — select que não mostra o valor atual engana
+     o olho e apaga o dado no primeiro toque. */
+  const opc = (lista, v) => (v && !lista.includes(v) ? [v, ...lista] : lista)
+    .map(o => `<option value="${es(o)}"${o === v ? ' selected' : ''}>${es(o)}${
+      lista.includes(o) ? '' : ' (fora do cadastro)'}</option>`).join('');
+
+  $('acesso').innerHTML = `
+    ${SEM_FUNCAO ? `<div class="slac" style="border-top:3px solid var(--warn)">
+      <div class="sub" style="line-height:1.6">${SEM_FUNCAO}</div></div>` : ''}
+
+    ${!SENHA_MOSTRADA ? '' : `<div class="senha-nova">
+      <b>Senha provisória de ${es(SENHA_MOSTRADA.nome)}</b>
+      <span class="v">${es(SENHA_MOSTRADA.senha)}</span>
+      <button class="btn btn-sm btn-ghost"
+        onclick="copiarSenha(this,'${es(SENHA_MOSTRADA.senha)}')">Copiar</button>
+      <button class="btn btn-sm btn-ghost" onclick="SENHA_MOSTRADA=null;pintarAcessos()"
+        >Já anotei</button>
+      <div class="av">Copie agora — esta é a única vez que ela aparece, e ela
+        não fica guardada em lugar nenhum. ${es(SENHA_MOSTRADA.nome)} vai ter
+        que criar a senha dele(a) no primeiro acesso.</div>
+    </div>`}
+
+    <div class="slac">
+      <h3>Novo acesso</h3>
+      <div class="sub">O login nasce com uma senha provisória que aparece aqui
+        uma vez, para você repassar. Quem recebe é obrigado a trocar no
+        primeiro acesso.</div>
+      <div class="bar" style="margin-top:14px">
+        <input class="inp" id="nv-nome" type="text" placeholder="Nome"
+               style="max-width:190px">
+        <input class="inp" id="nv-email" type="email" placeholder="e-mail@cabanaburger.com.br"
+               style="max-width:290px">
+        <select class="inp" id="nv-papel" style="max-width:190px" onchange="mudouPapelNovo()">
+          <option value="gerente">Gerente de loja</option>
+          <option value="regional">Coordenador regional</option>
+          <option value="rh">RH</option>
+          <option value="diretoria">Diretoria</option>
+        </select>
+        <select class="inp" id="nv-unidade" style="max-width:210px">
+          <option value="">Escolha a loja…</option>${opc(UNIDADES, '')}
+        </select>
+        <select class="inp" id="nv-regiao" style="max-width:230px;display:none">
+          <option value="">Escolha a regional…</option>${opc(REGIOES(), '')}
+        </select>
+        <button class="btn btn-sm btn-primary" onclick="criarAcesso(this)">Criar acesso</button>
+      </div>
+      <div class="msg" id="ac-msg"></div>
+    </div>
+
+    <div class="slac">
+      <h3>Quem tem acesso (${ACESSOS.length})</h3>
+      <div class="sub">${prov
+        ? `<b>${prov}</b> pessoa(s) ainda estão na senha provisória.`
+        : 'Todo mundo já criou a própria senha.'}
+        Mudar perfil, loja ou regional aqui vale na hora.</div>
+
+      <div class="acw"><table>
+        <thead><tr>
+          <th>Nome</th><th>E-mail</th><th>Perfil</th><th>Loja / regional</th>
+          <th>Senha</th><th>Último acesso</th><th>Ativo</th><th></th>
+        </tr></thead>
+        <tbody>${ACESSOS.map(a => `<tr class="${a.ativo ? '' : 'off'}">
+          <td><b>${es(a.nome || '—')}</b></td>
+          <td class="em">${es(a.email || '—')}</td>
+          <td><select class="sel" onchange="salvarAcesso('${a.user_id}','papel',this)">
+            ${['gerente','regional','rh','diretoria'].map(p =>
+              `<option value="${p}"${a.papel === p ? ' selected' : ''}
+                >${es(PAPEIS[p])}</option>`).join('')}
+          </select></td>
+          <td>${a.papel === 'gerente'
+            ? `<select class="sel" onchange="salvarAcesso('${a.user_id}','unidade',this)">
+                 <option value="">—</option>${opc(UNIDADES, a.unidade)}</select>`
+            : a.papel === 'regional'
+            ? `<select class="sel" onchange="salvarAcesso('${a.user_id}','regiao',this)">
+                 <option value="">—</option>${opc(REGIOES(), a.regiao)}</select>`
+            : '<span class="sub">vê tudo</span>'}</td>
+          <td>${a.trocou_senha
+            ? '<span class="pill pill-ok">própria</span>'
+            : '<span class="pill pill-prov">provisória</span>'}</td>
+          <td>${fmtAcesso(a.user_id)}</td>
+          <td><button class="btn btn-sm ${a.ativo ? 'btn-ghost' : 'btn-primary'}"
+              onclick="salvarAcesso('${a.user_id}','ativo',${!a.ativo})"
+              >${a.ativo ? 'Ligado' : 'Desligado'}</button></td>
+          <td><div class="acoes">
+            <button class="btn btn-sm btn-ghost"
+              onclick="resetarSenha('${a.user_id}','${es(a.nome)}',this)">Resetar senha</button>
+            ${a.user_id === MEU_ID ? ''
+              : `<button class="btn btn-sm btn-rec"
+                   onclick="excluirAcesso('${a.user_id}','${es(a.nome)}')">Excluir</button>`}
+          </div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+
+      <div class="sub" style="margin-top:16px;line-height:1.6">
+        <b>Por que não dá para ver a senha de ninguém.</b> O banco não guarda
+        senha — guarda um hash, que é um caminho de ida: serve para conferir
+        se o que foi digitado bate, nunca para voltar até o texto. Mostrar as
+        senhas exigiria gravar uma segunda cópia em texto puro, e aí quem
+        lesse essa tabela ou um backup dela teria todos os logins na mão.
+        Quando alguém não conseguir entrar, use <b>Resetar senha</b>: sai uma
+        provisória nova, aparece aqui uma vez, e a pessoa troca ao entrar.
+      </div>
+    </div>`;
+}
+
+/* As regionais que existem de fato, tiradas das lojas cadastradas. */
+function REGIOES() {
+  return [...new Set(Object.values(REGIONAL).map(r => r.regiao).filter(Boolean))].sort();
+}
+
+function mudouPapelNovo() {
+  const p = $('nv-papel').value;
+  $('nv-unidade').style.display = p === 'gerente'  ? '' : 'none';
+  $('nv-regiao').style.display  = p === 'regional' ? '' : 'none';
+}
+
+/* A senha provisória aparece uma vez só. Daqui ela não volta: para ver de
+   novo, só gerando outra. */
+function mostrarSenha(nome, senha) {
+  SENHA_MOSTRADA = { nome, senha };
+  pintarAcessos();
+  document.querySelector('#acesso .senha-nova')
+    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function copiarSenha(bt, senha) {
+  try { await navigator.clipboard.writeText(senha); } catch (_) {}
+  bt.textContent = '✓ copiada';
+  setTimeout(() => { bt.textContent = 'Copiar'; }, 2000);
+}
+
+async function criarAcesso(bt) {
+  const nome = $('nv-nome').value.trim();
+  const email = $('nv-email').value.trim().toLowerCase();
+  const papel = $('nv-papel').value;
+  const unidade = $('nv-unidade').value;
+  const regiao = $('nv-regiao').value;
+  if (!nome)  return msg('ac-msg', 'Informe o nome.', 'err');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+              return msg('ac-msg', 'Informe um e-mail válido.', 'err');
+  if (papel === 'gerente'  && !unidade) return msg('ac-msg', 'Escolha a loja.', 'err');
+  if (papel === 'regional' && !regiao)  return msg('ac-msg', 'Escolha a regional.', 'err');
+
+  bt.disabled = true; bt.textContent = 'Criando…';
+  try {
+    const r = await cliente().functions.invoke('gestao-acessos', {
+      body: { acao:'criar', nome, email, papel, unidade, regiao } });
+    if (r.error) throw new Error(r.error.message || 'a função respondeu com erro');
+    if (r.data?.erro) throw new Error(r.data.erro);
+    $('nv-nome').value = ''; $('nv-email').value = '';
+    await carregarAcessos();
+    mostrarSenha(nome, r.data.senha);
+  } catch (e) {
+    msg('ac-msg', 'Não consegui criar: ' + e.message, 'err');
+  } finally { bt.disabled = false; bt.textContent = 'Criar acesso'; }
+}
+
+async function resetarSenha(id, nome, bt) {
+  if (!confirm(`Gerar uma senha provisória nova para ${nome}?\n\n`
+    + 'A senha atual deixa de funcionar na hora, e ' + nome
+    + ' vai ter que criar outra ao entrar.')) return;
+  bt.disabled = true; bt.textContent = '…';
+  try {
+    const r = await cliente().functions.invoke('gestao-acessos', {
+      body: { acao:'resetar', user_id: id } });
+    if (r.error) throw new Error(r.error.message || 'a função respondeu com erro');
+    if (r.data?.erro) throw new Error(r.data.erro);
+    await carregarAcessos();
+    mostrarSenha(nome, r.data.senha);
+  } catch (e) {
+    alert('Não consegui resetar: ' + e.message);
+  } finally { bt.disabled = false; bt.textContent = 'Resetar senha'; }
+}
+
+async function excluirAcesso(id, nome) {
+  if (!confirm(`Apagar o acesso de ${nome} de vez?\n\n`
+    + 'O login some do Authentication e não tem volta. Se a ideia é só tirar '
+    + 'o acesso por um tempo, use o botão Ligado/Desligado — preserva o '
+    + 'histórico e volta com um clique.')) return;
+  try {
+    const r = await cliente().functions.invoke('gestao-acessos', {
+      body: { acao:'excluir', user_id: id } });
+    if (r.error) throw new Error(r.error.message || 'a função respondeu com erro');
+    if (r.data?.erro) throw new Error(r.data.erro);
+    await carregarAcessos();
+    msg('ac-msg', `Acesso de ${nome} apagado.`, 'ok');
+  } catch (e) {
+    alert('Não consegui apagar: ' + e.message);
+  }
+}
+
+/* Perfil, loja, regional e liga/desliga vão direto na tabela — não precisam
+   da chave secreta, a RLS já garante que só o RH chega aqui. */
+async function salvarAcesso(id, campo, valor) {
+  const a = ACESSOS.find(x => x.user_id === id);
+  if (!a) return;
+  const v = (typeof valor === 'object') ? (valor.value || null) : valor;
+  const patch = { [campo]: v };
+  // trocar de perfil limpa o alcance que não se aplica mais
+  if (campo === 'papel') {
+    patch.unidade = v === 'gerente'  ? a.unidade : null;
+    patch.regiao  = v === 'regional' ? a.regiao  : null;
+  }
+  try {
+    const { error } = await cliente().from('rh_autorizado')
+      .update(patch).eq('user_id', id);
+    if (error) throw new Error(error.message);
+    Object.assign(a, patch);
+    pintarAcessos();
+    msg('ac-msg', `${a.nome}: ${campo === 'ativo'
+      ? (v ? 'acesso religado' : 'acesso desligado') : campo + ' atualizado'}.`, 'ok');
+    setTimeout(() => msg('ac-msg', ''), 5000);
+  } catch (e) {
+    alert('Não consegui salvar: ' + e.message);
+    pintarAcessos();
+  }
 }
 
 /* ╔══════════════════════════════════════════════════════════════════════╗
