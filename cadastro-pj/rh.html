@@ -456,7 +456,7 @@ const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise',
 
 let sb = null, linhas = [], filtro = '', selId = null, TIPO = 'pj';
 const CACHE = {};            // linhas ja carregadas por tipo
-let PERFIL = { papel: 'rh', nome: '', unidade: null }, MEU_ID = null;
+let PERFIL = { papel: 'rh', nome: '', unidade: null, regiao: null }, MEU_ID = null;
 let VAGAS = [], CARGOS = [], SIGLA = {}, selVaga = null, etapaFoco = '', buscaFunil = '';
 let statusFoco = '', unidadesFoco = [], multiAberto = false;
 /* A base de regras e os feriados, carregados no login. A reserva abaixo só
@@ -537,7 +537,18 @@ const vagaViva = v => statusDe(v) === 'aberta';
 const noFunil  = v => ['aberta', 'fechada'].includes(statusDe(v));
 const vagaParada = v => ['congelada', 'cancelada'].includes(statusDe(v));
 
-const ehRH = () => PERFIL.papel === 'rh';
+/* Quatro perfis, e cada tela pergunta pelo que precisa saber — não pelo
+   nome do cargo. "Pode editar?" é sempre o RH; "o que enxerga?" o banco
+   resolve sozinho pela RLS, então o painel só esconde o que não serve.
+   'gestor' é o nome antigo de 'gerente' e continua aceito. */
+const PAPEIS = { rh:'RH', gerente:'Gerente de loja', gestor:'Gerente de loja',
+                 regional:'Coordenador regional', diretoria:'Diretoria' };
+const ehRH        = () => PERFIL.papel === 'rh';
+const ehGerente   = () => PERFIL.papel === 'gerente' || PERFIL.papel === 'gestor';
+const ehRegional  = () => PERFIL.papel === 'regional';
+const ehDiretoria = () => PERFIL.papel === 'diretoria';
+const podeAbrirVaga = () => ehRH() || ehGerente() || ehRegional();
+const vePrazos      = () => ehRH() || ehDiretoria();
 /* Na planilha a regional se repetia em toda linha da mesma loja. Aqui ela é
    propriedade da loja, e o painel só consulta. */
 const regionalDe = u => {
@@ -1070,16 +1081,16 @@ async function abrirApp() {
   const { data: { user } } = await db.auth.getUser();
   MEU_ID = user?.id || null;
   $('who').textContent = (p.nome || user?.email || '')
-    + (ehRH() ? '' : ' · gerente' + (p.unidade ? ' · ' + p.unidade : ''));
+    + ' · ' + (PAPEIS[p.papel] || p.papel)
+    + (p.unidade ? ' · ' + p.unidade
+     : p.regiao  ? ' · ' + p.regiao.replace(/^Regional /, '') : '');
 
-  // o gerente só enxerga a aba de vagas
-  if (!ehRH()) {
-    document.querySelectorAll('#sw-tipo button').forEach(b => {
-      if (b.dataset.t !== 'vaga') b.style.display = 'none';
-    });
-    document.querySelectorAll('#sw-tipo button[data-t=vaga]')
-      .forEach(b => b.classList.add('on'));
-    TIPO = 'vaga';
+  /* As regras de SLA são de quem edita e de quem fiscaliza. Gerente e
+     coordenador veem o resto: candidatos, vagas e funil, já filtrados pelo
+     banco para a loja ou a regional deles. */
+  if (!vePrazos()) {
+    document.querySelectorAll('#sw-tipo button[data-t=sla]')
+      .forEach(b => b.style.display = 'none');
   }
 
   // lista de cargos, para o formulário e para o tipo de contrato
@@ -1153,7 +1164,7 @@ function ajustarUI() {
     : t === 'pj' ? 'Buscar por nome, CPF, CNPJ ou protocolo…'
                  : 'Buscar por nome, CPF, PIS, RG ou protocolo…';
   document.querySelectorAll('.chip').forEach(c => c.style.display = cadastro ? '' : 'none');
-  $('bt-nova').style.display = t === 'vaga' ? '' : 'none';
+  $('bt-nova').style.display = (t === 'vaga' && podeAbrirVaga()) ? '' : 'none';
   document.querySelector('.tbl').style.display =
     (t === 'funil' || t === 'sla') ? 'none' : '';
   $('funil').style.display = t === 'funil' ? 'block' : 'none';
@@ -1161,7 +1172,8 @@ function ajustarUI() {
   $('tela').style.display = 'none';
   // o gerente nao exporta base de candidatos
   document.querySelectorAll('.top .btn-ghost').forEach(b => {
-    if (b.textContent.includes('CSV')) b.style.display = ehRH() ? '' : 'none';
+    if (b.textContent.includes('CSV'))
+      b.style.display = (ehRH() || ehDiretoria()) ? '' : 'none';
   });
   if (AVISO_SETUP && (t === 'vaga' || t === 'funil')) msg('app-msg', AVISO_SETUP);
   else if (!AVISO_SETUP) msg('app-msg', '');
@@ -1186,7 +1198,7 @@ async function carregar() {
         .order('data').order('hora');
       ENTREVISTAS = ag || [];
       // o funil precisa dos candidatos dos dois lados para contar
-      if (TIPO === 'funil' && ehRH()) {
+      if (TIPO === 'funil') {
         for (const t of ['pj', 'clt']) {
           if (CACHE[t]) continue;
           const { data: d2 } = await db.from(TIPOS[t].tabela).select('*')
@@ -1611,8 +1623,9 @@ function pintarVagas() {
   $('vazio').style.display = rs.length ? 'none' : 'block';
   $('vazio').textContent = VAGAS.length
     ? 'Nenhuma vaga corresponde à busca.'
-    : (ehRH() ? 'Nenhuma vaga solicitada ainda.'
-              : 'Você ainda não solicitou nenhuma vaga. Use "+ Nova solicitação".');
+    : (ehRH() || ehDiretoria() ? 'Nenhuma vaga solicitada ainda.'
+       : `Nenhuma vaga aberta ${PERFIL.unidade ? 'em ' + PERFIL.unidade
+          : PERFIL.regiao ? 'na ' + PERFIL.regiao : 'no seu alcance'}.`);
 }
 
 /* ── formulário de solicitação ── */
@@ -1860,7 +1873,7 @@ function abrirVaga(id) {
   const v = VAGAS.find(x => x.id === id);
   if (!v) return;
   selVaga = id; selId = null;
-  const cands = ehRH() ? candidatosDa(v) : [];
+  const cands = candidatosDa(v);
   const d = diasDesdeAprovacao(v);
   const linhaF = (k, val) => (val == null || val === '' || val === '—') ? ''
     : `<dt>${es(k)}</dt><dd>${es(val)}</dd>`;
@@ -1917,7 +1930,7 @@ function abrirVaga(id) {
       <div class="fm show" style="border-radius:9px;border-top:1.5px solid #fca5a5" id="fm-del">
         <label>Apagar esta vaga de vez?</label>
         <div style="font-size:11.5px;color:#b91c1c;line-height:1.5;margin-bottom:9px">
-          ${(() => { const n = ehRH() ? candidatosDa(v).length : 0;
+          ${(() => { const n = candidatosDa(v).length;
             return n ? `<b>${n} candidato(s) já informaram este código.</b> O cadastro `
               + 'deles continua, mas fica sem vaga vinculada. Se a ideia é só encerrar '
               + 'a vaga, use <b>Cancelar vaga</b> — preserva o histórico.'
@@ -1961,7 +1974,8 @@ function abrirVaga(id) {
           <div class="t"><b>${es(c.nome_social || c.nome)}</b>
             <span>${es(c.protocolo)} · ${es(ST_LABEL[c.status] || c.status)}
               ${f.length ? ` · <b style="color:var(--warn)">faltam ${f.length} doc.</b>` : ' · documentação completa'}</span></div>
-          <button class="btn btn-sm btn-ghost" onclick="irParaCandidato('${tipo}','${c.id}')">Ver</button>
+          <button class="btn btn-sm btn-ghost"
+            onclick="irParaCandidato('${tipo}','${c.id}')">Ver</button>
         </div>`; }).join('')
         : '<div class="sub">Nenhum candidato informou este código ainda.</div>'}
     </div>
@@ -1996,6 +2010,7 @@ function abrirVaga(id) {
 /* O gerente apaga só o que ele mesmo pediu e enquanto ainda não foi
    aprovado. Depois da aprovação a vaga entrou no funil e é do RH. */
 function podeExcluir(v) {
+  if (ehDiretoria()) return false;
   if (ehRH()) return true;
   return v.solicitante_id === MEU_ID && v.etapa === 'solicitada';
 }
@@ -2315,7 +2330,7 @@ function pintarSLA() {
       <h3>Prazos por cargo</h3>
       <div class="sub">Todos em <b>dias úteis</b> — fim de semana e feriado não
         contam. Editar aqui vale na hora, para o funil e para a lista.
-        ${ehRH() ? '' : 'Só o RH pode alterar.'}</div>
+        ${ehRH() ? '' : 'Você está vendo em modo leitura — só o RH altera.'}</div>
 
       <div class="slat"><table>
         <thead><tr><th>Cargo</th>
