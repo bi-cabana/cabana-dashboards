@@ -613,7 +613,13 @@ const VALIDADE_LINK = 120;   // segundos de validade do link do documento
 /* Aviso ao RH quando uma vaga é solicitada. Mesmo serviço que os portais usam. */
 const WEB3FORMS_KEY = 'e73ff3c6-17a1-4bfe-ba9e-ffc7f0fea661';
 const EMAIL_RH      = 'alodp@cabanaburger.com.br';
-const LINK_PAINEL   = 'https://cabana-dashboards.bi-253.workers.dev/trilha-de-admissao/';
+/* O link que vai no e-mail de aviso de vaga é o endereço desta própria
+   página. Escrito à mão, ele apontaria para o domínio antigo no dia em que
+   o painel mudar de casa — e quem recebesse o aviso cairia no lugar errado
+   sem ninguém perceber. */
+const linkPainel = () => location.protocol.startsWith('http')
+  ? location.origin + location.pathname.replace(/[^/]*$/, '')
+  : 'https://rh.cabanaburger.com.br/trilha-de-admissao/';
 const AVISAR_VAGA   = true;   // false desliga o e-mail sem mexer em mais nada
 
 const ST_LABEL = { recebido:'Recebido', em_analise:'Em análise',
@@ -1468,14 +1474,25 @@ function ajustarUI() {
   else if (!AVISO_SETUP) msg('app-msg', '');
 }
 
-/* O endereço do portal sai da própria barra do navegador: o painel e os dois
-   portais moram no mesmo lugar, então não há endereço escrito à mão para
-   ficar desatualizado se um dia o domínio mudar. */
+/* ── ONDE MORAM OS PORTAIS DE CANDIDATO ──
+   Enquanto tudo vivia num endereço só, bastava trocar a última pasta do
+   endereço atual. Com a separação por subdomínio isso deixa de valer: o
+   painel passa a morar em rh. e os formulários em vagas., que é um host
+   diferente — derivar do endereço do painel mandaria o candidato para um
+   lugar que as regras do rh. nem servem.
+
+   Então: dentro do domínio da empresa, o endereço de candidato é fixo e
+   sabido. Fora dele (workers.dev durante a transição, ou arquivo local em
+   teste) continua derivando como antes, para os dois mundos funcionarem
+   ao mesmo tempo enquanto a mudança não termina. */
+const HOST_CANDIDATO = 'https://vagas.cabanaburger.com.br/';
+
 function enderecoPortal(tipo) {
-  // o painel mora em .../<pasta-do-painel>/; os portais são pastas irmãs
+  const pasta = tipo === 'pj' ? 'cadastro-pj/' : 'cadastro-clt/';
+  if (/(^|\.)cabanaburger\.com\.br$/.test(location.hostname))
+    return HOST_CANDIDATO + pasta;
   const m = location.href.match(/^(https?:\/\/.*\/)[^/]+\/[^/]*$/);
-  const base = m ? m[1] : 'https://cabana-dashboards.bi-253.workers.dev/';
-  return base + (tipo === 'pj' ? 'cadastro-pj/' : 'cadastro-clt/');
+  return (m ? m[1] : 'https://cabana-dashboards.bi-253.workers.dev/') + pasta;
 }
 
 function pintarLinkPortal() {
@@ -2361,7 +2378,7 @@ function avisarVagaNova(v, emailSolicitante) {
     'AÇÃO NECESSÁRIA': 'A vaga está aguardando aprovação do RH. O código só é '
       + 'gerado depois que ela for aprovada no painel — antes disso, nenhum '
       + 'candidato consegue se cadastrar nela.',
-    'Painel': LINK_PAINEL,
+    'Painel': linkPainel(),
   };
   fetch('https://api.web3forms.com/submit', {
     method: 'POST',
