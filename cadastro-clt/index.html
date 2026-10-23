@@ -99,7 +99,16 @@
   @media(max-width:460px){.fg,.fg.wide{grid-column:span 1}}
   .fg.hide{display:none}
   .form-label{font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:6px;letter-spacing:.02em}
+  .doc-card.depois{border-style:dashed;background:var(--gray-50)}
+  .doc-card.depois .doc-ico{opacity:.55}
+  .doc-depois{font-size:11.5px;font-weight:700;color:var(--gray-500);
+    background:var(--gray-100);border-radius:999px;padding:5px 11px;
+    white-space:nowrap}
   .form-label .req{color:var(--danger)}
+  /* Campo que a pessoa lê mas não escolhe. Cinza e sem cursor de texto para
+     ninguém tentar apagar e achar que o formulário travou. */
+  .form-input.travado{background:var(--gray-100);color:var(--gray-600);
+    cursor:default}
   .form-input,.form-select{padding:10px 13px;border:1.5px solid var(--gray-200);border-radius:8px;
     font-family:'DM Sans',sans-serif;font-size:14px;color:var(--gray-900);background:#fff;
     outline:none;transition:.2s;width:100%}
@@ -261,10 +270,9 @@
       <div id="out-pendencia" style="display:none;max-width:440px;margin:0 auto 20px;
            background:#fffaf0;border:1.5px solid #f0b429;border-radius:10px;padding:14px 18px;
            text-align:left;font-size:12.5px;color:#78350f;line-height:1.6">
-        <strong>Ainda faltam documentos.</strong>
+        <strong id="out-pend-tit">Ainda faltam documentos.</strong>
         <div id="out-faltantes" style="margin:6px 0 8px 18px;font-weight:700"></div>
-        Envie para <strong>alodp@cabanaburger.com.br</strong> citando o protocolo acima.
-        A admissão só prossegue depois que eles chegarem.
+        <span id="out-pend-rodape"></span>
       </div>
       <div class="ok-txt">Em breve você receberá um contato pelo e-mail ou WhatsApp
         informado para os próximos passos.</div>
@@ -272,7 +280,6 @@
   </div>
 </div>
 
-<datalist id="bancos"></datalist>
 <datalist id="paises"></datalist>
 
 <script>
@@ -405,7 +412,6 @@ const MASCARAS = {
 
 /* ══════════════════ MONTAGEM DA TELA ══════════════════ */
 function montar() {
-  $('#bancos').innerHTML = BANCOS.map(b => `<option>${es(b)}</option>`).join('');
   $('#paises').innerHTML = PAISES.map(p => `<option>${es(p)}</option>`).join('');
 
   $('#passos').innerHTML = ETAPAS.map(e => `
@@ -479,8 +485,10 @@ function campo(c) {
     ctrl = `<label class="chk"><input type="checkbox" id="f-${c.k}" data-campo="${c.k}"
       value="Sim">${es(c.r)}</label>`;
   } else {
-    const inp = `<input class="form-input" id="f-${c.k}" data-campo="${c.k}"
+    const inp = `<input class="form-input${c.fixo ? ' travado' : ''}"
+      id="f-${c.k}" data-campo="${c.k}"
       type="${c.t === 'email' ? 'email' : c.t === 'tel' ? 'tel' : 'text'}"
+      ${c.fixo ? 'readonly tabindex="-1"' : ''}
       ${c.valor ? `value="${es(c.valor)}"` : ''}
       ${c.ph ? `placeholder="${es(c.ph)}"` : ''}
       ${c.lista ? `list="${c.lista}"` : ''}
@@ -809,23 +817,25 @@ function montarAnexos() {
   if (box.dataset.chaves !== chaves) {
     box.dataset.chaves = chaves;
     box.innerHTML = exigidos.map(d => `
-      <div class="doc-card" id="doc-${d.k}">
+      <div class="doc-card${d.depois ? ' depois' : ''}" id="doc-${d.k}">
         <div class="doc-head">
           <span class="doc-ico">${d.ico}</span>
           <div class="doc-txt">
             <div class="doc-nome" id="dn-${d.k}">${es(nomeDoc(d, D))}</div>
             <div class="doc-hint">${es(d.hint)}</div>
           </div>
-          <span class="doc-check">✓</span>
+          ${d.depois
+            ? '<span class="doc-depois">fica para depois</span>'
+            : `<span class="doc-check">✓</span>
           <button type="button" class="doc-btn">Anexar
             <input type="file" ${d.multi ? 'multiple' : ''}
                    accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,application/pdf,image/*"
                    onchange="addArquivo('${d.k}', this)">
-          </button>
+          </button>`}
         </div>
         <div class="doc-files" id="fl-${d.k}"></div>
       </div>`).join('');
-    exigidos.forEach(d => renderArquivos(d.k));
+    exigidos.filter(d => !d.depois).forEach(d => renderArquivos(d.k));
     // o que deixou de ser exigido não fica guardado
     Object.keys(anexos).forEach(k => {
       if (!exigidos.some(d => d.k === k)) delete anexos[k];
@@ -879,12 +889,21 @@ function renderArquivos(k) {
               onclick="removeArquivo('${k}', ${i})">&times;</button>
     </div>`).join('');
   card.classList.toggle('ok', fs.length > 0);
-  card.classList.toggle('falta', fs.length === 0);
+  if (!DOCS.find(d => d.k === k)?.depois)
+    card.classList.toggle('falta', fs.length === 0);
   atualizarPendencia();
 }
 
+/* O que ainda dá para anexar agora. O ASO não entra: ele fica pendente por
+   construção, e somá-lo aqui obrigaria todo candidato a marcar "estou
+   ciente" por um documento que ele não tinha como trazer. */
 function faltando() {
-  return docsExigidos(D).filter(d => !(anexos[d.k] || []).length);
+  return docsAgora(D).filter(d => !(anexos[d.k] || []).length);
+}
+/* O que vai para o painel do RH como pendência: o que faltou mais o que
+   fica para depois. */
+function pendenciasDoCadastro() {
+  return faltando().concat(docsDepois(D));
 }
 
 function atualizarPendencia() {
@@ -938,6 +957,7 @@ async function enviar() {
   for (let n = 1; n <= 5; n++) if (!validar(n)) { irPara(n); return; }
 
   const faltam = faltando();
+  const pendentes = pendenciasDoCadastro();
   if (faltam.length && !$('#f-ciente').checked) {
     $('#pend').scrollIntoView({ behavior: 'smooth', block: 'center' });
     return erro('Faltam ' + faltam.length + ' documento(s). Anexe agora, ou marque que '
@@ -959,7 +979,7 @@ async function enviar() {
 
     // documentos
     const fila = [];
-    docsExigidos(D).forEach(d => (anexos[d.k] || []).forEach((f, i) => fila.push({ d, f, i })));
+    docsAgora(D).forEach(d => (anexos[d.k] || []).forEach((f, i) => fila.push({ d, f, i })));
     const arquivos = [];
     for (let n = 0; n < fila.length; n++) {
       const { d, f, i } = fila[n];
@@ -978,7 +998,7 @@ async function enviar() {
     progresso('Gravando o cadastro…', 90);
     const linha = { user_id: uid, arquivos, termos_aceite: true,
       vaga_codigo: VAGA ? VAGA.codigo : null,
-      documentos_faltantes: faltam.map(d => nomeDoc(d, D)),
+      documentos_faltantes: pendentes.map(d => nomeDoc(d, D)),
       transporte_tipo: D.transporte_tipo || null,
       vt_linhas: linhasVT(), dependentes: dependentes() };
     ETAPAS.forEach(e => (e.grupos || []).forEach(g => g.campos.forEach(c => {
@@ -1012,10 +1032,14 @@ async function enviar() {
           'Contato': D.tel_celular + ' · ' + D.email,
           'Recebido em': new Date().toLocaleString('pt-BR'),
           'Documentos': arquivos.length + ' arquivo(s) anexado(s)',
-          'PENDENCIA': faltam.length
+          'PENDENCIA': (faltam.length
             ? '⚠️ FALTAM ' + faltam.length + ': ' + faltam.map(d => nomeDoc(d, D)).join(' · ')
               + ' — o candidato foi avisado de que a admissão não prossegue sem eles.'
-            : 'Nenhuma — todos os documentos exigidos foram anexados.',
+            : 'Nenhuma — todos os documentos que dependiam do candidato foram anexados.')
+            + (docsDepois(D).length
+              ? ' | Fica para depois: ' + docsDepois(D).map(d => nomeDoc(d, D)).join(' · ')
+                + ' — nasce pendente no painel, para o RH acompanhar.'
+              : ''),
           'Onde ver': 'Abra o painel de RH e busque pelo protocolo. Os dados e os '
                     + 'documentos não são enviados por e-mail.',
         })
@@ -1028,9 +1052,21 @@ async function enviar() {
       ['Identificação','Endereço e contato','Documentos','Dados bancários','Benefícios']
         .map(t => '✅ ' + t).join('<br>') +
       `<br>${faltam.length ? '⚠️' : '✅'} ${arquivos.length} documento(s) anexado(s)`;
-    if (faltam.length) {
+    const depois = docsDepois(D);
+    if (faltam.length || depois.length) {
       $('#out-pendencia').style.display = 'block';
-      $('#out-faltantes').innerHTML = faltam.map(d => '• ' + es(nomeDoc(d, D))).join('<br>');
+      $('#out-faltantes').innerHTML =
+        faltam.map(d => '• ' + es(nomeDoc(d, D))).join('<br>')
+        + (faltam.length && depois.length ? '<br>' : '')
+        + depois.map(d => `• ${es(nomeDoc(d, D))} — <i>o RH agenda e avisa você</i>`)
+            .join('<br>');
+      // o rodapé muda de sentido: o que você envia e o que esperamos por você
+      $('#out-pend-tit').textContent = faltam.length
+        ? 'Ainda faltam documentos.' : 'Um documento fica para depois.';
+      $('#out-pend-rodape').innerHTML = faltam.length
+        ? 'Envie para <strong>alodp@cabanaburger.com.br</strong> citando o protocolo '
+          + 'acima. A admissão só prossegue depois que eles chegarem.'
+        : 'Nada a fazer agora — o RH entra em contato para marcar o exame.';
     }
     $('#etapa-6').style.display = 'none';
     $('#sucesso').style.display = 'block';
