@@ -269,6 +269,32 @@
   }
   .semcod{color:var(--gray-300);font-style:italic}
 
+  /* ── AGENDA DE ENTREVISTAS ── */
+  .agd-dia{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px 18px;margin-bottom:14px}
+  .agd-dia > h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;
+    color:var(--green-dark);margin-bottom:2px;text-transform:capitalize}
+  .agd-dia > .sub{margin-bottom:12px}
+  .agd-h{display:grid;grid-template-columns:62px 1fr;gap:12px;
+    border-top:1px solid var(--gray-100);padding:11px 0}
+  .agd-h:first-of-type{border-top:none}
+  .agd-h > .hh{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;
+    color:var(--gray-900);line-height:1.2}
+  .agd-h > .hh span{display:block;font-family:'DM Sans',sans-serif;font-size:10px;
+    font-weight:700;color:var(--gray-400);text-transform:uppercase;
+    letter-spacing:.3px;margin-top:1px}
+  .agd-c{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:7px 0;border-bottom:1px dashed var(--gray-100)}
+  .agd-c:last-child{border-bottom:none}
+  .agd-c b{font-size:13.5px}
+  .agd-c .meta{font-size:11.5px;color:var(--gray-500);flex:1;min-width:170px}
+  .agd-c.fora b, .agd-c.fora .meta{text-decoration:line-through;opacity:.5}
+  .agd-c .sel{padding:5px 9px;font-size:11.5px;border-radius:7px;
+    border:1.5px solid var(--gray-200);font-family:inherit;background:#fff;
+    color:var(--gray-700);cursor:pointer}
+  .agd-vaga{font-size:11.5px;color:var(--gray-300);font-style:italic;padding:7px 0}
+  .agd-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+
   /* ── FILTRAR POR COLUNA ──
      O funil mora numa barra acima da tabela, porque lá o filtro é do painel
      inteiro. Aqui ele é da coluna, então mora na coluna: o cabeçalho diz o
@@ -516,6 +542,7 @@
       <button data-t="clt"             onclick="trocarTipo('clt')">Colaboradores CLT</button>
       <button data-t="vaga"            onclick="trocarTipo('vaga')">Vagas</button>
       <button data-t="funil"           onclick="trocarTipo('funil')">Painel Admissão</button>
+      <button data-t="entrev"          onclick="trocarTipo('entrev')">Entrevistas</button>
       <button data-t="sla"             onclick="trocarTipo('sla')">Regras de SLA</button>
       <button data-t="acesso"          onclick="trocarTipo('acesso')">Acessos</button>
     </div>
@@ -550,6 +577,7 @@
     </div>
 
     <div id="funil"></div>
+    <div id="entrev"></div>
     <div id="sla"></div>
     <div id="acesso"></div>
     <div id="tela"></div>
@@ -1281,6 +1309,11 @@ async function abrirApp() {
     document.querySelectorAll('#sw-tipo button[data-t=acesso]')
       .forEach(b => b.style.display = 'none');
   }
+  // a agenda pública traz dado pessoal de quem ainda nem é candidato
+  if (!ehRH() && !ehDiretoria()) {
+    document.querySelectorAll('#sw-tipo button[data-t=entrev]')
+      .forEach(b => b.style.display = 'none');
+  }
 
   // lista de cargos, para o formulário e para o tipo de contrato
   const { data: sr } = await db.from('sla_regras').select('*').order('ordem');
@@ -1419,10 +1452,11 @@ function ajustarUI() {
   document.querySelectorAll('.chip').forEach(c => c.style.display = cadastro ? '' : 'none');
   $('bt-nova').style.display = (t === 'vaga' && podeAbrirVaga()) ? '' : 'none';
   document.querySelector('.tbl').style.display =
-    (t === 'funil' || t === 'sla' || t === 'acesso') ? 'none' : '';
+    ['funil', 'sla', 'acesso', 'entrev'].includes(t) ? 'none' : '';
   $('funil').style.display  = t === 'funil'  ? 'block' : 'none';
   $('sla').style.display    = t === 'sla'    ? 'block' : 'none';
   $('acesso').style.display = t === 'acesso' ? 'block' : 'none';
+  $('entrev').style.display = t === 'entrev' ? 'block' : 'none';
   $('tela').style.display = 'none';
   pintarLinkPortal();
   // o gerente nao exporta base de candidatos
@@ -1625,6 +1659,7 @@ function tabelaOrdenavel(tabela, chave) {
 async function carregar() {
   if (TIPO === 'sla')    { pintarSLA(); return; }
   if (TIPO === 'acesso') { carregarAcessos(); return; }
+  if (TIPO === 'entrev') { carregarEntrevistasOnline(); return; }
   // o aviso de banco incompleto sobrevive ao recarregamento da lista
   msg('app-msg', (TIPO === 'vaga' || TIPO === 'funil') ? AVISO_SETUP : '');
   $('vazio').textContent = 'Carregando…';
@@ -1688,6 +1723,7 @@ function pintar() {
   if (TIPO === 'funil') return pintarFunil();
   if (TIPO === 'sla')    return pintarSLA();
   if (TIPO === 'acesso') return pintarAcessos();
+  if (TIPO === 'entrev') return pintarEntrevistasOnline();
   const cfg = T(), rs = visiveis();
   $('cab').innerHTML = cfg.colunas.map(c => `<th>${es(c.t)}</th>`).join('')
     + '<th>Documentos</th><th>Recebido</th><th>Status</th><th></th>';
@@ -3113,6 +3149,135 @@ async function salvarAcesso(id, campo, valor) {
   } catch (e) {
     alert('Não consegui salvar: ' + e.message);
     pintarAcessos();
+  }
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  ENTREVISTAS AGENDADAS PELA PÁGINA PÚBLICA                           ║
+   ║                                                                      ║
+   ║  A pessoa que marcou aqui ainda não é candidata de nenhuma vaga:     ║
+   ║  veio de um story, deixou nome e telefone e escolheu um horário.     ║
+   ║  Por isso esta aba é uma agenda, não uma lista de cadastros — o que  ║
+   ║  o RH faz com ela é abrir a sala no horário e marcar quem apareceu.  ║
+   ║                                                                      ║
+   ║  A mesma agenda chega no Outlook pelo calendário assinado; esta tela ║
+   ║  existe para o que o Outlook não faz: registrar compareceu/faltou.   ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+let AGENDA = [], agendaPassado = false;
+const ST_ENTREV = { agendada:'Agendada', compareceu:'Compareceu',
+                    faltou:'Faltou', cancelada:'Cancelada' };
+
+async function carregarEntrevistasOnline() {
+  $('entrev').innerHTML = '<div class="vazio">Carregando a agenda…</div>';
+  try {
+    const { data, error } = await cliente().rpc('lista_entrevistas_online',
+      { p_desde: null });
+    if (error) throw new Error(error.message);
+    AGENDA = data || [];
+    pintarEntrevistasOnline();
+  } catch (e) {
+    $('entrev').innerHTML = `<div class="slac" style="border-top:3px solid var(--warn)">
+      <h3>Entrevistas</h3><div class="sub" style="line-height:1.6">
+      Não consegui carregar: ${es(e.message)}<br>
+      Se a mensagem fala em função que não existe, rode o
+      <b>32_entrevistas_online.sql</b> no SQL Editor.</div></div>`;
+  }
+}
+
+function pintarEntrevistasOnline() {
+  const hoje0 = hoje();
+  const lista = AGENDA.filter(e => agendaPassado || e.data >= hoje0);
+  const porDia = {};
+  lista.forEach(e => (porDia[e.data] = porDia[e.data] || []).push(e));
+  const dias = Object.keys(porDia).sort();
+
+  const vivas = e => e.status !== 'cancelada';
+  const proximas = AGENDA.filter(e => e.data >= hoje0 && vivas(e)).length;
+  const deHoje = AGENDA.filter(e => e.data === hoje0 && vivas(e)).length;
+  const semTratar = AGENDA.filter(e => e.data < hoje0 && e.status === 'agendada').length;
+
+  $('entrev').innerHTML = `
+    <div class="agd-top">
+      <button class="btn btn-sm ${agendaPassado ? 'btn-primary' : 'btn-ghost'}"
+        onclick="agendaPassado = !agendaPassado; pintarEntrevistasOnline()">
+        ${agendaPassado ? 'Mostrando o que já passou' : 'Mostrar o que já passou'}</button>
+      <span class="sub">${deHoje} hoje · ${proximas} daqui para frente${
+        semTratar ? ` · <b style="color:var(--warn)">${semTratar} sem registro de presença</b>` : ''}</span>
+      <button class="btn btn-sm btn-ghost" style="margin-left:auto"
+        onclick="carregarEntrevistasOnline()">Atualizar</button>
+    </div>
+    ${dias.length ? dias.map(d => cardDia(d, porDia[d])).join('')
+      : `<div class="slac"><h3>Nenhuma entrevista ${
+          agendaPassado ? 'registrada' : 'marcada daqui para frente'}</h3>
+         <div class="sub">Os agendamentos feitos na página pública aparecem aqui.</div>
+         </div>`}`;
+}
+
+function cardDia(d, itens) {
+  const x = new Date(d + 'T12:00:00');
+  const titulo = x.toLocaleDateString('pt-BR',
+    { weekday:'long', day:'2-digit', month:'long' });
+  const hoje0 = hoje();
+  const marca = d === hoje0 ? ' · hoje' : d < hoje0 ? ' · já passou' : '';
+  const vivas = itens.filter(e => e.status !== 'cancelada');
+
+  const horas = [...new Set(itens.map(e => String(e.hora).slice(0, 5)))].sort();
+  return `<div class="agd-dia">
+    <h3>${es(titulo)}${marca}</h3>
+    <div class="sub">${vivas.length} pessoa(s) em ${horas.length} horário(s)</div>
+    ${horas.map(h => {
+      const doH = itens.filter(e => String(e.hora).slice(0, 5) === h);
+      return `<div class="agd-h">
+        <div class="hh">${h}<span>${doH.filter(e => e.status !== 'cancelada').length} pess.</span></div>
+        <div>${doH.map(linhaEntrev).join('')}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function linhaEntrev(e) {
+  const zap = String(e.celular || '').replace(/\D/g, '');
+  const tel = zap.length === 10 || zap.length === 11 ? '55' + zap : zap;
+  return `<div class="agd-c ${e.status === 'cancelada' ? 'fora' : ''}">
+    <b>${es(e.nome)}</b>
+    <span class="meta">${es(e.celular)} · ${es(e.email)}<br>
+      ${es(e.regiao)}${e.bairro ? ' · ' + es(e.bairro) : ''}
+      · <span class="mono">${es(e.protocolo)}</span></span>
+    ${podeFalarComCandidato() && tel ? `<a class="zap" target="_blank" rel="noopener"
+       href="https://wa.me/${tel}?text=${encodeURIComponent(textoEntrev(e))}"
+       title="Falar com ${es(e.nome)}">${ICONE_ZAP}</a>` : ''}
+    ${ehRH() ? `<select class="sel" onchange="mudarStatusEntrev('${e.id}', this.value)">
+      ${Object.entries(ST_ENTREV).map(([k, v]) =>
+        `<option value="${k}"${e.status === k ? ' selected' : ''}>${v}</option>`).join('')}
+    </select>` : `<span class="st">${es(ST_ENTREV[e.status] || e.status)}</span>`}
+  </div>`;
+}
+
+function textoEntrev(e) {
+  const prim = (String(e.nome || '').trim().split(/\s+/)[0] || '')
+    .toLowerCase().replace(/^./, c => c.toUpperCase());
+  const x = new Date(e.data + 'T12:00:00');
+  return `Olá, ${prim}! Aqui é o RH do Cabana Burger. Sua entrevista está `
+       + `marcada para ${x.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' })} `
+       + `às ${String(e.hora).slice(0, 5)}.`;
+}
+
+/* Cancelar aqui devolve o lugar para a página pública na hora: a contagem
+   de vagas livres ignora quem está cancelado. */
+async function mudarStatusEntrev(id, novo) {
+  const e = AGENDA.find(x => x.id === id);
+  if (!e) return;
+  const antes = e.status;
+  e.status = novo;
+  pintarEntrevistasOnline();
+  try {
+    const { error } = await cliente().from('entrevistas_online')
+      .update({ status: novo, tratado_em: new Date().toISOString() }).eq('id', id);
+    if (error) throw new Error(error.message);
+  } catch (err) {
+    e.status = antes;
+    pintarEntrevistasOnline();
+    alert('Não consegui salvar: ' + err.message);
   }
 }
 
