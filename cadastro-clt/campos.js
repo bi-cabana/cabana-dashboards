@@ -55,17 +55,26 @@ const LOGRADOURO = ['Rua','Avenida','Alameda','Praça','Travessa','Rodovia',
 const ORGAO_RG = ['SSP','DETRAN','PC','IFP','IML','SDS','PM','MEX','MAE','MAR',
                   'DIC','IPF','POF','CTPS','OAB','CRM','OUTRO'];
 
-const MEIO_PAGAMENTO = ['Depósito em conta corrente','Depósito em conta poupança',
-                        'Depósito em conta salário','PIX'];
+/* O salário sai por depósito, em conta corrente ou conta salário — poupança
+   e PIX saíram porque a folha não paga por esses meios. */
+const MEIO_PAGAMENTO = ['Depósito em conta corrente','Depósito em conta salário'];
+const TIPO_CONTA     = ['Conta Corrente','Conta Salário'];
 
-const BANCOS = ['Banco do Brasil','Bradesco','Caixa Econômica Federal','Itaú',
-                'Santander','Nubank','Inter','C6 Bank','Sicoob','Sicredi',
-                'Banrisul','BTG Pactual','Neon','PagBank','Mercado Pago','Safra'];
+/* A conta da folha é no Itaú. O campo existe para a pessoa ver em qual banco
+   a conta vai ser, não para escolher — por isso vem travado e não como lista
+   de uma opção só, que convida a procurar outra. */
+const BANCO_FOLHA = 'Itaú';
 
 const CONSELHOS = ['Não possui','CRA','CRB','CRC','CREA','CRECI','CREFITO','CRESS',
                    'CRF','CRM','CRMV','CRN','CRO','COREN','CRP','CRQ','OAB','OUTRO'];
 
 const CAT_CNH = ['A','B','AB','C','D','E','ACC'];
+
+/* Numeração brasileira. A calça vai de 2 em 2, como a etiqueta; o calçado
+   de 1 em 1. Lista fechada porque é pedido de compra: "38/40" ou "M" na mão
+   livre vira retrabalho na hora de encomendar. */
+const TAM_CALCA = ['34','36','38','40','42','44','46','48','50','52','54','56'];
+const TAM_SAPATO = ['33','34','35','36','37','38','39','40','41','42','43','44','45','46'];
 
 const PARENTESCO = ['Filho(a)','Enteado(a)','Cônjuge','Companheiro(a)',
                     'Pai','Mãe','Tutelado(a)','Outro'];
@@ -178,18 +187,6 @@ const ETAPAS = [
         { k:'rg_uf',      r:'UF', t:'select', opts:UF },
         { k:'rg_orgao',   r:'Órgão emissor', t:'select', opts:ORGAO_RG },
       ]},
-      { titulo: 'Outros registros', campos: [
-        { k:'pis_pasep', r:'PIS / PASEP / NIS', t:'text', mask:'pis',
-          ph:'000.00000.00-0',
-          hint:'Está no app CTPS Digital, no extrato do FGTS ou no cartão do PIS' },
-        { k:'pis_data_cadastro', r:'Data de cadastro do PIS', t:'text', mask:'data',
-          ph:'DD/MM/AAAA' },
-        { k:'num_sus', r:'Número do SUS', t:'text', mask:'sus',
-          ph:'000 0000 0000 0000' },
-        { k:'matricula_nascimento', r:'Matrícula da certidão', t:'text',
-          mask:'matricula',
-          hint:'Os 32 dígitos no alto da certidão de nascimento ou casamento' },
-      ]},
       { titulo: 'Carteira de Trabalho', campos: [
         { k:'ctps_numero',  r:'Número', t:'text',
           hint:'Na CTPS digital, é o seu CPF' },
@@ -242,17 +239,19 @@ const ETAPAS = [
   {
     n: 4, aba: 'Bancário', ico: '🏦',
     titulo: 'Dados bancários',
-    sub: 'Conta em seu próprio nome, para o depósito do salário.',
+    sub: 'Nenhum campo desta etapa é obrigatório. Se você já tem conta no '
+       + 'Itaú em seu próprio nome, preencha e o salário cai nela desde o '
+       + 'primeiro mês. Se não tiver, siga adiante — o RH abre a conta '
+       + 'salário com você na admissão.',
     grupos: [
       { campos: [
-        { k:'meio_pagamento', r:'Meio de pagamento', t:'select', req:1, span:1,
+        { k:'meio_pagamento', r:'Meio de pagamento', t:'select', span:1,
           opts:MEIO_PAGAMENTO },
-        { k:'banco',      r:'Banco', t:'text', req:1, lista:'bancos', span:1,
-          ph:'Ex: Itaú, Bradesco, Nubank…' },
-        { k:'agencia',    r:'Agência', t:'text', req:1, ph:'0000' },
-        { k:'conta',      r:'Conta', t:'text', req:1, ph:'00000000-0' },
-        { k:'tipo_conta', r:'Tipo de conta', t:'select',
-          opts:['Conta Corrente','Conta Poupança','Conta Salário','Conta de Pagamento'] },
+        { k:'banco',      r:'Banco', t:'text', fixo:1, valor:BANCO_FOLHA, span:1,
+          hint:'A folha do Cabana paga no Itaú — por isso o campo vem travado.' },
+        { k:'agencia',    r:'Agência', t:'text', ph:'0000' },
+        { k:'conta',      r:'Conta', t:'text', ph:'00000000-0' },
+        { k:'tipo_conta', r:'Tipo de conta', t:'select', opts:TIPO_CONTA },
       ]},
     ],
   },
@@ -262,9 +261,13 @@ const ETAPAS = [
     titulo: 'Benefícios e dependentes',
     sub: 'Transporte, uniforme e quem você declara como dependente.',
     grupos: [
-      { campos: [
+      { titulo: 'Uniforme', campos: [
         { k:'camiseta', r:'Tamanho da camiseta', t:'select', req:1,
           opts:['PP','P','M','G','GG','XGG'] },
+        { k:'calca', r:'Tamanho da calça', t:'select', req:1, opts:TAM_CALCA,
+          hint:'Numeração brasileira' },
+        { k:'sapato', r:'Numeração do sapato', t:'select', req:1, opts:TAM_SAPATO,
+          hint:'Numeração brasileira' },
       ]},
     ],
     extra: 'transporte_dependentes',   // montado a mao, tem linhas dinamicas
@@ -317,6 +320,14 @@ const DOCS = [
   { k:'laudo_pcd', ico:'🩺', nome:'Laudo médico (PCD)',
     ver: d => d.pcd === 'Sim',
     hint:'Laudo com o CID, assinado e carimbado pelo médico' },
+
+  /* `depois` é um documento que não dá para anexar agora: o exame ainda vai
+     ser marcado. Ele aparece na lista para a pessoa saber que falta, nasce
+     pendente no painel do RH — que é onde o acompanhamento acontece — e não
+     entra na conta que trava o envio, porque ninguém pode resolvê-lo hoje. */
+  { k:'aso', ico:'🩺', nome:'ASO — exame admissional', depois:true,
+    hint:'O RH vai agendar o exame e você recebe a guia. O atestado fica '
+       + 'pendente até a clínica entregar.' },
 ];
 
 /* Rotulo do documento, resolvendo os que mudam de nome conforme o cadastro. */
@@ -328,3 +339,7 @@ function nomeDoc(doc, d) {
 function docsExigidos(d) {
   return DOCS.filter(x => !x.ver || x.ver(d || {}));
 }
+
+/* Os que a pessoa pode anexar hoje, e os que ficam para depois. */
+function docsAgora(d)  { return docsExigidos(d).filter(x => !x.depois); }
+function docsDepois(d) { return docsExigidos(d).filter(x =>  x.depois); }
