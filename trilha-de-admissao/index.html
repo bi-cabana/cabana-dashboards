@@ -849,6 +849,13 @@ const idade = r => {
 const casou = r => ['CASADO(A)','UNIÃO ESTÁVEL','SEPARADO(A)','DIVORCIADO(A)','VIÚVO(A)']
   .includes(r.estado_civil);
 
+/* Conta informada é agência E conta preenchidas: só o nome do banco não
+   paga ninguém, e o banco vem travado no Itaú desde o portal. */
+const temBanco = r => !!(String(r.agencia || '').trim() && String(r.conta || '').trim());
+const tagBanco = r => temBanco(r)
+  ? '<span class="completo">conta informada</span>'
+  : '<span class="falta">sem conta</span>';
+
 const TIPOS = {
 
   /* ════════════════ PRESTADOR PJ ════════════════ */
@@ -944,6 +951,9 @@ const TIPOS = {
       ['escolaridade',   () => 'Comprovante de escolaridade',
         r => !/^Analfabeto/.test(r.grau_instrucao || '')],
       ['laudo_pcd',      () => 'Laudo médico (PCD)', r => r.pcd === true],
+      /* O ASO nasce pendente de propósito: o exame é marcado depois do
+         cadastro, e é nessa pendência que o RH acompanha quem já fez. */
+      ['aso',            () => 'ASO — exame admissional'],
     ],
 
     colunas: [
@@ -954,6 +964,7 @@ const TIPOS = {
       { t:'CPF',       v: r => `<span class="mono">${es(r.cpf)}</span>` },
       { t:'Contato',   v: r => `${es(r.tel_celular || '—')}` +
                                `<div class="sub">${es(r.email || '')}</div>` },
+      { t:'Banco',     v: tagBanco },
     ],
 
     grupos: [
@@ -1017,11 +1028,14 @@ const TIPOS = {
         ['Vencimento', r=>soData(r.conselho_vencimento)],
       ]},
       { t:'Bancário', c: [
+        ['Informou conta', r => temBanco(r)
+          ? 'Sim' : 'Não — abrir conta salário na admissão'],
         ['Meio de pagamento', r=>r.meio_pagamento], ['Banco', r=>r.banco],
         ['Agência', r=>r.agencia], ['Conta', r=>r.conta], ['Tipo', r=>r.tipo_conta],
       ]},
       { t:'Benefícios', c: [
         ['Transporte', r=>transp(r.transporte_tipo)], ['Camiseta', r=>r.camiseta],
+        ['Calça', r=>r.calca], ['Sapato', r=>r.sapato],
       ], vt:1, dep:1 },
     ],
 
@@ -1107,6 +1121,8 @@ const TIPOS = {
       ['§','— BENEFÍCIOS —'],
       ['Tipo Transporte', r=>transp(r.transporte_tipo), 'vt'],
       ['Camiseta',        r=>r.camiseta],
+      ['Calça',           r=>r.calca],
+      ['Sapato',          r=>r.sapato],
     ],
 
     csv: ['protocolo','criado_em','status','nome','nome_social','cpf','nascimento',
@@ -1119,7 +1135,8 @@ const TIPOS = {
           'ctps_emissao','ctps_uf','militar_numero','militar_categoria','titulo_numero',
           'titulo_zona','titulo_secao','titulo_uf','cnh_numero','cnh_categoria','cnh_uf',
           'cnh_validade','visto_tipo','visto_rne','conselho_sigla','conselho_numero',
-          'meio_pagamento','banco','agencia','conta','tipo_conta','transporte_tipo','camiseta',
+          'meio_pagamento','banco','agencia','conta','tipo_conta','transporte_tipo',
+          'camiseta','calca','sapato',
           'observacao','sincronizado_em','pasta_sharepoint'],
   },
 };
