@@ -1,0 +1,26 @@
+{
+  // ──────────────────────────────────────────────────────────────────────
+  //  Worker que serve SO o painel de RH, em rh.cabanaburger.com.br.
+  //
+  //  Este arquivo mora dentro da pasta trilha-de-admissao de proposito: a
+  //  pasta de arquivos deste Worker e esta, e so esta. Os outros painels do
+  //  repositorio (vendas, iFood, scorecard, os portais de candidato) nao
+  //  existem para ele — nao e filtro na frente, e ausencia mesmo.
+  //
+  //  O Worker antigo (cabana-dashboards) continua servindo o repositorio
+  //  inteiro no endereco .workers.dev, para os links ja enviados.
+  // ──────────────────────────────────────────────────────────────────────
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cabana-rh",
+  "compatibility_date": "2026-05-06",
+  "assets": {
+    "directory": "."
+  },
+  //  Sem endereco .workers.dev: este Worker so responde pelo dominio
+  //  proprio. Como nasce agora, nao quebra link nenhum — e ja fecha de
+  //  saida a porta dos fundos que o Worker antigo ainda tem aberta.
+  "workers_dev": false,
+  "observability": {
+    "enabled": true
+  }
+}
