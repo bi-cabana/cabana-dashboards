@@ -1,0 +1,3 @@
+# Configuracao nao e conteudo: estes dois nao sobem como arquivo servido.
+wrangler.jsonc
+.assetsignore
