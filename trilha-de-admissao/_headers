@@ -1,0 +1,4 @@
+# Sem ETag/Last-Modified na origem, o Chrome servia HTML antigo do cache
+# local e o time via o painel de ontem. no-store obriga a buscar sempre.
+/*
+  Cache-Control: no-store
