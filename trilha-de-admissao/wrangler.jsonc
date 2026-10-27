@@ -16,10 +16,12 @@
   "assets": {
     "directory": "."
   },
-  //  Sem endereco .workers.dev: este Worker so responde pelo dominio
-  //  proprio. Como nasce agora, nao quebra link nenhum — e ja fecha de
-  //  saida a porta dos fundos que o Worker antigo ainda tem aberta.
-  "workers_dev": false,
+  //  TEMPORARIO: ligado so para dar um endereco de teste enquanto a zona
+  //  rh.cabanaburger.com.br nao existe. Assim da para conferir que o
+  //  painel sobe certo a partir desta pasta antes do DNS ficar pronto.
+  //  Volta para false no dia em que o dominio proprio for ligado — e o
+  //  que fecha a porta dos fundos deste Worker.
+  "workers_dev": true,
   "observability": {
     "enabled": true
   }
