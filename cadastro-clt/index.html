@@ -598,6 +598,18 @@ function validar(n) {
   }
   if (n === 2 && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(D.email || ''))
     return erro('O e-mail informado não parece válido.');
+  if (n === 2) {
+    const so = v => String(v || '').replace(/\D/g, '');
+    if (so(D.emergencia_telefone) && so(D.emergencia_telefone) === so(D.tel_celular)) {
+      document.getElementById('f-emergencia_telefone')?.classList.add('erro');
+      return erro('O contato de emergência precisa ser de outra pessoa — '
+                + 'esse é o seu próprio celular.');
+    }
+    if (so(D.emergencia_telefone).length < 10) {
+      document.getElementById('f-emergencia_telefone')?.classList.add('erro');
+      return erro('Informe o telefone do contato de emergência com DDD.');
+    }
+  }
   if (n === 5) {
     for (const l of linhasVT()) {
       if (!l.empresa) return erro('Informe a empresa em todas as linhas de transporte.');
@@ -938,8 +950,8 @@ const paraISO = t => {
 };
 
 const DATAS = ['nascimento','data_migracao','rg_emissao','pis_data_cadastro',
-               'ctps_emissao','cnh_validade','visto_validade_rne','visto_validade_prof',
-               'conselho_vencimento'];
+               'ctps_emissao','cnh_validade','visto_validade_rne','visto_validade_prof'
+];
 const BOOLS = ['naturalizado','pcd','sem_numero'];
 
 function progresso(txt, pct) {
@@ -1030,6 +1042,8 @@ async function enviar() {
           'Vaga': VAGA ? `${VAGA.codigo} · ${VAGA.unidade} · ${VAGA.cargo}` : '—',
           'CPF': D.cpf,
           'Contato': D.tel_celular + ' · ' + D.email,
+          'Emergência': (D.emergencia_nome || '—') + ' · '
+                      + (D.emergencia_telefone || '—'),
           'Recebido em': new Date().toLocaleString('pt-BR'),
           'Documentos': arquivos.length + ' arquivo(s) anexado(s)',
           'PENDENCIA': (faltam.length
