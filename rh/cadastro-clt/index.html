@@ -596,8 +596,12 @@ function validar(n) {
     }
     if (idadeDe(D) < 14) return erro('A data de nascimento parece incorreta.');
   }
-  if (n === 2 && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(D.email || ''))
-    return erro('O e-mail informado não parece válido.');
+  if (n === 2 && String(D.email || '').trim()
+      && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(D.email.trim())) {
+    document.getElementById('f-email')?.classList.add('erro');
+    return erro('O e-mail informado não parece válido. Apague o campo se '
+              + 'você não tiver e-mail.');
+  }
   if (n === 2) {
     const so = v => String(v || '').replace(/\D/g, '');
     if (so(D.emergencia_telefone) && so(D.emergencia_telefone) === so(D.tel_celular)) {
@@ -1035,13 +1039,15 @@ async function enviar() {
           subject: (faltam.length ? '⚠️ Admissão CLT com pendência — ' : '🆕 Nova admissão CLT — ')
                    + D.nome + ' — protocolo ' + row.protocolo,
           from_name: 'Portal de Admissão CLT',
-          replyto: D.email,
+          replyto: String(D.email || '').trim() || EMAIL_RH,
           'Tipo': 'CLT',
           'Nome': D.nome + (D.nome_social ? ' (nome social: ' + D.nome_social + ')' : ''),
           'Protocolo': row.protocolo,
           'Vaga': VAGA ? `${VAGA.codigo} · ${VAGA.unidade} · ${VAGA.cargo}` : '—',
           'CPF': D.cpf,
-          'Contato': D.tel_celular + ' · ' + D.email,
+          'Contato': D.tel_celular
+                   + (String(D.email || '').trim() ? ' · ' + D.email
+                                                   : ' · (sem e-mail)'),
           'Emergência': (D.emergencia_nome || '—') + ' · '
                       + (D.emergencia_telefone || '—'),
           'Recebido em': new Date().toLocaleString('pt-BR'),
