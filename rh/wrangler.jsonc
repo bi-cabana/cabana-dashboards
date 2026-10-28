@@ -1,0 +1,33 @@
+{
+  // ──────────────────────────────────────────────────────────────────────
+  //  Worker do RH — rh.cabanaburger.com.br
+  //
+  //  Serve os quatro sistemas de Gente & Gestao, e so eles:
+  //
+  //    /                  painel Trilha de Admissao (com login)
+  //    /cadastro-pj/      formulario de colaborador PJ
+  //    /cadastro-clt/     formulario de colaborador CLT
+  //    /vem-pro-cabana/   agendamento de entrevista
+  //
+  //  Este arquivo mora dentro da pasta "rh" de proposito: a pasta de
+  //  arquivos deste Worker e esta, e so esta. Os dashboards gerenciais do
+  //  repositorio nao existem para ele — nao e filtro na frente, e ausencia.
+  //
+  //  O Worker antigo (cabana-dashboards) continua servindo o repositorio
+  //  inteiro no endereco .workers.dev, para os links ja enviados a
+  //  candidatos e os favoritos do time.
+  // ──────────────────────────────────────────────────────────────────────
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cabana-rh",
+  "compatibility_date": "2026-05-06",
+  "assets": {
+    "directory": "."
+  },
+  //  TEMPORARIO: ligado para dar endereco de teste enquanto a zona
+  //  rh.cabanaburger.com.br nao existe. Volta para false no dia em que o
+  //  dominio proprio for ligado.
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  }
+}
