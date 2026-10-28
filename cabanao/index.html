@@ -187,6 +187,35 @@
      apurado e os pontos dela ainda podem mudar — a tabela precisa dizer
      isso na linha, não só no rodapé. */
   .atr{font-style:normal; color:var(--esquilo); font-weight:800; cursor:help}
+
+  /* A SEXTA ABA. Com cinco, "RESTAURANTE" já ocupa a largura inteira do
+     botão num celular de 360px. Com seis, ou o rótulo encolhe ou quebra em
+     duas linhas e desalinha os outros cinco. Encolher é menos feio. */
+  nav.apertado button{font-size:9px; letter-spacing:.02em; padding:9px 1px 10px}
+  nav.apertado button svg{width:19px; height:19px}
+
+  /* A LISTA DE ATRASOS. Três colunas: quando foi, quem jogou e por quê, até
+     quando. A do meio cresce; as das pontas têm largura fixa para os prazos
+     ficarem alinhados e dar para bater o olho na coluna. */
+  .atraso{display:grid; grid-template-columns:46px 1fr 64px; gap:10px;
+          align-items:center; padding:11px 0; border-top:1px solid var(--linha)}
+  .atraso:first-child{border-top:0}
+  .atraso b{display:block; font-size:13.5px; line-height:1.3}
+  .atraso small{display:block; color:var(--fraco); font-size:11.5px;
+                line-height:1.35; margin-top:2px}
+  .atraso .qd{text-align:center}
+  .atraso .qd b{font-size:12px; color:var(--limonada)}
+  .atraso .qp{text-align:right}
+  .atraso .qp b{font-size:12.5px}
+  .atraso.meu{background:rgba(178,247,113,.06); border-radius:8px;
+              padding-left:8px; padding-right:8px}
+  .atraso.vencido .qp b{color:var(--esquilo)}
+  .atraso .sig{margin:0 4px}
+  .resumoAtraso{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 6px}
+  .resumoAtraso span{font-size:12px; font-weight:700; padding:5px 10px;
+       border-radius:999px; background:rgba(255,255,255,.06); color:var(--texto)}
+  .resumoAtraso span.alerta{background:rgba(255,93,49,.14); color:var(--esquilo)}
+  .resumoAtraso span.meu{background:rgba(178,247,113,.16); color:var(--limonada)}
   .seletorLojas{display:flex; gap:8px; overflow-x:auto; padding:2px 0 10px}
   .seletorLojas button{flex:0 0 auto; display:flex; align-items:center; gap:7px;
        background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
@@ -1633,6 +1662,17 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
       </div>
     </section>
 
+    <!-- --------------------------------------------------------- ATRASOS -->
+    <section id="pg-atrasos" class="pagina oculto">
+      <div class="cartao">
+        <h2 id="tituloAtrasos">Jogos em atraso</h2>
+        <div id="erroAtrasos"></div>
+        <div class="resumoAtraso" id="resumoAtrasos"></div>
+        <div id="listaAtrasos"></div>
+        <p class="nota" id="notaAtrasos"></p>
+      </div>
+    </section>
+
     <!-- ------------------------------------------------------ MINHA LOJA -->
     <section id="pg-loja" class="pagina oculto">
       <div class="seletorLojas" id="seletorLojas"></div>
@@ -1749,6 +1789,8 @@ const ICONES = {
   jogos:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/>',
   loja:   '<path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/>',
   time:   '<path d="M12 3l7 3v5c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6z"/>',
+  atrasos:'<path d="M12 3.6 2.9 19.4h18.2z"/><path d="M12 10.2v3.6"/>'
+        + '<path d="M12 16.8v.1"/>',
   regras: '<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v14H6.5A1.5 1.5 0 0 0 5 18.5z"/>'
         + '<path d="M5 18.5A1.5 1.5 0 0 0 6.5 20H19"/><path d="M8.5 7.5h7M8.5 11h5"/>',
   admin:  '<circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',
@@ -1756,8 +1798,9 @@ const ICONES = {
 // "Restaurante" e não "Meu restaurante": a frase inteira não cabe numa linha
 // na barra de baixo do celular e quebraria em duas, desalinhando os outros
 // rótulos. O "Meu" fica implícito — a aba só mostra a loja da própria pessoa.
-const ROTULOS = {tabela:"Tabela", jogos:"Jogos", loja:"Restaurante",
-                 time:"Meu time", regras:"Regras", admin:"Acessos"};
+const ROTULOS = {tabela:"Tabela", jogos:"Jogos", atrasos:"Atrasos",
+                 loja:"Restaurante", time:"Meu time", regras:"Regras",
+                 admin:"Acessos"};
 
 // O escudo de uma loja, ou a inicial dela quando ainda não há escudo
 // aprovado. Nunca uma imagem quebrada: no celular isso vira um quadrado cinza
@@ -1947,7 +1990,11 @@ function montarNav() {
   // Regras entra para todo mundo — é o objetivo da aba. Com isso o técnico
   // fica com 5 botões e o admin com 4; mais do que 5 não cabe na barra de um
   // celular estreito sem o rótulo quebrar em duas linhas.
-  const abas = ["tabela", "jogos"];
+  // Atrasos entra para todo mundo. O gerente precisa saber que o jogo dele
+  // está parado por falta de dado DELE; eu preciso da lista para o VAR de
+  // terça. É a mesma lista — esconder de um lado só criaria duas versões da
+  // verdade sobre o mesmo campeonato.
+  const abas = ["tabela", "jogos", "atrasos"];
   // A aba existe para quem tem ao menos uma loja — não para quem tem
   // exatamente uma. Era isso que escondia a aba do coordenador regional,
   // porque o loja_id dele é nulo.
@@ -1955,6 +2002,7 @@ function montarNav() {
   abas.push("regras");
   if (EU.admin) abas.push("admin");
   $("nav").style.gridTemplateColumns = `repeat(${abas.length},1fr)`;
+  $("nav").classList.toggle("apertado", abas.length > 5);
   $("nav").innerHTML = abas.map(a =>
     `<button data-p="${a}"><svg viewBox="0 0 24 24">${ICONES[a]}</svg>${ROTULOS[a]}</button>`
   ).join("");
@@ -1971,6 +2019,7 @@ async function mostrar(p) {
   window.scrollTo(0, 0);
   if (p === "tabela") await pgTabela();
   if (p === "jogos")  await pgJogos();
+  if (p === "atrasos") await pgAtrasos();
   if (p === "regras") await pgRegras();
   if (p === "loja")   await pgLoja();
   if (p === "time")   await pgTime();
@@ -2145,6 +2194,67 @@ async function pgJogos() {
         : (EU.loja_id != null
             ? "O tempo cravado aparece no seu jogo. Nos outros, o placar."
             : ""));
+}
+
+// ------------------------------------------------------------------ ATRASOS
+// O asterisco da classificação diz QUE há atraso. Esta aba diz QUAL, por quê
+// e até quando — sem ela, vinte e sete lojas perguntam a mesma coisa.
+function dm(iso) {
+  if (!iso) return "—";
+  const [a, m, d] = String(iso).slice(0, 10).split("-");
+  return d && m ? `${d}/${m}` : iso;
+}
+
+async function pgAtrasos() {
+  const { linhas, erro } = await ler("v_app_atraso", q => q.order("data"));
+  $("erroAtrasos").innerHTML = falhou(erro);
+
+  const meus     = linhas.filter(a => a.sou_eu).length;
+  const vencidos = linhas.filter(a => a.prazo_vencido).length;
+  const semDado  = linhas.filter(a => a.tipo === "dado").length;
+
+  $("tituloAtrasos").textContent = linhas.length
+    ? `Jogos em atraso · ${linhas.length}` : "Jogos em atraso";
+
+  $("resumoAtrasos").innerHTML = linhas.length ? [
+    [`${linhas.length} parado${linhas.length > 1 ? "s" : ""}`, ""],
+    meus     ? [`${meus} ${meus > 1 ? "são seus" : "é seu"}`, "meu"] : null,
+    vencidos ? [`${vencidos} fora do prazo`, "alerta"] : null,
+    semDado  ? [`${semDado} por falta de dado`, ""] : null,
+  ].filter(Boolean).map(([t, c]) =>
+    `<span class="${c}">${esc(t)}</span>`).join("") : "";
+
+  // Os meus primeiro: quem abre esta aba quase sempre abre por causa do seu.
+  const lista = linhas.slice().sort((a, b) => (b.sou_eu ? 1 : 0) - (a.sou_eu ? 1 : 0));
+
+  $("listaAtrasos").innerHTML = lista.length ? lista.map(a => `
+    <div class="atraso ${a.sou_eu ? "meu" : ""} ${a.prazo_vencido ? "vencido" : ""}">
+      <div class="qd"><b>R${a.rodada}</b><small>${dm(a.data)}</small></div>
+      <div class="qq">
+        <b><span style="white-space:nowrap">${esc(a.casa)}<i class="sig">${
+             esc(a.casa_sigla || "")}</i></span><span style="white-space:nowrap"
+             ><span style="color:var(--fraco);font-weight:600">x</span><i
+             class="sig">${esc(a.fora_sigla || "")}</i>${esc(a.fora)}</span></b>
+        <small>${esc(a.motivo)}</small>
+      </div>
+      <div class="qp"><b>${dm(a.prazo)}</b>
+        <small>${a.prazo_vencido ? "venceu" : "fecha"}</small></div>
+    </div>`).join("")
+    : `<p class="vazio">${erro
+        ? "A consulta falhou — veja o aviso acima."
+        : `Nenhum jogo em atraso. A classificação está fechada até a última
+           rodada apurada.`}</p>`;
+
+  $("notaAtrasos").innerHTML = lista.length
+    ? `Um jogo fica em atraso quando o dia já passou e o placar não saiu — ou
+       porque faltou a medição de uma das lojas, ou porque a rodada ainda não
+       foi apurada. O motivo de cada um está na linha.<br>
+       <b>Fecha em</b> é a terça seguinte ao jogo, dia do VAR: até lá o dado
+       ainda pode chegar; depois, o jogo fecha com o que existir. Enquanto
+       isso, os pontos das <b>duas</b> lojas são provisórios — é por elas que
+       o asterisco aparece na classificação.`
+    : "";
+  assinar($("pg-atrasos"));
 }
 
 function selos(j, lado) {
