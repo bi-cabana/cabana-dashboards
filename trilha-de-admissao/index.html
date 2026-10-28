@@ -1480,24 +1480,29 @@ function ajustarUI() {
 }
 
 /* ── ONDE MORAM OS PORTAIS DE CANDIDATO ──
-   Enquanto tudo vivia num endereço só, bastava trocar a última pasta do
-   endereço atual. Com a separação por subdomínio isso deixa de valer: o
-   painel passa a morar em rh. e os formulários em vagas., que é um host
-   diferente — derivar do endereço do painel mandaria o candidato para um
-   lugar que as regras do rh. nem servem.
+   Os quatro sistemas passam a morar sob o mesmo endereço, com o painel na
+   raiz e os formulários em pastas irmãs. Mas o endereço antigo continua
+   no ar durante a transição, e lá a forma é outra: o painel mora DENTRO
+   de uma pasta e os formulários são irmãs dela.
 
-   Então: dentro do domínio da empresa, o endereço de candidato é fixo e
-   sabido. Fora dele (workers.dev durante a transição, ou arquivo local em
-   teste) continua derivando como antes, para os dois mundos funcionarem
-   ao mesmo tempo enquanto a mudança não termina. */
-const HOST_CANDIDATO = 'https://vagas.cabanaburger.com.br/';
+   As duas formas se distinguem por uma coisa só — onde o painel está:
 
+     .../                      painel na raiz  → portal é /cadastro-pj/
+     .../trilha-de-admissao/   painel na pasta → portal é ../cadastro-pj/
+
+   Por isso a conta é feita sobre o caminho atual, e não sobre um endereço
+   escrito à mão: o mesmo arquivo serve os dois mundos sem saber em qual
+   deles está rodando. */
 function enderecoPortal(tipo) {
   const pasta = tipo === 'pj' ? 'cadastro-pj/' : 'cadastro-clt/';
-  if (/(^|\.)cabanaburger\.com\.br$/.test(location.hostname))
-    return HOST_CANDIDATO + pasta;
-  const m = location.href.match(/^(https?:\/\/.*\/)[^/]+\/[^/]*$/);
-  return (m ? m[1] : 'https://cabana-dashboards.bi-253.workers.dev/') + pasta;
+  if (!location.protocol.startsWith('http'))
+    return 'https://cabana-dashboards.bi-253.workers.dev/' + pasta;
+  // o diretório da página atual, com barra no fim
+  const dir = location.pathname.replace(/[^/]*$/, '');
+  // painel na raiz: os formulários são pastas dele
+  if (dir === '/') return location.origin + '/' + pasta;
+  // painel dentro de uma pasta: os formulários são pastas irmãs
+  return location.origin + dir.replace(/[^/]+\/$/, '') + pasta;
 }
 
 function pintarLinkPortal() {
