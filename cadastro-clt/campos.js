@@ -65,9 +65,6 @@ const TIPO_CONTA     = ['Conta Corrente','Conta Salário'];
    de uma opção só, que convida a procurar outra. */
 const BANCO_FOLHA = 'Itaú';
 
-const CONSELHOS = ['Não possui','CRA','CRB','CRC','CREA','CRECI','CREFITO','CRESS',
-                   'CRF','CRM','CRMV','CRN','CRO','COREN','CRP','CRQ','OAB','OUTRO'];
-
 const CAT_CNH = ['A','B','AB','C','D','E','ACC'];
 
 /* Numeração brasileira. A calça vai de 2 em 2, como a etiqueta; o calçado
@@ -151,8 +148,18 @@ const ETAPAS = [
           ph:'seuemail@gmail.com' },
         { k:'tel_celular', r:'Telefone celular', t:'tel', req:1, mask:'fone',
           ph:'(11) 99999-9999' },
-        { k:'tel_residencial', r:'Telefone residencial', t:'tel', mask:'fone',
-          ph:'(11) 3333-3333' },
+      ]},
+      /* O telefone residencial saiu: quase ninguem tem, e quase ninguem
+         preenchia. No lugar entra o que o RH realmente precisa ter em
+         maos, e com nome junto — numero sem nome deixa quem liga sem
+         saber por quem perguntar. */
+      { titulo: 'Contato de emergência',
+        nota: 'Quem o Cabana deve avisar se acontecer alguma coisa com você.',
+        campos: [
+        { k:'emergencia_nome', r:'Nome', t:'text', req:1, span:1,
+          ph:'Nome completo de quem avisar' },
+        { k:'emergencia_telefone', r:'Telefone', t:'tel', req:1, mask:'fone',
+          ph:'(11) 99999-9999' },
       ]},
       { titulo: 'Endereço', campos: [
         { k:'cep', r:'CEP', t:'text', req:1, mask:'cep', ph:'00000-000',
@@ -223,15 +230,6 @@ const ETAPAS = [
           ph:'DD/MM/AAAA' },
         { k:'visto_validade_prof', r:'Validade profissional', t:'text', mask:'data',
           ph:'DD/MM/AAAA' },
-      ]},
-      { titulo: 'Conselho de classe', nota:'Só para profissões regulamentadas',
-        campos: [
-        { k:'conselho_sigla',      r:'Conselho', t:'select', opts:CONSELHOS },
-        { k:'conselho_numero',     r:'Número do conselho', t:'text',
-          ver: d => d.conselho_sigla && d.conselho_sigla !== 'Não possui' },
-        { k:'conselho_vencimento', r:'Vencimento', t:'text', mask:'data',
-          ph:'DD/MM/AAAA',
-          ver: d => d.conselho_sigla && d.conselho_sigla !== 'Não possui' },
       ]},
     ],
   },
