@@ -319,6 +319,15 @@ const DOCS = [
     ver: d => d.pcd === 'Sim',
     hint:'Laudo com o CID, assinado e carimbado pelo médico' },
 
+  /* Só aparece para quem declarou dependente. A contagem não sai de um
+     campo do formulário: as linhas de dependente são montadas à parte, e
+     por isso o portal mantém `__dependentes` atualizado a cada mudança
+     nelas — é isso que esta condição lê. */
+  { k:'certidao_dependente', ico:'👨‍👩‍👧', nome:'Certidão dos dependentes',
+    multi:true, ver: d => (d.__dependentes || 0) > 0,
+    hint:'Certidão de nascimento de cada filho e de casamento do cônjuge — '
+       + 'pode anexar vários arquivos' },
+
   /* `depois` é um documento que não dá para anexar agora: o exame ainda vai
      ser marcado. Ele aparece na lista para a pessoa saber que falta, nasce
      pendente no painel do RH — que é onde o acompanhamento acontece — e não
