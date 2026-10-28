@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -176,6 +176,24 @@
   tr.eu td:first-child{box-shadow:inset 3px 0 0 var(--limonada)}
   .pos{width:26px; color:var(--fraco); padding-left:7px}
   .nm{display:flex; align-items:center; gap:8px; min-width:0}
+  /* A sigla da LOJA. O nome do time é do técnico e muda; a sigla não.
+     Sem ela, 'Os ++' em primeiro lugar não diz a ninguém que é a
+     Pinheiros. Discreta de propósito: identifica sem competir com o
+     nome que o técnico escolheu. */
+  .sig{font-style:normal; font-size:10px; font-weight:800; letter-spacing:.07em;
+       color:var(--fraco); background:rgba(255,255,255,.08);
+       border-radius:4px; padding:1px 4px; margin:0 5px; white-space:nowrap}
+  /* O asterisco do jogo em atraso. A loja ficou sem dado, o jogo não foi
+     apurado e os pontos dela ainda podem mudar — a tabela precisa dizer
+     isso na linha, não só no rodapé. */
+  .atr{font-style:normal; color:var(--esquilo); font-weight:800; cursor:help}
+  .seletorLojas{display:flex; gap:8px; overflow-x:auto; padding:2px 0 10px}
+  .seletorLojas button{flex:0 0 auto; display:flex; align-items:center; gap:7px;
+       background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
+       color:var(--texto); border-radius:999px; padding:7px 13px 7px 8px;
+       font-size:13px; font-weight:600; cursor:pointer}
+  .seletorLojas button.on{background:var(--limonada); color:#0E120C;
+       border-color:var(--limonada)}
   .nm .fig{width:22px; height:22px; border-radius:5px; flex:none}
   /* Loja sem escudo aprovado mostra a inicial, não uma imagem quebrada. */
   .fig{object-fit:cover; background:var(--vidro); display:grid; place-items:center;
@@ -360,6 +378,14 @@
     .kpis{grid-template-columns:repeat(4,1fr)}
   }
 </style>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">75DVEWA554PV-1278060199-48915</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">1c831641-11c0-4144-b532-dae010403806</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://cabanaburger.sharepoint.com/sites/documentos/_layouts/15/DocIdRedir.aspx?ID=75DVEWA554PV-1278060199-48915, 75DVEWA554PV-1278060199-48915</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
 </head>
 <body>
 
@@ -955,6 +981,19 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
   <button id="btEntrar" class="largo">Entrar</button>
   <button id="btTrocar" class="largo linha">Trocar minha senha</button>
   <div id="avisoLogin"></div>
+</section>
+
+<!-- ==================================================== NOVA SENHA ======= -->
+<section id="telaSenha" class="login oculto">
+  <p class="chamada">Escolha a sua senha. Ela substitui a que o BI mandou,
+    e é com ela que você entra daqui para frente.</p>
+
+  <label for="senha1">Senha nova</label>
+  <input id="senha1" type="password" autocomplete="new-password">
+  <label for="senha2">Repita a senha</label>
+  <input id="senha2" type="password" autocomplete="new-password">
+  <button id="btSalvarSenha" class="largo">Salvar e entrar</button>
+  <div id="avisoSenha"></div>
 </section>
 
 <!-- ========================================================== APP ========= -->
@@ -1579,7 +1618,7 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
           <b>SG</b> saldo · <b>Placa</b> Gols de Placa, as rodadas em que a loja
           fez 10 minutos ou menos.<br>
           O tempo é a média da loja no campeonato. O tempo de um dia só aparece
-          para quem jogou aquele jogo.</p>
+          para quem jogou aquele jogo.<span id="notaAtraso"></span></p>
       </div>
     </section>
 
@@ -1596,6 +1635,7 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
 
     <!-- ------------------------------------------------------ MINHA LOJA -->
     <section id="pg-loja" class="pagina oculto">
+      <div class="seletorLojas" id="seletorLojas"></div>
       <div class="kpis" id="meusKpis"></div>
       <div class="cartao">
         <h2>Meu tempo, rodada a rodada</h2>
@@ -1681,6 +1721,16 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // ===========================================================================
 
 const BUCKET = "cabanao-midia";
+
+// O link de troca de senha chega com `type=recovery` no endereço. O
+// supabase-js lê e APAGA esse pedaço da URL ao criar o cliente logo abaixo,
+// então a marca tem de ser guardada antes — depois não há mais o que ler.
+const _url = (location.hash || "") + "&" + (location.search || "");
+const RECUPERANDO = /type=recovery/.test(_url);
+const _erroLink = /error_description=([^&]*)/.exec(_url);
+const ERRO_DO_LINK = _erroLink
+  ? decodeURIComponent(_erroLink[1].replace(/\+/g, " ")) : "";
+
 const sb = (window.__SB_FAKE__ ||
             supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
 const $ = id => document.getElementById(id);
@@ -1688,6 +1738,11 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g,
   c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
 
 let EU = null, RODADAS = [], RODADA = null, PAGINA = "tabela";
+// Qual das minhas lojas a aba "Restaurante" está mostrando. Quem tem uma só
+// nunca vê isto; o coordenador regional e o franqueado de três lojas
+// trocam por aqui. A lista vem de v_app_eu.lojas, que o banco monta a
+// partir de acesso_loja — a tela não escolhe quem vê o quê.
+let LOJA_ATUAL = null, MINHAS = [];
 
 const ICONES = {
   tabela: '<path d="M4 6h16M4 12h16M4 18h16"/>',
@@ -1784,6 +1839,12 @@ function explica(erro) {
          + "a página, ou sirva a pasta por um endereço http.";
   if (/rate limit|too many/i.test(m))
     return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
+  if (/should be different|same.*password/i.test(m))
+    return "A senha nova é igual à antiga. Escolha outra.";
+  if (/at least|weak|password.*short/i.test(m))
+    return "A senha é curta demais. Use pelo menos 6 letras ou números.";
+  if (/session missing|not authenticated|JWT/i.test(m))
+    return "O link já não vale. Peça outro em \"Trocar minha senha\".";
   return "Não consegui entrar. O servidor respondeu: " + m;
 }
 
@@ -1793,6 +1854,54 @@ async function trocarSenha() {
   await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href });
   avisar("avisoLogin",
     "Se esse e-mail tiver conta, o link de troca de senha chegou nele.", true);
+}
+
+// --------------------------------------------------------- SENHA NOVA
+// O link que chega por e-mail entra na conta e para por aí. Sem uma tela
+// para digitar a senha, a pessoa usa o painel enquanto a aba está aberta e
+// na vez seguinte continua sem saber entrar — e pede outro link. Esta tela
+// é o passo que faltava entre o link e a senha de verdade.
+function pedirNovaSenha() {
+  // O brasão do login, emprestado. A pessoa chegou aqui por um link de
+  // e-mail: uma tela pedindo senha sem marca nenhuma parece golpe. Clonar
+  // sai mais barato do que repetir o desenho inteiro no arquivo.
+  const marca = document.querySelector("#telaLogin .assinatura");
+  if (marca && !$("telaSenha").querySelector(".assinatura"))
+    $("telaSenha").prepend(marca.cloneNode(true));
+  $("telaLogin").classList.add("oculto");
+  $("app").classList.add("oculto");
+  $("telaSenha").classList.remove("oculto");
+  $("senha1").focus();
+}
+
+async function salvarNovaSenha() {
+  const a = $("senha1").value, b = $("senha2").value;
+  if (a.length < 6)
+    return avisar("avisoSenha",
+      "A senha precisa de pelo menos 6 letras ou números.");
+  if (a !== b)
+    return avisar("avisoSenha", "As duas senhas não são iguais.");
+
+  $("btSalvarSenha").disabled = true;
+  avisar("avisoSenha", "");
+
+  // O cliente ainda pode estar lendo o link quando a pessoa clica. Esperar
+  // aqui é melhor do que devolver "sessão ausente", que não explica nada.
+  for (let i = 0; i < 20; i++) {
+    const { data } = await sb.auth.getSession();
+    if (data?.session) break;
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  let erro = null;
+  try { erro = (await sb.auth.updateUser({ password: a })).error; }
+  catch (e) { erro = e; }
+  $("btSalvarSenha").disabled = false;
+  if (erro) return avisar("avisoSenha", explica(erro));
+
+  $("telaSenha").classList.add("oculto");
+  $("telaLogin").classList.remove("oculto");
+  await abrir();
 }
 
 async function abrir() {
@@ -1814,6 +1923,15 @@ async function abrir() {
     : esc((eu.time || eu.loja || "C").trim()[0]);
   $("nomeTime").value = eu.time || "";
 
+  MINHAS = Array.isArray(eu.lojas) ? eu.lojas : [];
+  LOJA_ATUAL = MINHAS.length ? MINHAS[0].id : eu.loja_id;
+  // Com mais de uma loja, o cabeçalho não pode anunciar uma só como "a
+  // minha" — seria mentira para o coordenador de cinco.
+  if (MINHAS.length > 1) {
+    $("meuTime").textContent   = eu.nome || "Cabanão";
+    $("minhaLoja").textContent = MINHAS.length + " lojas";
+  }
+
   // Marca presença. Sem `await`: se a rede estiver ruim ou a função ainda não
   // existir no banco, o app abre do mesmo jeito — registro de acesso não pode
   // ser motivo para o gerente ficar olhando tela branca.
@@ -1830,7 +1948,10 @@ function montarNav() {
   // fica com 5 botões e o admin com 4; mais do que 5 não cabe na barra de um
   // celular estreito sem o rótulo quebrar em duas linhas.
   const abas = ["tabela", "jogos"];
-  if (EU.loja_id != null) abas.push("loja", "time");
+  // A aba existe para quem tem ao menos uma loja — não para quem tem
+  // exatamente uma. Era isso que escondia a aba do coordenador regional,
+  // porque o loja_id dele é nulo.
+  if (MINHAS.length) abas.push("loja", "time");
   abas.push("regras");
   if (EU.admin) abas.push("admin");
   $("nav").style.gridTemplateColumns = `repeat(${abas.length},1fr)`;
@@ -1937,7 +2058,10 @@ async function pgTabela() {
     <tr class="${t.sou_eu ? "eu" : ""}">
       <td class="pos">${t.pos}</td>
       <td class="l"><div class="nm">${fig(t.escudo, t.time)}
-        <span>${esc(t.time)}</span></div></td>
+        <span>${esc(t.time)}<i class="sig">${esc(t.sigla || "")}</i>${
+          t.atrasados ? `<i class="atr" title="${t.atrasados} jogo${
+            t.atrasados > 1 ? "s" : ""} em atraso — pontuação provisória">*</i>` : ""
+        }</span></div></td>
       <td class="pts">${t.pts}</td>
       <td class="largura">${t.j}</td>
       <td class="largao">${t.v}</td>
@@ -1957,6 +2081,17 @@ async function pgTabela() {
          : `O campeonato ainda não começou — a classificação aparece depois da
             primeira rodada apurada. A tabela de jogos já está em <b>Jogos</b>.`
        }</p></td></tr>`;
+  // O rodapé só fala em atraso quando há atraso. Explicação de regra que
+  // não se aplica hoje é ruído, e ruído todo dia faz a pessoa parar de ler.
+  const comAtraso = linhas.filter(t => t.atrasados).length;
+  $("notaAtraso").innerHTML = comAtraso
+    ? `<br><i class="atr">*</i> ${comAtraso === 1
+        ? "Uma loja tem jogo em atraso"
+        : comAtraso + " lojas têm jogo em atraso"} — a loja ficou sem dado no
+       dia e o jogo ainda não foi apurado. Os pontos dela <b>e os do
+       adversário</b> podem mudar quando o jogo fechar.`
+    : "";
+
   assinar($("pg-tabela"));
   const ir = $("irParaMim");
   if (ir) ir.addEventListener("click", () => {
@@ -1993,16 +2128,16 @@ async function pgJogos() {
     + (r.publicada ? "" : " · a jogar");
   $("listaJogos").innerHTML = jogos.map(j => j.publicado ? `
     <div class="jogo ${j.meu_jogo ? "meu" : ""}">
-      <div class="lado"><b>${esc(j.casa)}${selos(j, "casa")}</b>
+      <div class="lado"><b>${esc(j.casa)}<i class="sig">${esc(j.casa_sigla || "")}</i>${selos(j, "casa")}</b>
         <small>${j.tempo_casa ? "fez " + esc(j.tempo_casa) : "&nbsp;"}</small></div>
       <div class="pl">${j.gols_casa} <span style="color:var(--fraco);font-size:13px">x</span> ${j.gols_fora}</div>
-      <div class="lado d"><b>${selos(j, "fora")}${esc(j.fora)}</b>
+      <div class="lado d"><b>${selos(j, "fora")}<i class="sig">${esc(j.fora_sigla || "")}</i>${esc(j.fora)}</b>
         <small>${j.tempo_fora ? "fez " + esc(j.tempo_fora) : "&nbsp;"}</small></div>
     </div>` : `
     <div class="jogo ${j.meu_jogo ? "meu" : ""}">
-      <div class="lado"><b>${esc(j.casa)}</b></div>
+      <div class="lado"><b>${esc(j.casa)}<i class="sig">${esc(j.casa_sigla || "")}</i></b></div>
       <div class="pl" style="font-size:14px;color:var(--fraco);font-weight:600">x</div>
-      <div class="lado d"><b>${esc(j.fora)}</b></div>
+      <div class="lado d"><b><i class="sig">${esc(j.fora_sigla || "")}</i>${esc(j.fora)}</b></div>
     </div>`).join("");
   $("notaJogos").innerHTML = (r.folga ? `Folga da rodada: <b>${esc(r.folga)}</b>. ` : "")
     + (!r.publicada
@@ -2022,10 +2157,24 @@ function selos(j, lado) {
 
 // -------------------------------------------------------------- MINHA LOJA
 async function pgLoja() {
+  // O seletor só aparece para quem tem mais de uma loja. Com uma só, a aba
+  // fica exatamente como era.
+  $("seletorLojas").innerHTML = MINHAS.length > 1
+    ? MINHAS.map(l => `<button data-loja="${l.id}" class="${
+        l.id === LOJA_ATUAL ? "on" : ""}">${
+        l.escudo ? "" : ""}<i class="sig">${esc(l.sigla || "")}</i>${
+        esc(l.time || l.nome)}</button>`).join("")
+    : "";
+  $("seletorLojas").querySelectorAll("button").forEach(b =>
+    b.addEventListener("click", () => {
+      LOJA_ATUAL = +b.dataset.loja; pgLoja(); }));
+
   const [{ data: camp }, { data: tab }, { data: agenda }] = await Promise.all([
-    sb.from("v_app_minha_campanha").select("*").order("rodada"),
-    sb.from("v_app_tabela").select("*").eq("loja_id", EU.loja_id),
-    sb.from("v_app_minha_agenda").select("*").order("rodada"),
+    sb.from("v_app_minha_campanha").select("*")
+      .eq("minha_loja_id", LOJA_ATUAL).order("rodada"),
+    sb.from("v_app_tabela").select("*").eq("loja_id", LOJA_ATUAL),
+    sb.from("v_app_minha_agenda").select("*")
+      .eq("minha_loja_id", LOJA_ATUAL).order("rodada"),
   ]);
   const c = camp || [], eu = (tab || [])[0];
 
@@ -2452,6 +2601,9 @@ async function decidir(id, aprovar) {
 // -------------------------------------------------------------------- COLA
 $("btEntrar").addEventListener("click", entrar);
 $("btTrocar").addEventListener("click", trocarSenha);
+$("btSalvarSenha").addEventListener("click", salvarNovaSenha);
+$("senha2").addEventListener("keydown",
+  e => { if (e.key === "Enter") salvarNovaSenha(); });
 $("senha").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
 $("btSair").addEventListener("click", async () => {
   await sb.auth.signOut(); location.reload(); });
@@ -2470,8 +2622,21 @@ for (const [alvo, arq, tipo, aviso] of [
     enviar(tipo, e.dataTransfer.files[0], aviso); });
 }
 
-// Sessão guardada: quem já entrou no celular não digita senha de novo.
-sb.auth.getSession().then(({ data }) => { if (data?.session) abrir(); });
+// O Supabase avisa quando a sessão veio de um link de recuperação.
+sb.auth.onAuthStateChange(e => { if (e === "PASSWORD_RECOVERY") pedirNovaSenha(); });
+
+// Sessão guardada: quem já entrou no celular não digita senha de novo. Mas
+// quem chegou pelo link do e-mail tem sessão só para escolher a senha —
+// abrir o painel aqui seria pular justamente o passo que o link veio pedir.
+if (ERRO_DO_LINK) {
+  avisar("avisoLogin", /expired|invalid/i.test(ERRO_DO_LINK)
+    ? "O link de troca de senha venceu. Peça outro no botão abaixo."
+    : "O link não funcionou: " + ERRO_DO_LINK);
+} else if (RECUPERANDO) {
+  pedirNovaSenha();
+} else {
+  sb.auth.getSession().then(({ data }) => { if (data?.session) abrir(); });
+}
 </script>
 </body>
 </html>
