@@ -769,10 +769,27 @@ function addDep() {
     </select>
     <input class="form-input" id="dep-cpf-${id}" placeholder="000.000.000-00" maxlength="14"
            oninput="this.value=MASCARAS.cpf(this.value)">
-    <button type="button" class="bt-rm" onclick="document.getElementById('dep-${id}').remove()"
-            title="Remover">&times;</button>`;
+    <button type="button" class="bt-rm" title="Remover"
+            onclick="document.getElementById('dep-${id}').remove(); sincronizarDeps()"
+            >&times;</button>`;
   $('#dep-linhas').appendChild(d);
+  sincronizarDeps();
 }
+
+/* Mantém D a par de quantos dependentes existem e remonta os anexos.
+   Chamado a cada mexida nas linhas — incluir, digitar, remover. */
+function sincronizarDeps() {
+  const n = dependentes().length;
+  if (D.__dependentes === n) return;   // nada mudou, não redesenha à toa
+  D.__dependentes = n;
+  montarAnexos();
+}
+document.addEventListener('input', e => {
+  if (e.target.closest && e.target.closest('#dep-linhas')) sincronizarDeps();
+});
+document.addEventListener('change', e => {
+  if (e.target.closest && e.target.closest('#dep-linhas')) sincronizarDeps();
+});
 
 function dependentes() {
   return $$('#dep-linhas .lin').map(l => {
@@ -1017,6 +1034,7 @@ async function enviar() {
       documentos_faltantes: pendentes.map(d => nomeDoc(d, D)),
       transporte_tipo: D.transporte_tipo || null,
       vt_linhas: linhasVT(), dependentes: dependentes() };
+    //  __dependentes existe só para decidir anexo; não é coluna
     ETAPAS.forEach(e => (e.grupos || []).forEach(g => g.campos.forEach(c => {
       const v = String(D[c.k] ?? '').trim();
       if (DATAS.includes(c.k))      linha[c.k] = paraISO(v);
