@@ -145,8 +145,7 @@ const ETAPAS = [
     grupos: [
       { titulo: 'Comunicação', campos: [
         { k:'email', r:'E-mail', t:'email', span:1, auto:'email',
-          ph:'seuemail@gmail.com',
-          hint:'Se você tiver. Sem e-mail, o RH fala com você pelo WhatsApp.' },
+          ph:'seuemail@gmail.com' },
         { k:'tel_celular', r:'Telefone celular', t:'tel', req:1, mask:'fone',
           ph:'(11) 99999-9999' },
       ]},
