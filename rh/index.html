@@ -143,6 +143,27 @@
   .doc .t span{font-size:11px;color:var(--gray-400)}
   .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
+  /* ── EXCLUIR CADASTRO ──
+     Vermelho só aparece depois do primeiro clique: o botão de abrir é
+     discreto de propósito, para não competir com as ações do dia a dia. */
+  .zap-excluir{background:none;border:1.5px solid var(--gray-200);
+    color:var(--gray-500);border-radius:8px;padding:6px 12px;font-size:12.5px;
+    font-weight:600;font-family:inherit;cursor:pointer;margin-left:auto}
+  .zap-excluir:hover{border-color:var(--danger);color:var(--danger)}
+  .exc{display:none;border:1.5px solid #fca5a5;background:#fef2f2;
+    border-radius:11px;padding:15px 17px;margin-top:14px}
+  .exc.show{display:block}
+  .exc h4{font-size:13.5px;color:#991b1b;margin-bottom:7px}
+  .exc p{font-size:12.5px;color:#7f1d1d;line-height:1.6;margin-bottom:10px}
+  .exc ul{margin:0 0 10px 18px;font-size:12.5px;color:#7f1d1d;line-height:1.6}
+  .exc .linha{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .exc input{padding:8px 11px;border:1.5px solid #fca5a5;border-radius:8px;
+    font-family:inherit;font-size:13px;width:160px;text-transform:uppercase}
+  .btn-dng2{background:var(--danger);color:#fff;border:none;border-radius:8px;
+    padding:9px 16px;font-family:inherit;font-size:13px;font-weight:700;
+    cursor:pointer}
+  .btn-dng2:disabled{opacity:.45;cursor:not-allowed}
+
   /* ── CORRIGIR DADOS DO CANDIDATO ── */
   .edt{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
     gap:11px 14px;margin-top:4px}
@@ -1095,6 +1116,11 @@ const TIPOS = {
       ['escolaridade',   () => 'Comprovante de escolaridade',
         r => !/^Analfabeto/.test(r.grau_instrucao || '')],
       ['laudo_pcd',      () => 'Laudo médico (PCD)', r => r.pcd === true],
+      /* Quem declarou dependente precisa comprovar o vínculo: certidão de
+         nascimento de cada filho, de casamento do cônjuge. Sem isso não
+         sai salário-família nem dedução de imposto de renda. */
+      ['certidao_dependente', () => 'Certidão dos dependentes',
+        r => (r.dependentes || []).length > 0],
       /* O ASO nasce pendente de propósito: o exame é marcado depois do
          cadastro, e é nessa pendência que o RH acompanha quem já fez. */
       ['aso',            () => 'ASO — exame admissional'],
@@ -1899,6 +1925,69 @@ function pintar() {
 }
 
 /* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  EXCLUIR O CADASTRO                                                  ║
+   ║                                                                      ║
+   ║  Pedir a palavra EXCLUIR não é burocracia: a lista e o detalhe ficam ║
+   ║  lado a lado, e um clique errado aqui não tem volta. O custo é uma   ║
+   ║  palavra digitada; o custo do engano é um cadastro inteiro.          ║
+   ║                                                                      ║
+   ║  Os ARQUIVOS SAEM ANTES da linha. Se a ordem fosse a inversa e o     ║
+   ║  Storage falhasse no meio, sobrariam RG e CPF de alguém no bucket    ║
+   ║  sem nenhuma linha apontando para eles — invisíveis no painel e      ║
+   ║  eternos. Falhando antes, nada é perdido e dá para tentar de novo.   ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+function pedirExclusao(fechando) {
+  const box = $('exc-box');
+  if (!box) return;
+  box.classList.toggle('show', !fechando);
+  if (fechando) return;
+  $('exc-txt').value = '';
+  $('exc-ok').disabled = true;
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('exc-txt').focus();
+}
+
+function confirmarTexto(el) {
+  $('exc-ok').disabled = el.value.trim().toUpperCase() !== 'EXCLUIR';
+}
+
+async function excluirCadastro(id, btn) {
+  if (!podeMexerDoc()) return alert(SO_RH);
+  const r = linhas.find(x => x.id === id);
+  if (!r) return;
+  const cfg = T();
+  btn.disabled = true; btn.textContent = 'Excluindo…';
+
+  try {
+    const db = cliente();
+
+    // 1 · os arquivos
+    const caminhos = (r.arquivos || []).map(a => a.caminho).filter(Boolean);
+    if (caminhos.length) {
+      const { error } = await db.storage.from(cfg.bucket).remove(caminhos);
+      if (error) throw new Error('não consegui apagar os documentos ('
+                               + error.message + '). Nada foi excluído.');
+    }
+
+    // 2 · a linha, só depois que os arquivos saíram
+    const { error: eDel } = await db.from(cfg.tabela).delete().eq('id', id);
+    if (eDel) throw new Error('os documentos foram apagados, mas o cadastro '
+                            + 'não: ' + eDel.message);
+
+    linhas = linhas.filter(x => x.id !== id);
+    CACHE[TIPO] = linhas;
+    fechar();
+    pintar();
+    msg('app-msg', `Cadastro de ${r.nome_social || r.nome} excluído`
+      + (caminhos.length ? ` com ${caminhos.length} documento(s).` : '.'), 'ok');
+    setTimeout(() => msg('app-msg', ''), 8000);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Excluir definitivamente';
+    msg('exc-msg', e.message, 'err');
+  }
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
    ║  CORRIGIR OS DADOS DO CANDIDATO                                      ║
    ║                                                                      ║
    ║  Só o RH chega aqui, e o banco concorda: a política de UPDATE da     ║
@@ -2049,8 +2138,31 @@ function abrir(id) {
       <button class="btn btn-sm btn-primary" onclick="copiarSistema(this)">Copiar dados</button>
       ${podeMexerDoc() ? `<button class="btn btn-sm btn-ghost"
         onclick="editarCadastro('${r.id}')" title="Corrigir erro de digitação ou completar campo em branco"
-        >✏️ Corrigir dados</button>` : ''}
+        >✏️ Corrigir dados</button>
+      <button class="zap-excluir" onclick="pedirExclusao()"
+        title="Apagar este cadastro e os documentos dele">Excluir cadastro</button>` : ''}
     </div>
+
+    ${!podeMexerDoc() ? '' : `
+    <div class="exc" id="exc-box">
+      <h4>Excluir o cadastro de ${es(r.nome_social || r.nome)}?</h4>
+      <p>Isto apaga de vez, sem lixeira e sem desfazer:</p>
+      <ul>
+        <li>todos os dados pessoais deste cadastro</li>
+        <li>${(r.arquivos || []).length} documento(s) enviado(s), do armazenamento</li>
+        <li>o histórico de tratativa e as observações</li>
+      </ul>
+      <p>Se a intenção é só tirar da frente, mude o <b>status</b> em vez de
+         excluir — assim o registro continua existindo.</p>
+      <div class="linha">
+        <input id="exc-txt" placeholder="EXCLUIR" autocomplete="off"
+               oninput="confirmarTexto(this)">
+        <button class="btn-dng2" id="exc-ok" disabled
+                onclick="excluirCadastro('${r.id}', this)">Excluir definitivamente</button>
+        <button class="btn btn-sm btn-ghost" onclick="pedirExclusao(true)">Cancelar</button>
+      </div>
+      <div class="msg" id="exc-msg" style="margin:10px 0 0"></div>
+    </div>`}
 
     ${!f.length ? '' : `
     <div class="fbox">
