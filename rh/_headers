@@ -1,0 +1,4 @@
+# Sem ETag/Last-Modified na origem, o Chrome servia HTML antigo do cache
+# local. no-store obriga a buscar sempre a versao publicada.
+/*
+  Cache-Control: no-store
