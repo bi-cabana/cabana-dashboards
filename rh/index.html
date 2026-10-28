@@ -142,6 +142,26 @@
   .doc .t b{display:block;font-size:12.5px;color:var(--gray-800)}
   .doc .t span{font-size:11px;color:var(--gray-400)}
   .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+  /* ── CORRIGIR DADOS DO CANDIDATO ── */
+  .edt{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:11px 14px;margin-top:4px}
+  .edt .c{display:flex;flex-direction:column;gap:4px}
+  .edt .c.w{grid-column:1/-1}
+  .edt label{font-size:11.5px;font-weight:700;color:var(--gray-500)}
+  .edt input,.edt select{padding:8px 11px;border:1.5px solid var(--gray-200);
+    border-radius:8px;font-family:inherit;font-size:13.5px;background:#fff;
+    color:var(--gray-900);outline:none;width:100%}
+  .edt input:focus,.edt select:focus{border-color:var(--green);
+    box-shadow:0 0 0 3px rgba(74,143,58,.12)}
+  /* campo alterado fica marcado até salvar: é o que diz o que vai mudar */
+  .edt input.mud,.edt select.mud{border-color:var(--green);
+    background:var(--green-pale)}
+  .edt .vazio-antes{font-size:10.5px;color:var(--gray-400)}
+  .edt-barra{position:sticky;bottom:0;background:#fff;padding:12px 0 2px;
+    margin-top:16px;border-top:1px solid var(--gray-200);display:flex;
+    gap:8px;align-items:center;flex-wrap:wrap}
+  .edt-barra .sub{margin-left:auto}
   textarea.inp{resize:vertical;min-height:70px;font-size:13px}
   .rodape{font-size:11.5px;color:var(--gray-400);text-align:center;margin-top:26px;line-height:1.7}
 
@@ -567,6 +587,8 @@
       <button class="chip"    data-f="pendente"   onclick="filtrar(this)">Pendentes</button>
       <button class="chip"    data-f="aprovado"   onclick="filtrar(this)">Aprovados</button>
       <button class="chip"    data-f="__pend"     onclick="filtrar(this)">Doc. pendente</button>
+      <button class="chip chip-vaga" id="bt-concluidas" style="display:none"
+              onclick="alternarConcluidas()">Esconder concluídas</button>
       <button class="btn btn-sm btn-primary bt-nova" id="bt-nova"
               style="display:none" onclick="novaVaga()">+ Nova solicitação</button>
     </div>
@@ -889,6 +911,94 @@ const temBanco = r => !!(String(r.agencia || '').trim() && String(r.conta || '')
 const tagBanco = r => temBanco(r)
   ? '<span class="completo">conta informada</span>'
   : '<span class="falta">sem conta</span>';
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  O QUE O RH PODE CORRIGIR                                            ║
+   ║                                                                      ║
+   ║  O candidato preenche sozinho, sem ninguém olhando por cima — então  ║
+   ║  erro de digitação e campo esquecido acontecem, e hoje a única saída ║
+   ║  é pedir o cadastro de novo. Esta lista é o que pode ser arrumado    ║
+   ║  aqui dentro.                                                        ║
+   ║                                                                      ║
+   ║  Fica DE FORA de propósito: protocolo, data de recebimento, os       ║
+   ║  arquivos enviados e a lista de pendências. Os dois primeiros são    ║
+   ║  identidade do registro; os dois últimos têm controle próprio e      ║
+   ║  mexer neles por aqui faria a tela divergir do que está guardado.    ║
+   ║                                                                      ║
+   ║  Cada item: [coluna, rótulo, tipo?, opções?]                         ║
+   ║  tipo: 'data' (AAAA-MM-DD), 'sel' (lista), ausente = texto livre     ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const EDITAVEIS = {
+  pj: [
+    ['§', 'Pessoais'],
+    ['nome', 'Nome completo', 'w'], ['nome_social', 'Nome social', 'w'],
+    ['cpf', 'CPF'], ['nascimento', 'Nascimento', 'data'],
+    ['sexo', 'Sexo / Gênero'], ['cor_raca', 'Cor / Raça'],
+    ['estado_civil', 'Estado civil'], ['nome_mae', 'Nome da mãe', 'w'],
+    ['§', 'Contato'],
+    ['telefone', 'WhatsApp'], ['email', 'E-mail'],
+    ['endereco', 'Endereço', 'w'], ['cep', 'CEP'],
+    ['§', 'Empresa'],
+    ['razao_social', 'Razão social', 'w'], ['cnpj', 'CNPJ'],
+    ['abertura', 'Abertura', 'data'], ['endereco_pj', 'Endereço PJ', 'w'],
+    ['§', 'Bancário'],
+    ['pix', 'Chave PIX', 'w'], ['banco', 'Banco'],
+    ['agencia', 'Agência'], ['conta', 'Conta'],
+    ['tipo_conta', 'Tipo de conta'],
+    ['§', 'Outros'],
+    ['camiseta', 'Camiseta'], ['vaga_codigo', 'Código da vaga'],
+  ],
+
+  clt: [
+    ['§', 'Identificação'],
+    ['nome', 'Nome completo', 'w'], ['nome_social', 'Nome social', 'w'],
+    ['cpf', 'CPF'], ['nascimento', 'Nascimento', 'data'],
+    ['nac_pais', 'País de nascimento'], ['nac_uf', 'UF de nascimento'],
+    ['nac_cidade', 'Local de nascimento'],
+    ['grau_instrucao', 'Grau de instrução', 'w'],
+    ['estado_civil', 'Estado civil'],
+    ['nome_mae', 'Nome da mãe', 'w'], ['nome_pai', 'Nome do pai', 'w'],
+    ['§', 'Autodeclaração'],
+    ['raca', 'Raça'], ['identidade_genero', 'Identidade de gênero'],
+    ['pcd_tipo', 'Tipo de deficiência'],
+    ['§', 'Contato'],
+    ['email', 'E-mail', 'w'], ['tel_celular', 'Celular'],
+    ['emergencia_nome', 'Contato de emergência'],
+    ['emergencia_telefone', 'Telefone de emergência'],
+    ['cep', 'CEP'], ['end_uf', 'UF'], ['end_cidade', 'Cidade'],
+    ['end_logradouro', 'Tipo de logradouro'],
+    ['endereco', 'Endereço', 'w'], ['numero', 'Número'],
+    ['bairro', 'Bairro'], ['complemento', 'Complemento'],
+    ['§', 'RG'],
+    ['rg_numero', 'Número'], ['rg_digito', 'Dígito'],
+    ['rg_emissao', 'Emissão', 'data'], ['rg_uf', 'UF'],
+    ['rg_orgao', 'Órgão emissor'],
+    ['§', 'Carteira de trabalho'],
+    ['ctps_numero', 'Número'], ['ctps_serie', 'Série'],
+    ['ctps_prefixo', 'Prefixo'], ['ctps_emissao', 'Emissão', 'data'],
+    ['ctps_uf', 'UF'],
+    ['§', 'Título de eleitor'],
+    ['titulo_numero', 'Número'], ['titulo_zona', 'Zona'],
+    ['titulo_secao', 'Seção'], ['titulo_uf', 'UF'],
+    ['§', 'Certificado militar'],
+    ['militar_numero', 'Número'], ['militar_categoria', 'Categoria'],
+    ['§', 'CNH'],
+    ['cnh_numero', 'Número'], ['cnh_categoria', 'Categoria'],
+    ['cnh_uf', 'UF'], ['cnh_validade', 'Validade', 'data'],
+    ['§', 'Bancário'],
+    ['meio_pagamento', 'Meio de pagamento', 'w'], ['banco', 'Banco'],
+    ['agencia', 'Agência'], ['conta', 'Conta'], ['tipo_conta', 'Tipo de conta'],
+    ['§', 'Benefícios'],
+    ['camiseta', 'Camiseta'], ['calca', 'Calça'], ['sapato', 'Sapato'],
+    ['vaga_codigo', 'Código da vaga'],
+  ],
+};
+
+/* Colunas que o banco guarda como data. O input mostra DD/MM/AAAA, que é
+   como a pessoa lê, e grava AAAA-MM-DD, que é como a coluna aceita. */
+const DATAS_EDIT = new Set(['nascimento', 'abertura', 'rg_emissao',
+  'ctps_emissao', 'cnh_validade', 'data_migracao', 'seis_meses',
+  'pis_data_cadastro', 'conselho_vencimento']);
 
 const TIPOS = {
 
@@ -1460,7 +1570,9 @@ function ajustarUI() {
     ? 'Buscar por código, unidade, cargo ou solicitante…'
     : t === 'pj' ? 'Buscar por nome, CPF, CNPJ ou protocolo…'
                  : 'Buscar por nome, CPF, PIS, RG ou protocolo…';
-  document.querySelectorAll('.chip').forEach(c => c.style.display = cadastro ? '' : 'none');
+  document.querySelectorAll('.chip:not(.chip-vaga)')
+    .forEach(c => c.style.display = cadastro ? '' : 'none');
+  $('bt-concluidas').style.display = (t === 'vaga') ? '' : 'none';
   $('bt-nova').style.display = (t === 'vaga' && podeAbrirVaga()) ? '' : 'none';
   document.querySelector('.tbl').style.display =
     ['funil', 'sla', 'acesso', 'entrev'].includes(t) ? 'none' : '';
@@ -1546,8 +1658,16 @@ const COLUNAS_FILTRO = [
   { col:'Unidade', campo:'unidade', v: x => x.unidade || '—' },
   { col:'Cargo',   campo:'cargo',   v: x => x.cargo   || '—' },
   { col:'Turno',   campo:'turno',   v: x => turnoDe(x) },
+  { col:'Etapa',   campo:'etapa',   v: x => ET[x.etapa]?.t || x.etapa || '—' },
+  { col:'Status',  campo:'status',  v: x => STATUS_VAGA[statusDe(x)] || '—' },
 ];
 let FCOL = {}, fcolAberta = '';
+/* Vaga concluída é a que chegou ao fim do processo — admitida, ou fechada
+   por qualquer motivo. Ela não some: continua no funil, nos números e na
+   busca. O que esta chave faz é tirá-la da lista de trabalho, que é onde
+   ela só atrapalha quem está tocando as vagas abertas. */
+let esconderConcluidas = false;
+const vagaConcluida = v => v.etapa === 'admitido' || statusDe(v) === 'fechada';
 
 const passaFiltroCol = v => COLUNAS_FILTRO.every(c =>
   !(FCOL[c.campo] || []).length || FCOL[c.campo].includes(c.v(v)));
@@ -1571,7 +1691,12 @@ function limparCol(campo) {
   pintarVagas();
 }
 function limparTodosFiltrosCol() {
-  FCOL = {}; fcolAberta = '';
+  FCOL = {}; fcolAberta = ''; esconderConcluidas = false;
+  pintarVagas();
+}
+
+function alternarConcluidas() {
+  esconderConcluidas = !esconderConcluidas;
   pintarVagas();
 }
 
@@ -1773,6 +1898,132 @@ function pintar() {
   tabelaOrdenavel($('cab').closest('table'), TIPO);
 }
 
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  CORRIGIR OS DADOS DO CANDIDATO                                      ║
+   ║                                                                      ║
+   ║  Só o RH chega aqui, e o banco concorda: a política de UPDATE da     ║
+   ║  tabela é pode_editar(), que é o RH. O botão escondido para os       ║
+   ║  outros perfis é cortesia de tela; quem barra de verdade é a RLS.    ║
+   ║                                                                      ║
+   ║  Grava só o que mudou. Mandar o registro inteiro sobrescreveria com  ║
+   ║  o que estava na tela um campo que outra pessoa tivesse corrigido no ║
+   ║  meio tempo — e ninguém saberia.                                     ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+let EDITANDO = null;
+
+const brDeIso = v => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || ''));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : (v || '');
+};
+const isoDeBr = v => {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(v || '').trim());
+  if (!m) return null;
+  const d = new Date(+m[3], +m[2] - 1, +m[1]);
+  return (isNaN(d) || d.getDate() !== +m[1]) ? null
+       : `${m[3]}-${m[2]}-${m[1]}`;
+};
+
+function editarCadastro(id) {
+  if (!podeMexerDoc()) return alert(SO_RH);
+  const r = linhas.find(x => x.id === id);
+  if (!r) return;
+  EDITANDO = id;
+  const campos = EDITAVEIS[TIPO] || [];
+
+  $('d-body').innerHTML = `
+    <div class="copiar" style="background:var(--green-pale);border-color:var(--green-light)">
+      <div class="t"><b>Corrigindo o cadastro</b>Arrume o que estiver errado e
+        preencha o que ficou em branco. O que você mudar fica marcado em verde.</div>
+    </div>
+    <div class="msg" id="edt-msg"></div>
+
+    ${(() => {
+      // agrupa os campos sob o último rótulo de seção
+      const blocos = []; let atual = null;
+      campos.forEach(c => {
+        if (c[0] === '§') { atual = { t: c[1], itens: [] }; blocos.push(atual); }
+        else { (atual || (blocos.push(atual = { t: '', itens: [] }), atual)).itens.push(c); }
+      });
+      return blocos.map(b => `<div class="grp"><h3>${es(b.t)}</h3>
+        <div class="edt">${b.itens.map(([k, rot, tipo]) => {
+          const bruto = r[k] ?? '';
+          const val = DATAS_EDIT.has(k) ? brDeIso(bruto) : String(bruto);
+          return `<div class="c ${tipo === 'w' ? 'w' : ''}">
+            <label for="ed-${k}">${es(rot)}</label>
+            <input id="ed-${k}" data-k="${k}" value="${es(val)}"
+              ${DATAS_EDIT.has(k) ? 'placeholder="DD/MM/AAAA" maxlength="10"' : ''}
+              oninput="marcarMudou(this)">
+            ${bruto === '' || bruto == null
+              ? '<span class="vazio-antes">estava em branco</span>' : ''}
+          </div>`;
+        }).join('')}</div></div>`).join('');
+    })()}
+
+    <div class="edt-barra">
+      <button class="btn btn-sm btn-primary" onclick="salvarCadastro('${id}', this)"
+        >Salvar correções</button>
+      <button class="btn btn-sm btn-ghost" onclick="abrir('${id}')">Cancelar</button>
+      <span class="sub" id="edt-contador">nada alterado ainda</span>
+    </div>`;
+
+  // guarda o valor original de cada campo, para saber o que mudou
+  $('d-body').querySelectorAll('[data-k]').forEach(el => el.dataset.orig = el.value);
+  $('dv').scrollTop = 0;
+}
+
+function marcarMudou(el) {
+  el.classList.toggle('mud', el.value !== el.dataset.orig);
+  const n = $('d-body').querySelectorAll('[data-k].mud').length;
+  $('edt-contador').textContent = n ? `${n} campo(s) alterado(s)`
+                                : 'nada alterado ainda';
+}
+
+async function salvarCadastro(id, btn) {
+  const r = linhas.find(x => x.id === id);
+  if (!r) return;
+  const patch = {}; const erros = [];
+
+  $('d-body').querySelectorAll('[data-k]').forEach(el => {
+    if (el.value === el.dataset.orig) return;   // só o que mudou
+    const k = el.dataset.k, bruto = el.value.trim();
+    if (DATAS_EDIT.has(k)) {
+      if (!bruto) { patch[k] = null; return; }
+      const iso = isoDeBr(bruto);
+      if (!iso) { erros.push(el.previousElementSibling.textContent); return; }
+      patch[k] = iso;
+    } else {
+      patch[k] = bruto || null;
+    }
+  });
+
+  if (erros.length)
+    return msg('edt-msg', 'Data inválida em: ' + erros.join(', ')
+             + '. Use o formato DD/MM/AAAA.', 'err');
+  if (!Object.keys(patch).length)
+    return msg('edt-msg', 'Nenhum campo foi alterado.', 'err');
+
+  //  marca quando o registro foi mexido pela última vez — sem isso não há
+  //  como saber depois que alguém corrigiu alguma coisa
+  patch.tratado_em = new Date().toISOString();
+
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  try {
+    const { error } = await cliente().from(T().tabela).update(patch).eq('id', id);
+    if (error) throw new Error(error.message);
+    Object.assign(r, patch);
+    EDITANDO = null;
+    abrir(id);
+    pintar();
+    const quantos = Object.keys(patch).length - 1;
+    const m = $('d-msg');
+    if (m) { m.className = 'msg ok show';
+             m.textContent = `${quantos} campo(s) corrigido(s).`; }
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Salvar correções';
+    msg('edt-msg', 'Não consegui salvar: ' + e.message, 'err');
+  }
+}
+
 /* ───────────── DETALHE ───────────── */
 function abrir(id) {
   const cfg = T(), r = linhas.find(x => x.id === id);
@@ -1796,6 +2047,9 @@ function abrir(id) {
     <div class="copiar">
       <div class="t"><b>Sistema de admissão</b>Copia todos os campos na ordem das abas do sistema, prontos para colar.</div>
       <button class="btn btn-sm btn-primary" onclick="copiarSistema(this)">Copiar dados</button>
+      ${podeMexerDoc() ? `<button class="btn btn-sm btn-ghost"
+        onclick="editarCadastro('${r.id}')" title="Corrigir erro de digitação ou completar campo em branco"
+        >✏️ Corrigir dados</button>` : ''}
     </div>
 
     ${!f.length ? '' : `
@@ -2113,11 +2367,13 @@ function vagasBuscadas() {
   });
 }
 function vagasVisiveis() {
-  return vagasBuscadas().filter(passaFiltroCol);
+  return vagasBuscadas()
+    .filter(v => !esconderConcluidas || !vagaConcluida(v))
+    .filter(passaFiltroCol);
 }
 
 function pintarVagas() {
-  const base = vagasBuscadas();
+  const base = vagasBuscadas().filter(v => !esconderConcluidas || !vagaConcluida(v));
   const rs = base.filter(passaFiltroCol);
   const porColuna = Object.fromEntries(COLUNAS_FILTRO.map(c => [c.col, c]));
   $('cab').innerHTML = ['Código','Unidade','Cargo','Turno','Contrato',
@@ -2144,7 +2400,18 @@ function pintarVagas() {
     </tr>`).join('');
   $('vazio').style.display = rs.length ? 'none' : 'block';
   tabelaOrdenavel($('cab').closest('table'), 'vaga');
-  const comFiltro = COLUNAS_FILTRO.some(c => (FCOL[c.campo] || []).length);
+
+  const concluidas = vagasBuscadas().filter(vagaConcluida).length;
+  const bt = $('bt-concluidas');
+  bt.classList.toggle('on', esconderConcluidas);
+  bt.textContent = esconderConcluidas
+    ? `Concluídas escondidas (${concluidas})`
+    : `Esconder concluídas${concluidas ? ' (' + concluidas + ')' : ''}`;
+  bt.title = 'Vaga admitida ou fechada. Ela continua no Painel Admissão e '
+           + 'na busca — some só desta lista.';
+
+  const comFiltro = esconderConcluidas
+    || COLUNAS_FILTRO.some(c => (FCOL[c.campo] || []).length);
   $('vazio').innerHTML = !rs.length && comFiltro
     ? `Nenhuma vaga com esse filtro. <button class="btn btn-sm btn-ghost"
          onclick="limparTodosFiltrosCol()">Limpar filtros</button>`
