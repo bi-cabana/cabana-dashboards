@@ -157,8 +157,11 @@
   .exc p{font-size:12.5px;color:#7f1d1d;line-height:1.6;margin-bottom:10px}
   .exc ul{margin:0 0 10px 18px;font-size:12.5px;color:#7f1d1d;line-height:1.6}
   .exc .linha{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .exc input{padding:8px 11px;border:1.5px solid #fca5a5;border-radius:8px;
-    font-family:inherit;font-size:13px;width:160px;text-transform:uppercase}
+  .exc textarea{width:100%;padding:9px 11px;border:1.5px solid #fca5a5;
+    border-radius:8px;font-family:inherit;font-size:13px;line-height:1.5;
+    resize:vertical;min-height:62px;background:#fff;color:var(--gray-800)}
+  .exc textarea:focus{outline:none;border-color:var(--danger)}
+  .exc .conta{font-size:11.5px;color:#9f1239;margin:5px 0 10px}
   .btn-dng2{background:var(--danger);color:#fff;border:none;border-radius:8px;
     padding:9px 16px;font-family:inherit;font-size:13px;font-weight:700;
     cursor:pointer}
@@ -1928,32 +1931,50 @@ function pintar() {
 /* ╔══════════════════════════════════════════════════════════════════════╗
    ║  EXCLUIR O CADASTRO                                                  ║
    ║                                                                      ║
-   ║  Pedir a palavra EXCLUIR não é burocracia: a lista e o detalhe ficam ║
-   ║  lado a lado, e um clique errado aqui não tem volta. O custo é uma   ║
-   ║  palavra digitada; o custo do engano é um cadastro inteiro.          ║
+   ║  A JUSTIFICATIVA NÃO É SÓ UMA TRAVA. O botão só abre com ela porque ║
+   ║  escrever o motivo obriga a formular o motivo — e porque é a única  ║
+   ║  coisa que sobra depois. O cadastro sai da base; fica a linha em    ║
+   ║  exclusoes_cadastro dizendo quem apagou, quando e por quê.          ║
    ║                                                                      ║
-   ║  Os ARQUIVOS SAEM ANTES da linha. Se a ordem fosse a inversa e o     ║
-   ║  Storage falhasse no meio, sobrariam RG e CPF de alguém no bucket    ║
-   ║  sem nenhuma linha apontando para eles — invisíveis no painel e      ║
-   ║  eternos. Falhando antes, nada é perdido e dá para tentar de novo.   ║
+   ║  A ORDEM AQUI JÁ CUSTOU CARO. Os arquivos saem antes da linha, de   ║
+   ║  propósito: se fosse ao contrário e o Storage falhasse no meio,     ║
+   ║  sobrariam RG e CPF de alguém no bucket sem nenhuma linha           ║
+   ║  apontando para eles — invisíveis no painel e eternos.              ║
+   ║                                                                      ║
+   ║  Só que o inverso também aconteceu de verdade: faltava o GRANT de   ║
+   ║  delete, os documentos sumiram e o cadastro ficou de pé apontando   ║
+   ║  para o vazio. Por isso o passo 1 agora é um ENSAIO no banco, que   ║
+   ║  confere perfil, motivo e existência SEM apagar nada. Só depois de  ║
+   ║  o banco dizer que vai passar é que o primeiro arquivo é tocado.    ║
    ╚══════════════════════════════════════════════════════════════════════╝ */
+const MOTIVO_MIN = 10;
+
 function pedirExclusao(fechando) {
   const box = $('exc-box');
   if (!box) return;
   box.classList.toggle('show', !fechando);
   if (fechando) return;
   $('exc-txt').value = '';
-  $('exc-ok').disabled = true;
+  confirmarTexto($('exc-txt'));
+  msg('exc-msg', '');
   box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   $('exc-txt').focus();
 }
 
 function confirmarTexto(el) {
-  const ok = el.value.trim().toUpperCase() === 'EXCLUIR';
+  const n = el.value.trim().length;
+  const ok = n >= MOTIVO_MIN;
   const bt = $('exc-ok');
   bt.disabled = !ok;
   bt.title = ok ? 'Apagar este cadastro e os documentos dele'
-                : 'Digite EXCLUIR no campo ao lado para liberar';
+                : 'Escreva a justificativa para liberar o botão';
+  const c = $('exc-conta');
+  if (c) {
+    c.textContent = ok ? n + ' caracteres'
+                       : 'mínimo de ' + MOTIVO_MIN + ' caracteres — faltam '
+                         + (MOTIVO_MIN - n);
+    c.style.color = ok ? 'var(--picles)' : '#9f1239';
+  }
 }
 
 async function excluirCadastro(id, btn) {
@@ -1961,12 +1982,20 @@ async function excluirCadastro(id, btn) {
   const r = linhas.find(x => x.id === id);
   if (!r) return;
   const cfg = T();
+  const motivo = $('exc-txt').value.trim();
+  if (motivo.length < MOTIVO_MIN) return;
   btn.disabled = true; btn.textContent = 'Excluindo…';
+  msg('exc-msg', '');
 
   try {
     const db = cliente();
 
-    // 1 · os arquivos
+    // 1 · ensaio: o banco confere tudo e não apaga nada
+    const { error: eEns } = await db.rpc('excluir_cadastro',
+      { p_tipo: TIPO, p_id: id, p_motivo: motivo, p_ensaio: true });
+    if (eEns) throw new Error(eEns.message + ' — nada foi excluído.');
+
+    // 2 · os arquivos
     const caminhos = (r.arquivos || []).map(a => a.caminho).filter(Boolean);
     if (caminhos.length) {
       const { error } = await db.storage.from(cfg.bucket).remove(caminhos);
@@ -1974,10 +2003,12 @@ async function excluirCadastro(id, btn) {
                                + error.message + '). Nada foi excluído.');
     }
 
-    // 2 · a linha, só depois que os arquivos saíram
-    const { error: eDel } = await db.from(cfg.tabela).delete().eq('id', id);
+    // 3 · a linha e o registro da exclusão, na mesma transação
+    const { error: eDel } = await db.rpc('excluir_cadastro',
+      { p_tipo: TIPO, p_id: id, p_motivo: motivo, p_ensaio: false });
     if (eDel) throw new Error('os documentos foram apagados, mas o cadastro '
-                            + 'não: ' + eDel.message);
+                            + 'não: ' + eDel.message
+                            + ' — clique de novo para concluir.');
 
     linhas = linhas.filter(x => x.id !== id);
     CACHE[TIPO] = linhas;
@@ -2159,13 +2190,14 @@ function abrir(id) {
       </ul>
       <p>Se a intenção é só tirar da frente, mude o <b>status</b> em vez de
          excluir — assim o registro continua existindo.</p>
-      <p style="margin-bottom:7px"><b>Para liberar o botão, digite
-         <code style="background:#fee2e2;padding:1px 6px;border-radius:4px"
-         >EXCLUIR</code> no campo abaixo.</b></p>
+      <p style="margin-bottom:7px"><b>Por que este cadastro está sendo
+         excluído?</b> A justificativa fica registrada com o seu nome e a
+         data — é o que resta depois que o cadastro sai.</p>
+      <textarea id="exc-txt" rows="2" maxlength="400" autocomplete="off"
+                placeholder="ex.: cadastro duplicado, o candidato preencheu duas vezes"
+                oninput="confirmarTexto(this)"></textarea>
+      <div class="conta" id="exc-conta">mínimo de 10 caracteres</div>
       <div class="linha">
-        <input id="exc-txt" placeholder="digite aqui" autocomplete="off"
-               oninput="confirmarTexto(this)"
-               onkeydown="if(event.key==='Enter'&&!$('exc-ok').disabled)$('exc-ok').click()">
         <button class="btn-dng2" id="exc-ok" disabled
                 onclick="excluirCadastro('${r.id}', this)">Excluir definitivamente</button>
         <button class="btn btn-sm btn-ghost" onclick="pedirExclusao(true)">Cancelar</button>
