@@ -162,7 +162,8 @@
   .btn-dng2{background:var(--danger);color:#fff;border:none;border-radius:8px;
     padding:9px 16px;font-family:inherit;font-size:13px;font-weight:700;
     cursor:pointer}
-  .btn-dng2:disabled{opacity:.45;cursor:not-allowed}
+  .btn-dng2:disabled{background:var(--gray-200);color:var(--gray-400);
+    cursor:not-allowed}
 
   /* ── CORRIGIR DADOS DO CANDIDATO ── */
   .edt{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
@@ -1948,7 +1949,11 @@ function pedirExclusao(fechando) {
 }
 
 function confirmarTexto(el) {
-  $('exc-ok').disabled = el.value.trim().toUpperCase() !== 'EXCLUIR';
+  const ok = el.value.trim().toUpperCase() === 'EXCLUIR';
+  const bt = $('exc-ok');
+  bt.disabled = !ok;
+  bt.title = ok ? 'Apagar este cadastro e os documentos dele'
+                : 'Digite EXCLUIR no campo ao lado para liberar';
 }
 
 async function excluirCadastro(id, btn) {
@@ -2154,9 +2159,13 @@ function abrir(id) {
       </ul>
       <p>Se a intenção é só tirar da frente, mude o <b>status</b> em vez de
          excluir — assim o registro continua existindo.</p>
+      <p style="margin-bottom:7px"><b>Para liberar o botão, digite
+         <code style="background:#fee2e2;padding:1px 6px;border-radius:4px"
+         >EXCLUIR</code> no campo abaixo.</b></p>
       <div class="linha">
-        <input id="exc-txt" placeholder="EXCLUIR" autocomplete="off"
-               oninput="confirmarTexto(this)">
+        <input id="exc-txt" placeholder="digite aqui" autocomplete="off"
+               oninput="confirmarTexto(this)"
+               onkeydown="if(event.key==='Enter'&&!$('exc-ok').disabled)$('exc-ok').click()">
         <button class="btn-dng2" id="exc-ok" disabled
                 onclick="excluirCadastro('${r.id}', this)">Excluir definitivamente</button>
         <button class="btn btn-sm btn-ghost" onclick="pedirExclusao(true)">Cancelar</button>
