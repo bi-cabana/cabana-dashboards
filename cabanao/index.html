@@ -2370,7 +2370,7 @@ function grafico(c) {
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block"
             role="img" aria-label="Tempo da loja por rodada">${o}</svg>
           <p class="nota">Linha laranja: sua loja. Linha pontilhada: a mediana
-          das 27 lojas no mesmo dia. Ponto verde: Gol de Placa.</p>`;
+          das lojas no mesmo dia. Ponto verde: Gol de Placa.</p>`;
 }
 
 // --------------------------------------------------------------- MEU TIME
@@ -2473,7 +2473,9 @@ async function pgRegras() {
     <h2>O jogo</h2>
     <p class="texto">De quarta a domingo, a sua loja enfrenta outra loja.
       <b>Vence quem fizer o menor tempo médio de preparo no iFood naquele dia.</b>
-      São ${f.jogos_por_dia} jogos por dia e uma loja de folga.</p>
+      São ${f.jogos_por_dia} jogos por dia${f.lojas % 2
+        ? " e uma loja de folga, porque o elenco é ímpar"
+        : " — com " + f.lojas + " lojas o elenco é par, então ninguém folga"}.</p>
     <div class="fatos">
       <div><b>${f.lojas}</b><i>lojas</i></div>
       <div><b>${f.rodadas}</b><i>rodadas</i></div>
