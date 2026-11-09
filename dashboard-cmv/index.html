@@ -440,13 +440,13 @@ function renderLojas() {
   let h = `<table><tr><th>Loja</th>${mc.map(m => `<th>${rotMes(m)}</th>`).join("")}<th>Δ p.p.</th><th>Fat. ${rotMes(ult)}</th></tr>`;
   for (const l of lojas) {
     const v = mc.map(m => pctCMV(s.get(m + "|" + l))); const d = v.at(-1) != null && v.at(-2) != null ? v.at(-1) - v.at(-2) : null;
-    const av = (D.aviso_regra && D.aviso_regra.lojas.includes(DM.loja[l])) ? `<span class="tag est" title="${D.aviso_regra.texto}">custo: regra nova desde ${ml(D.aviso_regra.desde)}</span>` : "";
+    const av = "";
     h += `<tr><td>${DM.loja[l]}${novas.has(l) ? '<span class="tag">loja nova</span>' : ''}${av}</td>${v.map((x, i) => `<td style="${cor(x, mc[i])}">${x == null ? "–" : fmt(x)}</td>`).join("")}<td class="${d>0?'up':'down'}">${pp(d)}</td><td>${rs((s.get(ult + "|" + l) || [0])[0])}</td></tr>`;
   }
   const T = mc.map(m => pctCMV(tot.get(m)));
   h += `<tr><td><b>Total</b></td>${T.map(x => `<td><b>${fmt(x)}</b></td>`).join("")}<td class="${T.at(-1)-T.at(-2)>0?'up':'down'}"><b>${pp(T.at(-1)-T.at(-2))}</b></td><td><b>${rs(tot.get(ult)[0])}</b></td></tr></table>`;
   document.getElementById("tLojas").innerHTML = h;
-  if (D.aviso_regra) document.getElementById("nLojasAviso").textContent = " " + D.aviso_regra.texto;
+
 }
 
 // ---------- INSUMOS ----------
