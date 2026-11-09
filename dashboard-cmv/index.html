@@ -200,7 +200,8 @@ const pp = (v, d=2) => v==null||isNaN(v) ? "–" : (v>0?"+":"") + fmt(v,d);
 const rs = v => v==null ? "–" : "R$ " + (Math.abs(v)>=1e6 ? fmt(v/1e6,2)+" mi" : Math.abs(v)>=1e3 ? fmt(v/1e3,1)+" mil" : fmt(v,0));
 const facAj = m => D.fator[DM.mes[m]] || 1;
 const fac = m => st.versao==="aju" ? facAj(m) : 1;
-const parcial = m => DM.mes[m] === D.mes_corrente;
+const fimMes = am => { const [y, mm] = am.split("-").map(Number); return new Date(Date.UTC(y, mm, 0)).toISOString().slice(0, 10); };
+const parcial = m => DM.mes[m] === D.mes_corrente && D.corrente_ate < fimMes(D.mes_corrente);
 const rotMes = m => ml(DM.mes[m]) + (parcial(m) ? "*" : "");
 
 // ---------- base de linhas ----------
@@ -593,7 +594,7 @@ function metodo() {
 // ---------- inicialização ----------
 function preencher() {
   const ult = mc.at(-1);
-  document.getElementById("sub").textContent = `Revenue & BI · Fev a ${ml(D.mes_corrente)} · ${ml(D.mes_corrente)} parcial, vendas até ${D.corrente_ate.split("-").reverse().join("/")} · gerado em ${D.gerado}`;
+  document.getElementById("sub").textContent = `Revenue & BI · Fev a ${ml(D.mes_corrente)}` + (parcial(DM.mes.indexOf(D.mes_corrente)) ? ` · ${ml(D.mes_corrente)} parcial, vendas até ${D.corrente_ate.split("-").reverse().join("/")}` : ` · ${ml(D.mes_corrente)} fechado`) + ` · P&L: meses sem P&L real usam o fator do último mês fechado · gerado em ${D.gerado}`;
   const trans = []; for (let i = mc.length - 1; i > 0; i--) trans.push([mc[i - 1] + ">" + mc[i], rotMes(mc[i - 1]) + " → " + rotMes(mc[i])]);
   opcoes("pTrans", trans, null);
   const canais = dimLista("canal"); ["pCanal", "eCanal", "lCanal"].forEach(id => opcoes(id, canais, "Total (todos)"));
