@@ -16,6 +16,7 @@ header h1{margin:0;font-size:22px;letter-spacing:.2px}
 header .sub{opacity:.9;font-size:12.5px;margin-top:2px}
 .toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:12px;padding-bottom:12px}
 .toolbar label{font-size:12px;opacity:.95}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:rgba(255,255,255,.14);border-radius:8px;padding:5px 10px;font-size:12.5px}.chk input{width:16px;height:16px;accent-color:#fff;cursor:pointer}
 .seg{display:inline-flex;background:rgba(255,255,255,.14);border-radius:8px;padding:2px}
 .seg button{border:0;background:transparent;color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12.5px}
 .seg button.on{background:#fff;color:var(--floresta);font-weight:600}
@@ -62,7 +63,7 @@ tr:hover td{background:#FBF7EF}
   <div class="sub" id="sub"></div>
   <div class="toolbar">
     <label>Versão&nbsp;<span class="seg" id="segVersao"><button data-v="ger" class="on">Gerencial</button><button data-v="aju">Ajustado ao P&amp;L</button></span></label>
-    <label>Benefício colaboradores&nbsp;<span class="seg" id="segBenef"><button data-v="com" class="on">Dentro do CMV</button><button data-v="sem">Fora do CMV</button></span></label>
+    <label class="chk" title="Tira do faturamento e do custo os lanches de benefício (itens BENEF) e a Marmita Liv Up, em todas as abas"><input type="checkbox" id="chkBenef" checked> Tirar benefício colaboradores do CMV (lanches BENEF + Marmita Liv Up)</label>
     <label>Base&nbsp;<span class="seg" id="segBase"><button data-v="mesma" class="on">Mesma base (sem lojas novas)</button><button data-v="total">Todas as lojas</button></span></label>
   </div>
   <nav id="nav">
@@ -156,7 +157,7 @@ tr:hover td{background:#FBF7EF}
   <div class="filtros"><label>Loja<select id="bLoja"></select></label></div>
   <div class="grid g4" id="bkpis"></div>
   <div class="grid g2" style="margin-top:14px">
-    <div class="card"><h3>Custo do benefício aos colaboradores</h3><p class="nota">Itens de benefício lançados no PDV (nome com "BENEF", ex.: CB CABANA BG BENEF, LANCHE BENEFICIO): saem praticamente sem receita e entram no CMV. Barras = R$ no mês; linha = p.p. que somam ao %CMV.</p><div class="chartbox"><canvas id="cBen"></canvas></div></div>
+    <div class="card"><h3>Custo do benefício aos colaboradores</h3><p class="nota">Itens de benefício lançados no PDV (nome com "BENEF", ex.: CB CABANA BG BENEF, LANCHE BENEFICIO, e a MARMITA LIV UP): saem praticamente sem receita e entram no CMV. Barras = R$ no mês; linha = p.p. que somam ao %CMV.</p><div class="chartbox"><canvas id="cBen"></canvas></div></div>
     <div class="card"><h3>%CMV com e sem o benefício</h3><p class="nota">A distância entre as linhas é quanto o benefício pesa no %CMV.</p><div class="chartbox"><canvas id="cBenPct"></canvas></div></div>
   </div>
   <div class="grid g2" style="margin-top:14px">
@@ -192,9 +193,9 @@ const NOME_MES = {"01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"J
 const ml = m => NOME_MES[m.slice(5)] + "/" + m.slice(2,4);
 const mc = MESES.map(m => DM.mes.indexOf(m));
 const COR = {flo:"#00630F", esc:"#0B3D17", esq:"#FF5D31", pic:"#779152", lim:"#B2F771", canal:"#0F7B6C", mix:"#A9A9A9", ink:"#1B2A20"};
-const st = {versao:"ger", base:"mesma", benef:"com"};
+const st = {versao:"ger", base:"mesma", benef:"sem"};
 const novas = new Set(D.lojas_novas.map(n => DM.loja.indexOf(n)));
-const BENEF = new Set(DM.item.map((n, i) => /BENEF/i.test(n || "") ? i : -1).filter(i => i >= 0));
+const BENEF = new Set(DM.item.map((n, i) => /BENEF|MARMITA LIV UP/i.test(n || "") ? i : -1).filter(i => i >= 0));
 const fmt = (v, d=2) => v==null||isNaN(v) ? "–" : v.toLocaleString("pt-BR",{minimumFractionDigits:d, maximumFractionDigits:d});
 const pp = (v, d=2) => v==null||isNaN(v) ? "–" : (v>0?"+":"") + fmt(v,d);
 const rs = v => v==null ? "–" : "R$ " + (Math.abs(v)>=1e6 ? fmt(v/1e6,2)+" mi" : Math.abs(v)>=1e3 ? fmt(v/1e3,1)+" mil" : fmt(v,0));
@@ -583,7 +584,7 @@ function metodo() {
     `<b>Gerencial</b>: meses fechados usam o CMV publicado (coluna CMV da Base Vendas, montada com a Ficha Técnica Histórico da época). O mês corrente (${ml(D.mes_corrente)}, vendas até ${D.corrente_ate.split("-").reverse().join("/")}) usa a Ficha Técnica Histórico gravada pelo motor, com custo médio do mês para todas as lojas. <span class="tag est">* parcial/estimado</span>`,
     `<b>Ajustado ao P&L</b>: custo de cada mês multiplicado pelo fator do mês (P&L ÷ gerencial). Meses fechados ficam congelados; o mês ainda não fechado no P&L usa o fator do último mês fechado. Por canal, loja ou produto o fator é o mesmo do mês (aproximação). Publicados: ${linhasPub}.`,
     `<b>Ponte</b>: decomposição sequencial e exata (soma = variação total), com quantidade, custo unitário e preço líquido unitário por loja × item, e canal Salão/Delivery: (1) custo com mix e preço do mês anterior; (2) preço; (3) mix de canais, reescalando as quantidades para a participação de receita de cada canal no mês novo; (4) mix de produtos. Os valores podem diferir em alguns centésimos dos decks já apresentados, que foram feitos com outro script.`,
-    `<b>Benefício aos colaboradores</b>: itens do PDV com "BENEF" no nome (combos CB … BENEF e LANCHE BENEFICIO). Saem praticamente sem receita. O seletor "Benefício colaboradores" no topo tira esses itens (faturamento e custo) de todas as abas; a aba Benefício mostra o custo e quanto ele pesa no %CMV. Os meses já publicados foram fechados com o benefício dentro do CMV.`,
+    `<b>Benefício aos colaboradores</b>: itens do PDV com "BENEF" no nome (combos CB … BENEF e LANCHE BENEFICIO) e a MARMITA LIV UP (refeição dos colaboradores; só passou a ter custo na ficha em Out/26). Saem praticamente sem receita. A caixinha "Tirar benefício colaboradores do CMV" no topo (marcada por padrão) tira esses itens (faturamento e custo) de todas as abas; a aba Benefício mostra o custo e quanto ele pesa no %CMV. Os meses já publicados foram fechados com o benefício dentro do CMV.`,
     `<b>Insumos</b>: preço = custo médio do mês no razão do SAP (Preço Médio - SAP: exclui NE e saldo inicial; Σ valor ÷ Σ quantidade; mês pela data de lançamento), por loja; o preço da rede é a média das lojas ponderada pelo volume movimentado. Consumo teórico = vendas do mês × quantidade do insumo na ficha técnica do mês. Exposição = consumo × preço. Impacto no %CMV = consumo do mês × (preço do mês − preço do mês anterior) ÷ receita líquida. Índice: encadeado, base ${ml(MESES[0])} = 100.`,
     (D.aviso_regra ? `<b>Mudança de regra</b>: ${D.aviso_regra.texto}` : ""),
     `<b>Conferência</b>: consumo × custo da ficha reproduz o CMV publicado em Fev, Mar e Jun a Out (diferença abaixo de 0,4%). Em Abr e Mai a ficha mensal arquivada não bate com a Ficha Técnica Histórico; nesses meses o painel de insumos usa as quantidades da ficha e o preço do razão, e o %CMV continua sendo o publicado.`,
@@ -618,7 +619,8 @@ document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
 const seg = (id, k) => document.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => {
   document.querySelectorAll(`#${id} button`).forEach(x => x.classList.toggle("on", x === b)); st[k] = b.dataset.v; render();
 });
-seg("segVersao", "versao"); seg("segBase", "base"); seg("segBenef", "benef");
+seg("segVersao", "versao"); seg("segBase", "base");
+document.getElementById("chkBenef").onchange = e => { st.benef = e.target.checked ? "sem" : "com"; render(); };
 document.querySelectorAll("main select, main input").forEach(el => el.addEventListener(el.tagName === "INPUT" ? "input" : "change", render));
 preencher(); render();
 </script>
