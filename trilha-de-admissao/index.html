@@ -959,11 +959,20 @@ const tagBanco = r => temBanco(r)
    ║  identidade do registro; os dois últimos têm controle próprio e      ║
    ║  mexer neles por aqui faria a tela divergir do que está guardado.    ║
    ║                                                                      ║
-   ║  Cada item: [coluna, rótulo, tipo?, opções?]                         ║
-   ║  tipo: 'data' (AAAA-MM-DD), 'sel' (lista), ausente = texto livre     ║
+   ║  O CÓDIGO DA VAGA vem primeiro, e não é texto livre. Ele é o que    ║
+   ║  liga o candidato ao processo: digitado errado, o cadastro some do   ║
+   ║  funil sem avisar ninguém. Lista fechada não deixa errar, e mostra   ║
+   ║  quantos candidatos já apontam para cada vaga — que é exatamente o   ║
+   ║  que se quer saber quando dois foram parar na mesma.                 ║
+   ║                                                                      ║
+   ║  Cada item: [coluna, rótulo, tipo?]                                  ║
+   ║  tipo: 'data' (AAAA-MM-DD), 'vaga' (lista de vagas),                 ║
+   ║        'w' (ocupa a linha toda), ausente = texto livre               ║
    ╚══════════════════════════════════════════════════════════════════════╝ */
 const EDITAVEIS = {
   pj: [
+    ['§', 'Vaga'],
+    ['vaga_codigo', 'Código da vaga', 'vaga'],
     ['§', 'Pessoais'],
     ['nome', 'Nome completo', 'w'], ['nome_social', 'Nome social', 'w'],
     ['cpf', 'CPF'], ['nascimento', 'Nascimento', 'data'],
@@ -980,10 +989,12 @@ const EDITAVEIS = {
     ['agencia', 'Agência'], ['conta', 'Conta'],
     ['tipo_conta', 'Tipo de conta'],
     ['§', 'Outros'],
-    ['camiseta', 'Camiseta'], ['vaga_codigo', 'Código da vaga'],
+    ['camiseta', 'Camiseta'],
   ],
 
   clt: [
+    ['§', 'Vaga'],
+    ['vaga_codigo', 'Código da vaga', 'vaga'],
     ['§', 'Identificação'],
     ['nome', 'Nome completo', 'w'], ['nome_social', 'Nome social', 'w'],
     ['cpf', 'CPF'], ['nascimento', 'Nascimento', 'data'],
@@ -1024,7 +1035,6 @@ const EDITAVEIS = {
     ['agencia', 'Agência'], ['conta', 'Conta'], ['tipo_conta', 'Tipo de conta'],
     ['§', 'Benefícios'],
     ['camiseta', 'Camiseta'], ['calca', 'Calça'], ['sapato', 'Sapato'],
-    ['vaga_codigo', 'Código da vaga'],
   ],
 };
 
@@ -2057,12 +2067,53 @@ const isoDeBr = v => {
        : `${m[3]}-${m[2]}-${m[1]}`;
 };
 
-function editarCadastro(id) {
+/* As vagas só são buscadas quando se abre a aba Vagas. Quem está corrigindo
+   um cadastro nunca passou por lá, então a lista chega vazia — busca aqui,
+   uma vez por sessão. Falhando, o campo volta a ser texto livre em vez de
+   virar uma lista vazia que trava a correção. */
+async function garantirVagas() {
+  if (VAGAS.length) return;
+  try {
+    const { data } = await cliente().from('vagas')
+      .select('codigo,unidade,cargo,etapa,status')
+      .not('codigo', 'is', null).limit(2000);
+    VAGAS = data || [];
+  } catch (_) { /* segue com texto livre */ }
+}
+
+/* Rótulo de cada opção: código, onde é, que cargo, e quantos candidatos já
+   apontam para ela. O contador é o ponto: foi um "2" despercebido que
+   trouxe esta tela até aqui. */
+function opcoesVaga(atual) {
+  const conta = {};
+  [].concat(CACHE.pj || [], CACHE.clt || []).forEach(c => {
+    const k = (c.vaga_codigo || '').toUpperCase();
+    if (k) conta[k] = (conta[k] || 0) + 1;
+  });
+  const lista = VAGAS.filter(v => v.codigo).slice().sort(
+    (a, b) => String(a.codigo).localeCompare(String(b.codigo)));
+  const temAtual = lista.some(v => v.codigo === atual);
+  let out = `<option value="">— sem vaga —</option>`;
+  if (atual && !temAtual)
+    out += `<option value="${es(atual)}" selected>${es(atual)} — código atual, `
+         + `vaga não encontrada</option>`;
+  out += lista.map(v => {
+    const n = conta[String(v.codigo).toUpperCase()] || 0;
+    const quem = n === 0 ? 'nenhum candidato'
+               : n === 1 ? '1 candidato' : n + ' candidatos';
+    return `<option value="${es(v.codigo)}"${v.codigo === atual ? ' selected' : ''}
+      >${es(v.codigo)} — ${es(v.unidade || '?')} · ${es(v.cargo || '?')} (${quem})</option>`;
+  }).join('');
+  return out;
+}
+
+async function editarCadastro(id) {
   if (!podeMexerDoc()) return alert(SO_RH);
   const r = linhas.find(x => x.id === id);
   if (!r) return;
   EDITANDO = id;
   const campos = EDITAVEIS[TIPO] || [];
+  if (campos.some(c => c[2] === 'vaga')) await garantirVagas();
 
   $('d-body').innerHTML = `
     <div class="copiar" style="background:var(--green-pale);border-color:var(--green-light)">
@@ -2082,12 +2133,20 @@ function editarCadastro(id) {
         <div class="edt">${b.itens.map(([k, rot, tipo]) => {
           const bruto = r[k] ?? '';
           const val = DATAS_EDIT.has(k) ? brDeIso(bruto) : String(bruto);
-          return `<div class="c ${tipo === 'w' ? 'w' : ''}">
+          const lista = tipo === 'vaga' && VAGAS.length;
+          return `<div class="c ${tipo === 'w' || tipo === 'vaga' ? 'w' : ''}">
             <label for="ed-${k}">${es(rot)}</label>
-            <input id="ed-${k}" data-k="${k}" value="${es(val)}"
-              ${DATAS_EDIT.has(k) ? 'placeholder="DD/MM/AAAA" maxlength="10"' : ''}
-              oninput="marcarMudou(this)">
-            ${bruto === '' || bruto == null
+            ${lista
+              ? `<select id="ed-${k}" data-k="${k}"
+                   oninput="marcarMudou(this)" onchange="marcarMudou(this)"
+                 >${opcoesVaga(String(bruto))}</select>`
+              : `<input id="ed-${k}" data-k="${k}" value="${es(val)}"
+                   ${DATAS_EDIT.has(k) ? 'placeholder="DD/MM/AAAA" maxlength="10"' : ''}
+                   oninput="marcarMudou(this)">`}
+            ${tipo === 'vaga' && !lista
+              ? '<span class="vazio-antes">não consegui carregar a lista de '
+                + 'vagas — digite o código e confira na aba Vagas</span>'
+              : bruto === '' || bruto == null
               ? '<span class="vazio-antes">estava em branco</span>' : ''}
           </div>`;
         }).join('')}</div></div>`).join('');
