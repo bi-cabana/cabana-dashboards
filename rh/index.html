@@ -84,6 +84,12 @@
     font-family:inherit;font-size:13px;font-weight:700;color:rgba(255,255,255,.72);transition:.2s}
   .tipo button:hover{color:#fff}
   .tipo button.on{background:#fff;color:var(--green-dark)}
+  .tipo .sai{display:flex;align-items:center;gap:5px;padding:6px 15px;
+    border-radius:7px;border:1.5px solid rgba(255,255,255,.38);
+    font-size:13px;font-weight:700;color:rgba(255,255,255,.82);
+    text-decoration:none;white-space:nowrap;transition:.2s}
+  .tipo .sai:hover{border-color:var(--limonada);color:var(--limonada)}
+  .tipo .sai span{font-size:11px;opacity:.8}
 
   .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
   .bar .inp{flex:1;min-width:220px}
@@ -586,6 +592,9 @@
       <button data-t="pj"   class="on" onclick="trocarTipo('pj')">Colaboradores PJ</button>
       <button data-t="clt"             onclick="trocarTipo('clt')">Colaboradores CLT</button>
       <button data-t="vaga"            onclick="trocarTipo('vaga')">Vagas</button>
+      <a class="sai" href="https://eduardocurti.github.io/headcount/" target="_blank" rel="noopener noreferrer"
+         title="Headcount e turnover — abre em outra aba, fora da Trilha. Use o filtro de loja para ver a sua unidade."
+         >Headcount <span>↗</span></a>
       <button data-t="funil"           onclick="trocarTipo('funil')">Painel Admissão</button>
       <button data-t="entrev"          onclick="trocarTipo('entrev')">Entrevistas</button>
       <button data-t="sla"             onclick="trocarTipo('sla')">Regras de SLA</button>
