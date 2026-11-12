@@ -469,6 +469,9 @@
     letter-spacing:.04em;background:#fff;border-radius:8px;padding:10px 14px;
     display:inline-block;margin-right:9px;user-select:all}
   .senha-nova .av{font-size:11.5px;color:#065f46;margin-top:9px;line-height:1.55}
+  .senha-nova .adotado{font-size:12px;color:#7c4a03;background:#fffbeb;
+    border:1px solid #fcd34d;border-radius:8px;padding:9px 11px;
+    margin-bottom:11px;line-height:1.55}
 
   /* ── REGRAS DE SLA ── */
   #sla{display:none}
@@ -3385,6 +3388,10 @@ function pintarAcessos() {
       <div class="sub" style="line-height:1.6">${SEM_FUNCAO}</div></div>` : ''}
 
     ${!SENHA_MOSTRADA ? '' : `<div class="senha-nova">
+      ${SENHA_MOSTRADA.adotado ? `<div class="adotado">Já existia uma conta
+        com este e-mail, sem permissão nenhuma — sobra de uma criação que
+        falhou pela metade. Em vez de criar outra, reaproveitei a conta e
+        dei a ela a senha abaixo.</div>` : ''}
       <b>Senha provisória de ${es(SENHA_MOSTRADA.nome)}</b>
       <span class="v">${es(SENHA_MOSTRADA.senha)}</span>
       <button class="btn btn-sm btn-ghost"
@@ -3567,8 +3574,8 @@ function mudouPapelNovo() {
 
 /* A senha provisória aparece uma vez só. Daqui ela não volta: para ver de
    novo, só gerando outra. */
-function mostrarSenha(nome, senha) {
-  SENHA_MOSTRADA = { nome, senha };
+function mostrarSenha(nome, senha, adotado) {
+  SENHA_MOSTRADA = { nome, senha, adotado };
   pintarAcessos();
   document.querySelector('#acesso .senha-nova')
     ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -3598,7 +3605,7 @@ async function criarAcesso(bt) {
       { acao:'criar', nome, email, papel, unidade, regiao });
     $('nv-nome').value = ''; $('nv-email').value = '';
     await carregarAcessos();
-    mostrarSenha(nome, d.senha);
+    mostrarSenha(nome, d.senha, d.adotado);
   } catch (e) {
     msg('ac-msg', 'Não consegui criar: ' + e.message, 'err');
   } finally { bt.disabled = false; bt.textContent = 'Criar acesso'; }
