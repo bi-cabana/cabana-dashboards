@@ -3594,16 +3594,72 @@ async function criarAcesso(bt) {
 
   bt.disabled = true; bt.textContent = 'Criando…';
   try {
-    const r = await cliente().functions.invoke('gestao-acessos', {
-      body: { acao:'criar', nome, email, papel, unidade, regiao } });
-    if (r.error) throw new Error(r.error.message || 'a função respondeu com erro');
-    if (r.data?.erro) throw new Error(r.data.erro);
+    const d = await chamarAcessos(
+      { acao:'criar', nome, email, papel, unidade, regiao });
     $('nv-nome').value = ''; $('nv-email').value = '';
     await carregarAcessos();
-    mostrarSenha(nome, r.data.senha);
+    mostrarSenha(nome, d.senha);
   } catch (e) {
     msg('ac-msg', 'Não consegui criar: ' + e.message, 'err');
   } finally { bt.disabled = false; bt.textContent = 'Criar acesso'; }
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  FALAR COM A FUNÇÃO DE ACESSOS                                       ║
+   ║                                                                      ║
+   ║  O supabase-js, diante de um status fora da faixa 2xx, devolve um    ║
+   ║  erro cuja mensagem é sempre a mesma frase: "Edge Function returned  ║
+   ║  a non-2xx status code". O motivo de verdade — "e-mail já            ║
+   ║  cadastrado", "só o RH gerencia acessos" — viaja no CORPO da         ║
+   ║  resposta, que fica pendurado em error.context e que ninguém lia.    ║
+   ║                                                                      ║
+   ║  O resultado era um painel que dizia "não consegui" sem dizer por    ║
+   ║  quê, e a pessoa do RH sem ação nenhuma a tomar. Aqui o corpo é      ║
+   ║  lido e vira a mensagem. Quando nem isso existe, o status pelo       ║
+   ║  menos indica o caminho.                                             ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const RECADO_HTTP = {
+  401: 'sua sessão expirou. Saia e entre de novo.',
+  403: 'só um usuário com perfil RH pode gerenciar acessos.',
+  404: 'a função gestao-acessos não está publicada no Supabase.',
+  500: 'a função quebrou no servidor. Veja os logs dela no Supabase.',
+  503: 'a função gestao-acessos está fora do ar no momento.',
+};
+
+/* Mensagens do Supabase Auth que o RH vai encontrar na prática. Traduzir
+   não é enfeite: "already been registered" não diz o que fazer, e
+   "já existe um login com este e-mail" diz. */
+function traduzirAuth(m) {
+  const t = String(m || '');
+  if (/already.*registered|already exists|duplicate key/i.test(t))
+    return 'já existe um login com este e-mail. Procure a pessoa na lista '
+         + 'abaixo — se estiver desligada, é só religar; se a senha for o '
+         + 'problema, use Resetar senha.';
+  if (/password/i.test(t) && /weak|short/i.test(t))
+    return 'a senha provisória foi recusada por ser fraca demais.';
+  if (/invalid.*email|email.*invalid/i.test(t))
+    return 'o e-mail foi recusado pelo Supabase como inválido.';
+  return t;
+}
+
+async function chamarAcessos(body) {
+  const r = await cliente().functions.invoke('gestao-acessos', { body });
+  if (r.error) {
+    const ctx = r.error.context;
+    let detalhe = '';
+    if (ctx && typeof ctx.text === 'function') {
+      try {
+        const bruto = await ctx.text();
+        try { detalhe = JSON.parse(bruto).erro || ''; }
+        catch (_) { detalhe = bruto.slice(0, 200); }
+      } catch (_) { /* corpo já consumido ou vazio */ }
+    }
+    const st = ctx && ctx.status;
+    throw new Error(traduzirAuth(detalhe) || RECADO_HTTP[st]
+                    || r.error.message || 'a função respondeu com erro');
+  }
+  if (r.data?.erro) throw new Error(traduzirAuth(r.data.erro));
+  return r.data;
 }
 
 async function resetarSenha(id, nome, bt) {
@@ -3612,12 +3668,9 @@ async function resetarSenha(id, nome, bt) {
     + ' vai ter que criar outra ao entrar.')) return;
   bt.disabled = true; bt.textContent = '…';
   try {
-    const r = await cliente().functions.invoke('gestao-acessos', {
-      body: { acao:'resetar', user_id: id } });
-    if (r.error) throw new Error(r.error.message || 'a função respondeu com erro');
-    if (r.data?.erro) throw new Error(r.data.erro);
+    const d = await chamarAcessos({ acao:'resetar', user_id: id });
     await carregarAcessos();
-    mostrarSenha(nome, r.data.senha);
+    mostrarSenha(nome, d.senha);
   } catch (e) {
     alert('Não consegui resetar: ' + e.message);
   } finally { bt.disabled = false; bt.textContent = 'Resetar senha'; }
@@ -3629,10 +3682,7 @@ async function excluirAcesso(id, nome) {
     + 'o acesso por um tempo, use o botão Ligado/Desligado — preserva o '
     + 'histórico e volta com um clique.')) return;
   try {
-    const r = await cliente().functions.invoke('gestao-acessos', {
-      body: { acao:'excluir', user_id: id } });
-    if (r.error) throw new Error(r.error.message || 'a função respondeu com erro');
-    if (r.data?.erro) throw new Error(r.data.erro);
+    await chamarAcessos({ acao:'excluir', user_id: id });
     await carregarAcessos();
     msg('ac-msg', `Acesso de ${nome} apagado.`, 'ok');
   } catch (e) {
