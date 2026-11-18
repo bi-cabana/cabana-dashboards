@@ -4077,6 +4077,23 @@ function pintarGap() {
    ╚══════════════════════════════════════════════════════════════════════╝ */
 let DESLIG = [], dsgUnidade = '', dsgHcErro = '';
 
+/* Os cinco motivos previstos. A mesma lista está no banco, como trava —
+   aqui ela guia, lá ela garante. Texto livre durou uma semana e virou
+   "TESTE": motivo de desligamento é campo que o jurídico lê depois. */
+const MOTIVOS_DESLIG = [
+  'Pedido de demissão',
+  'Demissão por parte da empresa',
+  'Abandono',
+  'Falecimento',
+  'Justa causa',
+];
+
+/* Só o pedido de demissão traz carta, e por isso ela só aparece nesse
+   caso: campo de anexo visível em desligamento por justa causa convida a
+   anexar a coisa errada no lugar errado. */
+const MOTIVO_COM_CARTA = 'Pedido de demissão';
+const BUCKET_DESLIG = 'documentos-desligamento';
+
 const podeSolicitarDeslig = () => !ehDiretoria();
 
 function dsgUnidadesPossiveis() {
@@ -4158,9 +4175,20 @@ function pintarDeslig() {
                  pela base do Headcount${HC ? ' de ' + dataBR(HC.base.toISOString().slice(0,10)) : ''}</span>`}
         </div>
 
-        <div class="c w">
+        <div class="c">
           <label for="dsg-motivo">Motivo do desligamento</label>
-          <input id="dsg-motivo" placeholder="ex.: desempenho abaixo do combinado, reiterado">
+          <select id="dsg-motivo" onchange="dsgMotivo(this.value)">
+            <option value="">— escolha —</option>
+            ${MOTIVOS_DESLIG.map(m => `<option>${es(m)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="c" id="dsg-box-carta" style="display:none">
+          <label for="dsg-carta">Carta de demissão</label>
+          <input type="file" id="dsg-carta" accept=".pdf,.jpg,.jpeg,.png,.heic"
+                 onchange="dsgCarta()">
+          <span class="aviso" id="dsg-carta-aviso">Escrita e assinada pelo
+            próprio colaborador. PDF ou foto, até 10 MB.</span>
         </div>
 
         <div class="c">
@@ -4236,13 +4264,49 @@ function linhaDeslig(d) {
       · pedido por ${es(d.solicitante_nome || '—')} em ${dataBR(String(d.criado_em).slice(0,10))}
       ${d.observacao ? '<br>Obs.: ' + es(d.observacao) : ''}
     </div>
+    ${!(d.arquivos || []).length ? '' : `<div class="met">
+      ${(d.arquivos || []).map(a => `📎 <a href="#" onclick="abrirCarta('${es(a.caminho)}', this);return false"
+        >${es(a.nome)}</a>`).join(' · ')}</div>`}
     <div class="fb"><b>Último feedback — ${dataBR(d.feedback_data)}</b>${
       dias != null ? ` <span class="sub">(${dias} dia(s) antes da saída prevista)</span>` : ''
       }<br>${es(d.feedback_texto)}</div>
   </div>`;
 }
 
+/* Link temporário, igual ao dos documentos de cadastro: a carta não fica
+   alcançável por quem tiver o endereço. */
+async function abrirCarta(caminho, el) {
+  const antes = el.textContent;
+  el.textContent = 'abrindo…';
+  try {
+    const { data, error } = await cliente().storage.from(BUCKET_DESLIG)
+      .createSignedUrl(caminho, VALIDADE_LINK);
+    if (error) throw new Error(error.message);
+    window.open(data.signedUrl, '_blank', 'noopener');
+  } catch (e) { alert('Não consegui abrir: ' + e.message); }
+  finally { el.textContent = antes; }
+}
+
 function dsgTrocarUnidade(u) { dsgUnidade = u; pintarDeslig(); }
+
+function dsgMotivo(v) {
+  $('dsg-box-carta').style.display = v === MOTIVO_COM_CARTA ? '' : 'none';
+  if (v !== MOTIVO_COM_CARTA) $('dsg-carta').value = '';
+}
+
+const CARTA_MAX = 10 * 1024 * 1024;
+
+function dsgCarta() {
+  const f = $('dsg-carta').files[0];
+  const av = $('dsg-carta-aviso');
+  if (!f) { av.textContent = 'Escrita e assinada pelo próprio colaborador. PDF ou foto, até 10 MB.';
+            av.classList.remove('sem'); return; }
+  const grande = f.size > CARTA_MAX;
+  av.classList.toggle('sem', grande);
+  av.textContent = grande
+    ? `"${f.name}" tem ${(f.size / 1048576).toFixed(1)} MB — o limite é 10 MB.`
+    : `${f.name} · ${(f.size / 1024).toFixed(0)} KB`;
+}
 function dsgAprov(marcado) {
   $('dsg-box-aprovador').style.display = marcado ? '' : 'none';
 }
@@ -4252,6 +4316,7 @@ async function enviarDeslig(bt) {
   const op = el.tagName === 'SELECT' ? el.selectedOptions[0] : null;
   const nome = (el.value || '').trim();
   const motivo = $('dsg-motivo').value.trim();
+  const carta = motivo === MOTIVO_COM_CARTA ? ($('dsg-carta').files[0] || null) : null;
   const prevista = isoDeBr($('dsg-data').value.trim());
   const fbData = isoDeBr($('dsg-fbdata').value.trim());
   const fbTexto = $('dsg-fbtexto').value.trim();
@@ -4260,7 +4325,8 @@ async function enviarDeslig(bt) {
 
   const falta = [];
   if (!nome) falta.push('o colaborador');
-  if (motivo.length < 3) falta.push('o motivo');
+  if (!motivo) falta.push('o motivo');
+  if (motivo === MOTIVO_COM_CARTA && !carta) falta.push('a carta de demissão');
   if (!prevista) falta.push('a data prevista (DD/MM/AAAA)');
   if (!fbData) falta.push('a data do último feedback');
   if (fbTexto.length < 15) falta.push('o que foi falado no feedback (ao menos 15 caracteres)');
@@ -4269,8 +4335,16 @@ async function enviarDeslig(bt) {
     return msg('dsg-msg', 'Falta ' + falta.join(', ') + '.', 'err');
   if (fbData > prevista)
     return msg('dsg-msg', 'O feedback não pode ser depois da data de saída.', 'err');
+  if (carta && carta.size > CARTA_MAX)
+    return msg('dsg-msg', 'A carta tem mais de 10 MB. Reduza o arquivo e tente de novo.', 'err');
+
+  /* O id nasce aqui, e não no banco, porque a carta precisa de uma pasta
+     antes de a linha existir — e ela precisa existir antes, veja abaixo. */
+  const id = (crypto.randomUUID ? crypto.randomUUID()
+             : 'x' + Date.now() + Math.random().toString(16).slice(2));
 
   const linha = {
+    id,
     solicitante_nome: PERFIL.nome || '',
     unidade: ehGerente() ? PERFIL.unidade : ($('dsg-un').value || dsgUnidade),
     colaborador_nome: nome,
@@ -4284,8 +4358,32 @@ async function enviarDeslig(bt) {
   };
 
   bt.disabled = true; bt.textContent = 'Enviando…';
+  let caminho = null;
   try {
-    const { data, error } = await cliente().from('desligamentos')
+    const db = cliente();
+
+    /* A CARTA VAI PRIMEIRO, e isso é deliberado. Gravado o pedido antes,
+       uma falha no envio deixaria no painel um pedido de demissão que diz
+       ter carta e não tem — e ninguém revisita pedido já enviado. Falhando
+       aqui, nada foi criado e dá para tentar de novo. O preço é um arquivo
+       órfão se a gravação falhar logo depois; por isso ele é apagado no
+       catch, e o bucket é privado de qualquer forma. */
+    if (carta) {
+      bt.textContent = 'Enviando a carta…';
+      const ext = (carta.name.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
+      caminho = `${id}/carta-demissao${ext}`;
+      const { error: eUp } = await db.storage.from(BUCKET_DESLIG)
+        .upload(caminho, carta, { contentType: carta.type || 'application/octet-stream',
+                                  upsert: false });
+      if (eUp) { caminho = null;
+                 throw new Error('não consegui enviar a carta (' + eUp.message
+                               + '). Nada foi registrado.'); }
+      linha.arquivos = [{ tipo: 'carta_demissao', nome: carta.name, caminho,
+                          bytes: carta.size, mime: carta.type || null }];
+    }
+
+    bt.textContent = 'Registrando…';
+    const { data, error } = await db.from('desligamentos')
       .insert(linha).select('*').single();
     if (error) throw new Error(error.message);
     DESLIG.unshift(data);
@@ -4298,6 +4396,10 @@ async function enviarDeslig(bt) {
       aviso ? 'ok' : 'err');
     setTimeout(() => msg('dsg-msg', ''), 12000);
   } catch (e) {
+    //  Desfaz a carta para não deixar documento sem pedido nenhum apontando
+    //  para ele — invisível no painel e eterno no bucket.
+    if (caminho) { try { await cliente().storage.from(BUCKET_DESLIG).remove([caminho]); }
+                   catch (_) {} }
     msg('dsg-msg', 'Não consegui registrar: ' + e.message, 'err');
   } finally { bt.disabled = false; bt.textContent = 'Enviar solicitação'; }
 }
@@ -4312,6 +4414,11 @@ async function avisarDeslig(d) {
         access_key: WEB3FORMS_KEY,
         subject: `🔴 Solicitação de desligamento — ${d.colaborador_nome} · ${d.unidade}`,
         from_name: 'Trilha de Admissão · Desligamentos',
+        /* O serviço de e-mail abre com uma frase fixa em inglês que não dá
+           para trocar pela API. O primeiro campo vem logo abaixo dela e é
+           o que a pessoa lê de verdade — então ele diz, em português, o que
+           chegou. */
+        'Aviso': 'Chegou uma nova solicitação de desligamento.',
         'Unidade': d.unidade,
         'Colaborador': d.colaborador_nome
           + (d.colaborador_cargo ? ' · ' + d.colaborador_cargo : '')
@@ -4323,6 +4430,9 @@ async function avisarDeslig(d) {
         'Aprovado com o superior': d.aprovado_superior
           ? 'SIM — ' + (d.aprovador_nome || '') : 'NÃO',
         'Observação': d.observacao || '—',
+        'Carta de demissão': (d.arquivos || []).length
+          ? 'anexada no painel — abra a Trilha para ver'
+          : (d.motivo === MOTIVO_COM_CARTA ? 'NÃO ANEXADA' : 'não se aplica'),
         'Solicitado por': (d.solicitante_nome || '—') + ' em '
           + new Date(d.criado_em).toLocaleString('pt-BR'),
       }),
