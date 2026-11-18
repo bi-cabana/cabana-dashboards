@@ -473,6 +473,48 @@
     border:1px solid #fcd34d;border-radius:8px;padding:9px 11px;
     margin-bottom:11px;line-height:1.55}
 
+  /* ── DESLIGAMENTO E QUADRO ── */
+  .dsg{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:22px 24px;margin-bottom:18px}
+  .dsg h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:3px}
+  .dsg .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:12px 15px;margin-top:16px}
+  .dsg .c{display:flex;flex-direction:column;gap:4px}
+  .dsg .c.w{grid-column:1/-1}
+  .dsg label{font-size:11.5px;font-weight:700;color:var(--gray-500)}
+  .dsg input,.dsg select,.dsg textarea{padding:9px 11px;border:1.5px solid var(--gray-200);
+    border-radius:8px;font-family:inherit;font-size:13.5px;background:#fff;
+    color:var(--gray-900);outline:none;width:100%}
+  .dsg textarea{min-height:76px;resize:vertical;line-height:1.5}
+  .dsg input:focus,.dsg select:focus,.dsg textarea:focus{border-color:var(--green);
+    box-shadow:0 0 0 3px rgba(74,143,58,.12)}
+  .dsg .aviso{font-size:11.5px;color:var(--gray-400);margin-top:3px}
+  .dsg .marca{display:flex;align-items:center;gap:8px;font-size:13px;
+    color:var(--gray-700);padding-top:6px}
+  .dsg .marca input{width:16px;height:16px;accent-color:var(--green)}
+  .dsg .barra{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:17px}
+  .dl{border:1.5px solid var(--gray-200);border-radius:11px;padding:13px 15px;
+    margin-bottom:9px}
+  .dl .topo{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .dl .topo b{font-size:14px}
+  .dl .topo .un{font-size:11px;font-weight:800;color:var(--green-dark);
+    background:var(--green-pale);border-radius:5px;padding:2px 7px}
+  .dl .met{font-size:11.5px;color:var(--gray-500);margin-top:4px;line-height:1.6}
+  .dl .fb{font-size:12.5px;color:var(--gray-700);background:var(--gray-50);
+    border-radius:8px;padding:9px 11px;margin-top:9px;line-height:1.55}
+  .dl .sem{color:#b45309;font-weight:700}
+
+  .gap{margin-top:16px;border-top:1px solid var(--gray-100);padding-top:15px}
+  .gap table{width:100%;border-collapse:collapse;font-size:13px}
+  .gap th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--gray-400);font-weight:800;text-align:center;padding:0 8px 8px}
+  .gap th:first-child{text-align:left}
+  .gap td{padding:6px 8px;border-top:1px solid var(--gray-100);text-align:center}
+  .gap td:first-child{text-align:left;font-weight:700;white-space:nowrap}
+  .gap .falta{color:var(--danger);font-weight:800}
+  .gap .ok{color:var(--picles);font-weight:800}
+  .gap .fonte{font-size:11px;color:var(--gray-400);margin-top:10px;line-height:1.55}
+
   /* ── REGRAS DE SLA ── */
   #sla{display:none}
   .slac{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);
@@ -599,6 +641,7 @@
          title="Headcount e turnover — abre em outra aba, fora da Trilha. Use o filtro de loja para ver a sua unidade."
          >Headcount <span>↗</span></a>
       <button data-t="funil"           onclick="trocarTipo('funil')">Painel Admissão</button>
+      <button data-t="deslig"          onclick="trocarTipo('deslig')">Desligamentos</button>
       <button data-t="sla"             onclick="trocarTipo('sla')">Regras de SLA</button>
       <button data-t="acesso"          onclick="trocarTipo('acesso')">Acessos</button>
     </div>
@@ -635,6 +678,7 @@
     </div>
 
     <div id="funil"></div>
+    <div id="deslig"></div>
     <div id="sla"></div>
     <div id="acesso"></div>
     <div id="tela"></div>
@@ -1619,10 +1663,11 @@ function ajustarUI() {
   $('bt-concluidas').style.display = (t === 'vaga') ? '' : 'none';
   $('bt-nova').style.display = (t === 'vaga' && podeAbrirVaga()) ? '' : 'none';
   document.querySelector('.tbl').style.display =
-    ['funil', 'sla', 'acesso'].includes(t) ? 'none' : '';
+    ['funil', 'sla', 'acesso', 'deslig'].includes(t) ? 'none' : '';
   $('funil').style.display  = t === 'funil'  ? 'block' : 'none';
   $('sla').style.display    = t === 'sla'    ? 'block' : 'none';
   $('acesso').style.display = t === 'acesso' ? 'block' : 'none';
+  $('deslig').style.display = t === 'deslig' ? 'block' : 'none';
   $('tela').style.display = 'none';
   pintarLinkPortal();
   // o gerente nao exporta base de candidatos
@@ -1861,6 +1906,7 @@ async function carregar() {
   const deste = TIPO;
   const db = cliente();
   try {
+    if (TIPO === 'deslig') { await carregarDeslig(); return; }
     if (TIPO === 'vaga' || TIPO === 'funil') {
       const { data, error } = await db.from('vagas').select('*')
         .order('criado_em', { ascending:false }).limit(2000);
@@ -1913,6 +1959,7 @@ function visiveis() {
 }
 
 function pintar() {
+  if (TIPO === 'deslig') return pintarDeslig();
   if (TIPO === 'vaga')  return pintarVagas();
   if (TIPO === 'funil') return pintarFunil();
   if (TIPO === 'sla')    return pintarSLA();
@@ -3714,6 +3761,577 @@ async function salvarAcesso(id, campo, valor) {
 }
 
 /* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  A BASE DO HEADCOUNT                                                 ║
+   ║                                                                      ║
+   ║  Duas coisas vêm de fora, do painel do Eduardo, e elas não vêm do    ║
+   ║  mesmo lugar:                                                        ║
+   ║                                                                      ║
+   ║    O REALIZADO sai de data/dados.xlsx — arquivo de dados, servido    ║
+   ║    com CORS aberto. Leitura estável.                                 ║
+   ║                                                                      ║
+   ║    A META está escrita DENTRO DO CÓDIGO da página, numa constante    ║
+   ║    chamada METAS_HISTORY. Não há arquivo. Para lê-la é preciso       ║
+   ║    baixar o index.html e garimpar o texto — funciona hoje e quebra   ║
+   ║    no dia em que ele renomear a variável.                            ║
+   ║                                                                      ║
+   ║  Por isso a extração da meta mora numa função só, isolada, e falha   ║
+   ║  FALANDO: sem meta o painel diz que não conseguiu ler, em vez de     ║
+   ║  mostrar um gap calculado contra o vazio. Número errado em tela de   ║
+   ║  quadro é pior do que número nenhum — alguém contrata em cima dele.  ║
+   ║                                                                      ║
+   ║  Quando existir um data/metas.json, só esta função muda.             ║
+   ║                                                                      ║
+   ║  A REGRA DO REALIZADO, conferida contra as 18 lojas com meta da      ║
+   ║  tabela "Meta vs real" — meta, realizado, as três subunidades e a    ║
+   ║  diferença, tudo batendo:                                            ║
+   ║                                                                      ║
+   ║    · admitidos até o fim do mês, sem rescisão até lá;                ║
+   ║    · só os centros de custo Liderança Loja, Salão e Cozinha;         ║
+   ║    · SEM aprendiz e SEM estagiário — não ocupam vaga de quadro.      ║
+   ║                                                                      ║
+   ║  Esse último ponto não estava escrito em lugar nenhum. Sem ele,      ║
+   ║  Niterói e Barra Shopping davam uma e duas pessoas a mais.           ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const HC_BASE  = 'https://eduardocurti.github.io/headcount/';
+const HC_XLSX  = HC_BASE + 'data/dados.xlsx';
+const HC_SHEET = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+
+/* Centro de custo que conta contra a meta de loja. Quem está fora disto
+   (Logística, Eventos, Manutenção, as áreas da Matriz) não entra. */
+const HC_CC = { 'LIDERANÇA LOJA':'lid', 'SALÃO':'sal', 'COZINHA':'coz' };
+const HC_FORA_DO_QUADRO = /APRENDIZ|ESTAGI/i;
+
+let HC = null;          // { ativos:[], metas:{}, base:Date, erroMeta:'' }
+let hcCarregando = null;
+
+/* '23- CABANA BOTAFOGO' e '23-CABANA BOTAFOGO' são a mesma loja. O espaço
+   depois do hífen existe em uma linha da planilha e em nenhuma outra. */
+const hcChave = s => String(s || '').toUpperCase()
+  .replace(/\s+/g, ' ').replace(/-\s+/, '-').trim();
+
+/* O nome da loja lá e o nome da unidade aqui raramente coincidem: lá vem
+   com número e a palavra CABANA na frente. Tirando isso, a maioria casa
+   sozinha; o resto está no de-para abaixo, que é curto de propósito —
+   apelido demais esconde loja nova que ninguém ligou. */
+const HC_APELIDO = {
+  'BARRA SHOP': 'Barra Shopping RJ',
+  'SHOP MORUMBI': 'Morumbi Shopping',
+  'SHOP VL LOBOS': 'Villa Lobos Shopping',
+  'SHOP ELDORADO': 'Shop Eldorado',
+};
+
+function hcNomeCurto(loja) {
+  return hcChave(loja).replace(/^\d+\s*-\s*/, '').replace(/^CABANA\s+/, '').trim();
+}
+
+/* Devolve o nome da unidade como a Trilha escreve, ou null se aquela loja
+   não existe aqui (Ribeirão Preto, Santo André, Franquias). */
+function hcParaUnidade(loja) {
+  const curto = hcNomeCurto(loja);
+  if (HC_APELIDO[curto]) return HC_APELIDO[curto];
+  const semAcento = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  const achou = (UNIDADES.length ? UNIDADES : UNIDADES_RESERVA)
+    .find(u => semAcento(u) === semAcento(curto));
+  return achou || null;
+}
+
+/* Serial do Excel: dias desde 30/12/1899. */
+const hcData = n => typeof n === 'number'
+  ? new Date(Date.UTC(1899, 11, 30) + n * 86400000) : null;
+
+function hcCarregarScript() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, falha) => {
+    const s = document.createElement('script');
+    s.src = HC_SHEET;
+    s.onload = ok;
+    s.onerror = () => falha(new Error('não consegui carregar o leitor de planilha'));
+    document.head.appendChild(s);
+  });
+}
+
+/* ── A META ───────────────────────────────────────────────────────────────
+   A parte frágil, e a única. Garimpa METAS_HISTORY do HTML do Headcount.
+   Qualquer tropeço aqui vira erroMeta, e quem chama decide o que dizer. */
+/* Separa os { … } de primeiro nível contando chaves. Regex não serve aqui:
+   uma entrada de meta ajustada carrega outro objeto dentro dela
+   (from:{year:2026,month:7}), e qualquer [^}] para no fecha-chaves errado —
+   a entrada vinha com liderança, salão e cozinha zerados, o que daria uma
+   meta de zero para justamente as lojas que tiveram a meta revista. */
+function hcGrupos(texto) {
+  const out = [];
+  let nivel = 0, inicio = -1;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (c === '{') { if (nivel === 0) inicio = i; nivel++; }
+    else if (c === '}') { nivel--; if (nivel === 0 && inicio >= 0) out.push(texto.slice(inicio + 1, i)); }
+  }
+  return out;
+}
+
+async function hcLerMetas() {
+  const r = await fetch(HC_BASE + 'index.html', { cache: 'no-store' });
+  if (!r.ok) throw new Error('a página do Headcount respondeu ' + r.status);
+  const html = await r.text();
+  const i = html.indexOf('const METAS_HISTORY');
+  if (i < 0) throw new Error('a constante METAS_HISTORY não está mais na página');
+  const fim = html.indexOf('\n};', i);
+  if (fim < 0) throw new Error('não achei o fim da constante METAS_HISTORY');
+  const bloco = html.slice(i, fim);
+  const metas = {};
+  const re = /'([^']+)'\s*:\s*\[([\s\S]*?)\]\s*,?\s*(?=\n\s*'|\s*$)/g;
+  let m;
+  while ((m = re.exec(bloco))) {
+    const entradas = hcGrupos(m[2]).map(t => {
+      const num = k => { const x = t.match(new RegExp(k + '\\s*:\\s*(\\d+)')); return x ? +x[1] : 0; };
+      const quando = t.match(/from\s*:\s*\{([^}]*)\}/);
+      const ano = quando && quando[1].match(/year\s*:\s*(\d+)/);
+      const mes = quando && quando[1].match(/month\s*:\s*(\d+)/);
+      return {
+        de: ano ? { ano: +ano[1], mes: mes ? +mes[1] : 0 } : { ano: 2000, mes: 0 },
+        lid: num('lideranca'), sal: num('salao'), coz: num('cozinha'),
+      };
+    }).filter(e => e.lid || e.sal || e.coz);
+    if (entradas.length) metas[hcChave(m[1])] = entradas;
+  }
+  if (!Object.keys(metas).length)
+    throw new Error('li a página mas não reconheci nenhuma meta — o formato mudou');
+  return metas;
+}
+
+/* A meta vigente num mês é a última entrada cujo início já passou. É assim
+   que o Headcount faz, e é o que permite Oscar Freire ter uma meta até
+   julho, outra de agosto a setembro e uma terceira depois. */
+function hcMetaNoMes(loja, ano, mes) {
+  const h = (HC && HC.metas[hcChave(loja)]) || [];
+  let v = null;
+  for (const e of h) if (e.de.ano < ano || (e.de.ano === ano && e.de.mes <= mes)) v = e;
+  return v && { ...v, total: v.lid + v.sal + v.coz };
+}
+
+async function hcCarregar(forcar) {
+  if (HC && !forcar) return HC;
+  if (hcCarregando) return hcCarregando;
+  hcCarregando = (async () => {
+    await hcCarregarScript();
+    const buf = await (await fetch(HC_XLSX, { cache: 'no-store' })).arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const linhas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+
+    const ativos = linhas.map(r => ({
+      nome: String(r['Nome'] || '').trim(),
+      cargo: String(r['Cargo'] || '').trim(),
+      cc: String(r['Centro custo'] || '').trim(),
+      loja: String(r['Nome Fantasia'] || '').trim(),
+      admissao: hcData(r['Dt Admissão']),
+      rescisao: hcData(r['Dt Rescisão']),
+    })).filter(x => x.nome && x.admissao);
+
+    let metas = {}, erroMeta = '';
+    try { metas = await hcLerMetas(); }
+    catch (e) { erroMeta = e.message; }
+
+    //  A base não tem data de corte declarada; a admissão mais recente é a
+    //  melhor pista de até quando ela enxerga.
+    const base = ativos.reduce((a, x) => x.admissao > a ? x.admissao : a, new Date(0));
+    HC = { ativos, metas, base, erroMeta, lido: new Date() };
+    return HC;
+  })().finally(() => { hcCarregando = null; });
+  return hcCarregando;
+}
+
+/* Quem estava na folha no fim de um mês. Sem filtro de centro de custo:
+   esta lista serve para o gerente achar a pessoa, e Logística e Eventos
+   também são gente da loja mesmo não contando contra a meta. */
+function hcAtivosEm(ano, mes, unidade) {
+  if (!HC) return [];
+  const fim = new Date(Date.UTC(ano, mes + 1, 0));
+  return HC.ativos.filter(x =>
+    x.admissao <= fim && (!x.rescisao || x.rescisao > fim)
+    && (!unidade || hcParaUnidade(x.loja) === unidade));
+}
+
+/* O quadro de uma loja: meta, realizado e a diferença, pela regra do
+   Headcount. Devolve null quando aquela loja não tem meta lá. */
+function hcQuadro(unidade, ano, mes) {
+  if (!HC) return null;
+  const lojaHC = [...new Set(HC.ativos.map(x => x.loja))]
+    .find(l => hcParaUnidade(l) === unidade);
+  if (!lojaHC) return null;
+  const meta = hcMetaNoMes(lojaHC, ano, mes);
+  if (!meta || !meta.total) return null;
+
+  const real = { lid: 0, sal: 0, coz: 0 };
+  for (const x of hcAtivosEm(ano, mes, unidade)) {
+    const b = HC_CC[x.cc];
+    if (b && !HC_FORA_DO_QUADRO.test(x.cargo)) real[b]++;
+  }
+  const total = real.lid + real.sal + real.coz;
+  return { unidade, loja: lojaHC, meta, real, total, gap: total - meta.total };
+}
+
+/* Todas as lojas que têm meta, da maior falta para a menor. */
+function hcQuadroGeral(ano, mes) {
+  const uns = [...new Set(HC.ativos.map(x => hcParaUnidade(x.loja)).filter(Boolean))];
+  return uns.map(u => hcQuadro(u, ano, mes)).filter(Boolean)
+    .sort((a, b) => a.gap - b.gap);
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  GAP DE QUADRO                                                       ║
+   ║                                                                      ║
+   ║  Meta menos realizado, loja a loja, pela base do Headcount. Não é    ║
+   ║  pipeline: vaga aberta na Trilha e buraco de quadro são coisas       ║
+   ║  diferentes, e confundir as duas faz abrir vaga que já está aberta.  ║
+   ║                                                                      ║
+   ║  Não carrega sozinho. São 88 KB de planilha mais o HTML do painel    ║
+   ║  do Eduardo a cada abertura do funil, e quase sempre ninguém está    ║
+   ║  olhando para o quadro — está olhando para a fila. Carrega quando    ║
+   ║  pedem.                                                              ║
+   ║                                                                      ║
+   ║  E se a meta não vier, NÃO MOSTRA NÚMERO. Diz que não conseguiu      ║
+   ║  ler. Gap errado numa tela de quadro vira contratação errada.        ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+let gapAberto = false, gapErro = '', gapCarregando = false;
+
+async function alternarGap() {
+  if (gapAberto) { gapAberto = false; return pintarFunil(); }
+  if (HC && !HC.erroMeta) { gapAberto = true; return pintarFunil(); }
+  gapCarregando = true; gapErro = ''; pintarFunil();
+  try {
+    await hcCarregar(true);
+    gapErro = HC.erroMeta || '';
+  } catch (e) { gapErro = e.message; }
+  gapCarregando = false; gapAberto = true;
+  pintarFunil();
+}
+
+function pintarGap() {
+  if (gapCarregando)
+    return `<div class="gap"><div class="sub">Lendo a base do Headcount…</div></div>`;
+  if (!gapAberto)
+    return `<div class="gap" style="border:none;padding-top:0;margin-top:11px">
+      <button class="chip" onclick="alternarGap()"
+        title="Meta de quadro contra o realizado, pela base do Headcount"
+        >Ver gap de quadro</button></div>`;
+
+  const fechar = `<button class="chip on" onclick="alternarGap()">Esconder o gap</button>`;
+  if (gapErro)
+    return `<div class="gap">
+      <div class="sub" style="color:var(--danger)">
+        <b>Não consegui ler a meta do Headcount.</b><br>${es(gapErro)}<br>
+        Prefiro não mostrar número nenhum a mostrar um gap calculado contra
+        o vazio — alguém contrata em cima dele.</div>
+      <div style="margin-top:11px">${fechar}</div></div>`;
+
+  const hoje = new Date();
+  let linhas = hcQuadroGeral(hoje.getUTCFullYear(), hoje.getUTCMonth());
+  if (unidadesFoco.length)
+    linhas = linhas.filter(l => unidadesFoco.includes(l.unidade));
+  if (!linhas.length)
+    return `<div class="gap"><div class="sub">Nenhuma das lojas do recorte tem
+      meta de quadro no Headcount.</div>
+      <div style="margin-top:11px">${fechar}</div></div>`;
+
+  const falta = linhas.reduce((a, l) => a + Math.min(0, l.gap), 0);
+  const naMeta = linhas.filter(l => l.gap >= 0).length;
+
+  return `<div class="gap">
+    <div class="sub" style="margin-bottom:9px">
+      <b>Gap de quadro — ${linhas.length} loja(s)</b> ·
+      ${falta ? `faltam <b style="color:var(--danger)">${-falta} pessoa(s)</b>` : 'sem falta'}
+      · ${naMeta} na meta ou acima</div>
+    <table>
+      <thead><tr><th>Loja</th><th>Liderança</th><th>Salão</th><th>Cozinha</th>
+        <th>Meta</th><th>Real</th><th>Gap</th></tr></thead>
+      <tbody>${linhas.map(l => `<tr>
+        <td>${es(l.unidade)}</td>
+        <td>${l.real.lid}/${l.meta.lid}</td>
+        <td>${l.real.sal}/${l.meta.sal}</td>
+        <td>${l.real.coz}/${l.meta.coz}</td>
+        <td>${l.meta.total}</td><td>${l.total}</td>
+        <td class="${l.gap < 0 ? 'falta' : 'ok'}">${l.gap > 0 ? '+' : ''}${l.gap}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+    <div class="fonte">Base do Headcount de ${es(dataBR(HC.base.toISOString().slice(0,10)))},
+      lida agora. Conta quem estava na folha no fim do mês nos centros de custo
+      Liderança, Salão e Cozinha — <b>sem aprendiz e sem estagiário</b>, que não
+      ocupam vaga de quadro. É a mesma regra da tabela "Meta vs real" do Headcount.</div>
+    <div style="margin-top:11px">${fechar}</div>
+  </div>`;
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  SOLICITAÇÃO DE DESLIGAMENTO                                         ║
+   ║                                                                      ║
+   ║  O gerente pede; o RH recebe por e-mail e decide fora daqui. Esta    ║
+   ║  tela não aprova nada — ela registra, e o registro é o produto.      ║
+   ║                                                                      ║
+   ║  O FEEDBACK É OBRIGATÓRIO, e não por burocracia: desligamento sem    ║
+   ║  conversa registrada é o que vira processo depois. A tela exige, e   ║
+   ║  a tabela exige de novo — tela não é garantia.                       ║
+   ║                                                                      ║
+   ║  O NOME VEM DO HEADCOUNT, não digitado. Nome digitado erra, e erro   ║
+   ║  de nome num pedido de desligamento é o pior lugar para errar.       ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+let DESLIG = [], dsgUnidade = '', dsgHcErro = '';
+
+const podeSolicitarDeslig = () => !ehDiretoria();
+
+function dsgUnidadesPossiveis() {
+  if (ehGerente()) return [PERFIL.unidade].filter(Boolean);
+  const todas = UNIDADES.length ? UNIDADES : UNIDADES_RESERVA;
+  if (ehRegional()) return todas.filter(u => (REGIONAL[u] || {}).regiao === PERFIL.regiao);
+  return todas;
+}
+
+async function carregarDeslig() {
+  $('deslig').innerHTML = '<div class="vazio">Carregando…</div>';
+  dsgHcErro = '';
+  try {
+    const { data, error } = await cliente().from('desligamentos')
+      .select('*').order('criado_em', { ascending: false }).limit(500);
+    if (error) throw new Error(error.message);
+    DESLIG = data || [];
+  } catch (e) {
+    $('deslig').innerHTML = `<div class="dsg" style="border-top:3px solid var(--warn)">
+      <h3>Desligamentos</h3><div class="sub">Não consegui carregar: ${es(e.message)}.<br>
+      Se a tabela não existe, rode o <b>38_desligamentos.sql</b> no SQL Editor.</div></div>`;
+    return;
+  }
+  //  A lista de colaboradores vem de fora; se falhar, o formulário ainda
+  //  abre — só não traz nomes, e diz por quê.
+  try { await hcCarregar(); }
+  catch (e) { dsgHcErro = e.message; }
+  if (!dsgUnidade) dsgUnidade = dsgUnidadesPossiveis()[0] || '';
+  pintarDeslig();
+}
+
+function dsgPessoas() {
+  if (!HC || !dsgUnidade) return [];
+  const hoje = new Date();
+  return hcAtivosEm(hoje.getUTCFullYear(), hoje.getUTCMonth(), dsgUnidade)
+    .slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+function pintarDeslig() {
+  const unidades = dsgUnidadesPossiveis();
+  const pessoas = dsgPessoas();
+  const podeAbrir = podeSolicitarDeslig();
+  const visiveis = DESLIG;
+
+  $('deslig').innerHTML = `
+    ${!podeAbrir ? '' : `
+    <div class="dsg">
+      <h3>Solicitar desligamento</h3>
+      <div class="sub">O RH recebe um e-mail assim que você enviar. A decisão
+        não acontece aqui — este é o registro do pedido.</div>
+      <div class="msg" id="dsg-msg"></div>
+
+      <div class="grade">
+        <div class="c">
+          <label for="dsg-un">Unidade</label>
+          ${unidades.length === 1
+            ? `<input id="dsg-un" value="${es(unidades[0])}" readonly
+                 style="background:var(--gray-50);color:var(--gray-500)">`
+            : `<select id="dsg-un" onchange="dsgTrocarUnidade(this.value)">
+                 ${unidades.map(u => `<option ${u === dsgUnidade ? 'selected' : ''}
+                   >${es(u)}</option>`).join('')}</select>`}
+        </div>
+
+        <div class="c w">
+          <label for="dsg-pessoa">Colaborador</label>
+          ${dsgHcErro || !pessoas.length
+            ? `<input id="dsg-pessoa" placeholder="nome completo do colaborador">
+               <span class="aviso sem">${es(dsgHcErro
+                 ? 'não consegui ler a base do Headcount (' + dsgHcErro + ') — digite o nome'
+                 : 'o Headcount não tem ninguém ativo nesta unidade — digite o nome')}</span>`
+            : `<select id="dsg-pessoa">
+                 <option value="">— escolha —</option>
+                 ${pessoas.map(p => `<option value="${es(p.nome)}"
+                    data-cargo="${es(p.cargo)}" data-cc="${es(p.cc)}"
+                    data-adm="${p.admissao.toISOString().slice(0,10)}"
+                   >${es(p.nome)} — ${es(p.cargo)}</option>`).join('')}
+               </select>
+               <span class="aviso">${pessoas.length} ativo(s) nesta unidade,
+                 pela base do Headcount${HC ? ' de ' + dataBR(HC.base.toISOString().slice(0,10)) : ''}</span>`}
+        </div>
+
+        <div class="c w">
+          <label for="dsg-motivo">Motivo do desligamento</label>
+          <input id="dsg-motivo" placeholder="ex.: desempenho abaixo do combinado, reiterado">
+        </div>
+
+        <div class="c">
+          <label for="dsg-data">Data prevista do desligamento</label>
+          <input id="dsg-data" placeholder="DD/MM/AAAA" maxlength="10">
+        </div>
+
+        <div class="c">
+          <label for="dsg-fbdata">Data do último feedback</label>
+          <input id="dsg-fbdata" placeholder="DD/MM/AAAA" maxlength="10">
+        </div>
+
+        <div class="c w">
+          <label for="dsg-fbtexto">O que foi falado no último feedback</label>
+          <textarea id="dsg-fbtexto" placeholder="O que foi apontado, o que foi combinado e qual era o prazo."></textarea>
+        </div>
+
+        <div class="c">
+          <label>Aprovação do superior</label>
+          <div class="marca">
+            <input type="checkbox" id="dsg-aprov" onchange="dsgAprov(this.checked)">
+            <label for="dsg-aprov" style="font-size:13px;color:var(--gray-700);font-weight:600"
+              >Já aprovado com meu superior</label>
+          </div>
+        </div>
+
+        <div class="c" id="dsg-box-aprovador" style="display:none">
+          <label for="dsg-aprovador">Quem aprovou</label>
+          <input id="dsg-aprovador" placeholder="nome de quem aprovou">
+        </div>
+
+        <div class="c w">
+          <label for="dsg-obs">Observação (opcional)</label>
+          <input id="dsg-obs" placeholder="qualquer coisa que o RH precise saber">
+        </div>
+      </div>
+
+      <div class="barra">
+        <button class="btn btn-sm btn-primary" onclick="enviarDeslig(this)"
+          >Enviar solicitação</button>
+        <span class="sub">O pedido fica registrado com o seu nome e a data.</span>
+      </div>
+    </div>`}
+
+    <div class="dsg">
+      <h3>Solicitações${visiveis.length ? ` · ${visiveis.length}` : ''}</h3>
+      <div class="sub">${ehGerente() ? 'Os pedidos da sua loja.'
+        : ehRegional() ? 'Os pedidos das lojas da sua regional.'
+        : 'Todos os pedidos abertos pelos gerentes.'}</div>
+      <div style="margin-top:15px">
+        ${!visiveis.length
+          ? '<div class="sub">Nenhuma solicitação até agora.</div>'
+          : visiveis.map(linhaDeslig).join('')}
+      </div>
+    </div>`;
+}
+
+function linhaDeslig(d) {
+  const dias = d.feedback_data
+    ? Math.round((new Date(d.data_prevista) - new Date(d.feedback_data)) / 86400000) : null;
+  return `<div class="dl">
+    <div class="topo">
+      <b>${es(d.colaborador_nome)}</b>
+      <span class="un">${es(d.unidade)}</span>
+      <span class="sub">${es(d.colaborador_cargo || '—')}</span>
+    </div>
+    <div class="met">
+      Saída prevista <b>${dataBR(d.data_prevista)}</b> ·
+      motivo: ${es(d.motivo)}<br>
+      ${d.aprovado_superior
+        ? `✓ aprovado com ${es(d.aprovador_nome || 'o superior')}`
+        : '<span class="sem">⚠️ ainda não aprovado com o superior</span>'}
+      · pedido por ${es(d.solicitante_nome || '—')} em ${dataBR(String(d.criado_em).slice(0,10))}
+      ${d.observacao ? '<br>Obs.: ' + es(d.observacao) : ''}
+    </div>
+    <div class="fb"><b>Último feedback — ${dataBR(d.feedback_data)}</b>${
+      dias != null ? ` <span class="sub">(${dias} dia(s) antes da saída prevista)</span>` : ''
+      }<br>${es(d.feedback_texto)}</div>
+  </div>`;
+}
+
+function dsgTrocarUnidade(u) { dsgUnidade = u; pintarDeslig(); }
+function dsgAprov(marcado) {
+  $('dsg-box-aprovador').style.display = marcado ? '' : 'none';
+}
+
+async function enviarDeslig(bt) {
+  const el = $('dsg-pessoa');
+  const op = el.tagName === 'SELECT' ? el.selectedOptions[0] : null;
+  const nome = (el.value || '').trim();
+  const motivo = $('dsg-motivo').value.trim();
+  const prevista = isoDeBr($('dsg-data').value.trim());
+  const fbData = isoDeBr($('dsg-fbdata').value.trim());
+  const fbTexto = $('dsg-fbtexto').value.trim();
+  const aprov = $('dsg-aprov').checked;
+  const aprovador = aprov ? $('dsg-aprovador').value.trim() : '';
+
+  const falta = [];
+  if (!nome) falta.push('o colaborador');
+  if (motivo.length < 3) falta.push('o motivo');
+  if (!prevista) falta.push('a data prevista (DD/MM/AAAA)');
+  if (!fbData) falta.push('a data do último feedback');
+  if (fbTexto.length < 15) falta.push('o que foi falado no feedback (ao menos 15 caracteres)');
+  if (aprov && !aprovador) falta.push('quem aprovou');
+  if (falta.length)
+    return msg('dsg-msg', 'Falta ' + falta.join(', ') + '.', 'err');
+  if (fbData > prevista)
+    return msg('dsg-msg', 'O feedback não pode ser depois da data de saída.', 'err');
+
+  const linha = {
+    solicitante_nome: PERFIL.nome || '',
+    unidade: ehGerente() ? PERFIL.unidade : ($('dsg-un').value || dsgUnidade),
+    colaborador_nome: nome,
+    colaborador_cargo: op ? op.dataset.cargo : null,
+    colaborador_cc: op ? op.dataset.cc : null,
+    colaborador_admissao: op ? op.dataset.adm : null,
+    motivo, data_prevista: prevista,
+    feedback_data: fbData, feedback_texto: fbTexto,
+    aprovado_superior: aprov, aprovador_nome: aprovador || null,
+    observacao: $('dsg-obs').value.trim() || null,
+  };
+
+  bt.disabled = true; bt.textContent = 'Enviando…';
+  try {
+    const { data, error } = await cliente().from('desligamentos')
+      .insert(linha).select('*').single();
+    if (error) throw new Error(error.message);
+    DESLIG.unshift(data);
+    //  O e-mail vem DEPOIS de gravar: se o aviso falhar, o pedido não se
+    //  perde — e o RH ainda vê na lista.
+    const aviso = await avisarDeslig(data);
+    pintarDeslig();
+    msg('dsg-msg', 'Solicitação registrada' + (aviso ? ' e enviada ao RH.' :
+      ' — mas o e-mail ao RH não saiu. Avise o RH por outro caminho.'),
+      aviso ? 'ok' : 'err');
+    setTimeout(() => msg('dsg-msg', ''), 12000);
+  } catch (e) {
+    msg('dsg-msg', 'Não consegui registrar: ' + e.message, 'err');
+  } finally { bt.disabled = false; bt.textContent = 'Enviar solicitação'; }
+}
+
+async function avisarDeslig(d) {
+  if (!AVISAR_VAGA) return true;
+  try {
+    const r = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        access_key: WEB3FORMS_KEY,
+        subject: `🔴 Solicitação de desligamento — ${d.colaborador_nome} · ${d.unidade}`,
+        from_name: 'Trilha de Admissão · Desligamentos',
+        'Unidade': d.unidade,
+        'Colaborador': d.colaborador_nome
+          + (d.colaborador_cargo ? ' · ' + d.colaborador_cargo : '')
+          + (d.colaborador_admissao ? ' · admitido em ' + dataBR(d.colaborador_admissao) : ''),
+        'Motivo': d.motivo,
+        'Saída prevista': dataBR(d.data_prevista),
+        'Último feedback': dataBR(d.feedback_data),
+        'O que foi falado': d.feedback_texto,
+        'Aprovado com o superior': d.aprovado_superior
+          ? 'SIM — ' + (d.aprovador_nome || '') : 'NÃO',
+        'Observação': d.observacao || '—',
+        'Solicitado por': (d.solicitante_nome || '—') + ' em '
+          + new Date(d.criado_em).toLocaleString('pt-BR'),
+      }),
+    });
+    return r.ok;
+  } catch (_) { return false; }
+}
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
    ║  REGRAS DE SLA                                                       ║
    ║  Os prazos saíram do código e do Excel e viraram tabela no banco.    ║
    ║  Mudar um prazo aqui vale na hora, sem republicar nada.              ║
@@ -3934,12 +4552,14 @@ function pintarFunil() {
           .map(mesRotulo).join(', ')) : ''}</span>
     </div>
 
-    <div class="fn">
+    <div class="fn" id="fn-gap-dono">
       <h3>Painel Admissão</h3>
       <div class="sub">${base} vaga(s) no processo · ${admitidos} já admitida(s)${
         paradas ? ` · ${paradas} congelada(s) ou cancelada(s), fora da conta` : ''}
         <br>O número de cada card é quanta vaga está <b>parada naquela etapa hoje</b>;
         o percentual embaixo é quanto do que entrou já chegou até ali.</div>
+
+      <div id="gap-caixa">${pintarGap()}</div>
 
       <div class="eta">
         ${linhas.map((l, i) => {
