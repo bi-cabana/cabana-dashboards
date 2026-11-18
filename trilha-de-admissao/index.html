@@ -655,6 +655,7 @@
          title="Headcount e turnover — abre em outra aba, fora da Trilha. Use o filtro de loja para ver a sua unidade."
          >Headcount <span>↗</span></a>
       <button data-t="funil"           onclick="trocarTipo('funil')">Painel Admissão</button>
+      <button data-t="mov"             onclick="trocarTipo('mov')">Movimentação</button>
       <button data-t="deslig"          onclick="trocarTipo('deslig')">Desligamentos</button>
       <button data-t="sla"             onclick="trocarTipo('sla')">Regras de SLA</button>
       <button data-t="acesso"          onclick="trocarTipo('acesso')">Acessos</button>
@@ -692,6 +693,7 @@
     </div>
 
     <div id="funil"></div>
+    <div id="mov"></div>
     <div id="deslig"></div>
     <div id="sla"></div>
     <div id="acesso"></div>
@@ -1677,11 +1679,12 @@ function ajustarUI() {
   $('bt-concluidas').style.display = (t === 'vaga') ? '' : 'none';
   $('bt-nova').style.display = (t === 'vaga' && podeAbrirVaga()) ? '' : 'none';
   document.querySelector('.tbl').style.display =
-    ['funil', 'sla', 'acesso', 'deslig'].includes(t) ? 'none' : '';
+    ['funil', 'sla', 'acesso', 'deslig', 'mov'].includes(t) ? 'none' : '';
   $('funil').style.display  = t === 'funil'  ? 'block' : 'none';
   $('sla').style.display    = t === 'sla'    ? 'block' : 'none';
   $('acesso').style.display = t === 'acesso' ? 'block' : 'none';
   $('deslig').style.display = t === 'deslig' ? 'block' : 'none';
+  $('mov').style.display = t === 'mov' ? 'block' : 'none';
   $('tela').style.display = 'none';
   pintarLinkPortal();
   // o gerente nao exporta base de candidatos
@@ -1921,6 +1924,7 @@ async function carregar() {
   const db = cliente();
   try {
     if (TIPO === 'deslig') { await carregarDeslig(); return; }
+    if (TIPO === 'mov') { await carregarMov(); return; }
     if (TIPO === 'vaga' || TIPO === 'funil') {
       const { data, error } = await db.from('vagas').select('*')
         .order('criado_em', { ascending:false }).limit(2000);
@@ -1974,6 +1978,7 @@ function visiveis() {
 
 function pintar() {
   if (TIPO === 'deslig') return pintarDeslig();
+  if (TIPO === 'mov') return pintarMov();
   if (TIPO === 'vaga')  return pintarVagas();
   if (TIPO === 'funil') return pintarFunil();
   if (TIPO === 'sla')    return pintarSLA();
@@ -4074,6 +4079,366 @@ function pintarGap() {
       ocupam vaga de quadro. É a mesma regra da tabela "Meta vs real" do Headcount.</div>
     <div style="margin-top:11px">${fechar}</div>
   </div>`;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  SOLICITAÇÃO DE MOVIMENTAÇÃO                                         ║
+   ║                                                                      ║
+   ║  Irmã da solicitação de desligamento, e de propósito: mesma lista de ║
+   ║  colaboradores vinda do Headcount, mesmo alcance por loja, mesmo     ║
+   ║  fecho pelo RH. Quem aprende uma, sabe a outra.                      ║
+   ║                                                                      ║
+   ║  O "DE" VIAJA JUNTO COM O "PARA". Cargo e loja de origem são         ║
+   ║  copiados no momento do pedido. Guardar só o destino tornaria a      ║
+   ║  solicitação ilegível três meses depois, quando a base já mudou — e  ║
+   ║  é justamente aí que alguém pergunta de onde a pessoa veio.          ║
+   ║                                                                      ║
+   ║  O cargo de destino sai da própria base do Headcount, não da lista   ║
+   ║  de vagas: quem muda de cargo vai para um cargo que existe na folha, ║
+   ║  com o nome que a folha usa. Lista de vaga é outra coisa.            ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+let MOV = [], movUnidade = '', movHcErro = '', movVerArquivo = false;
+
+const podeSolicitarMov  = () => !ehDiretoria();
+const podeFinalizarMov  = () => ehRH();
+
+function movUnidadesPossiveis() { return dsgUnidadesPossiveis(); }
+
+async function carregarMov() {
+  $('mov').innerHTML = '<div class="vazio">Carregando…</div>';
+  movHcErro = '';
+  try {
+    const { data, error } = await cliente().from('movimentacoes')
+      .select('*').order('criado_em', { ascending: false }).limit(500);
+    if (error) throw new Error(error.message);
+    MOV = data || [];
+  } catch (e) {
+    $('mov').innerHTML = `<div class="dsg" style="border-top:3px solid var(--warn)">
+      <h3>Movimentação</h3><div class="sub">Não consegui carregar: ${es(e.message)}.<br>
+      Se a tabela não existe, rode o <b>42_movimentacoes.sql</b> no SQL Editor.</div></div>`;
+    return;
+  }
+  try { await hcCarregar(); }
+  catch (e) { movHcErro = e.message; }
+  if (!movUnidade) movUnidade = movUnidadesPossiveis()[0] || '';
+  pintarMov();
+}
+
+function movPessoas() {
+  if (!HC || !movUnidade) return [];
+  const hoje = new Date();
+  return hcAtivosEm(hoje.getUTCFullYear(), hoje.getUTCMonth(), movUnidade)
+    .slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+/* Os cargos que existem na folha, sem repetição. Vem de toda a base e não
+   só da loja: movimentação de cargo muitas vezes é para um cargo que a
+   loja ainda não tem — é esse o ponto de promover alguém. */
+function movCargos() {
+  if (!HC) return [];
+  return [...new Set(HC.ativos.map(x => x.cargo).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+function pintarMov() {
+  const unidades = movUnidadesPossiveis();
+  const pessoas = movPessoas();
+  const cargos = movCargos();
+  const todas = (UNIDADES.length ? UNIDADES : UNIDADES_RESERVA);
+  const podeAbrir = podeSolicitarMov();
+  const abertas = MOV.filter(m => m.status !== 'concluido');
+  const arquivadas = MOV.filter(m => m.status === 'concluido');
+  const visiveis = movVerArquivo ? arquivadas : abertas;
+
+  $('mov').innerHTML = `
+    ${!podeAbrir ? '' : `
+    <div class="dsg">
+      <h3>Solicitar movimentação</h3>
+      <div class="sub">Mudança de cargo, de loja, ou as duas. O RH recebe um
+        e-mail assim que você enviar.</div>
+      <div class="msg" id="mov-msg"></div>
+
+      <div class="grade">
+        <div class="c">
+          <label for="mov-un">Loja de origem</label>
+          ${unidades.length === 1
+            ? `<input id="mov-un" value="${es(unidades[0])}" readonly
+                 style="background:var(--gray-50);color:var(--gray-500)">`
+            : `<select id="mov-un" onchange="movTrocarUnidade(this.value)">
+                 ${unidades.map(u => `<option ${u === movUnidade ? 'selected' : ''}
+                   >${es(u)}</option>`).join('')}</select>`}
+        </div>
+
+        <div class="c w">
+          <label for="mov-pessoa">Colaborador</label>
+          ${movHcErro || !pessoas.length
+            ? `<input id="mov-pessoa" placeholder="nome completo do colaborador">
+               <span class="aviso sem">${es(movHcErro
+                 ? 'não consegui ler a base do Headcount (' + movHcErro + ') — digite o nome'
+                 : 'o Headcount não tem ninguém ativo nesta unidade — digite o nome')}</span>`
+            : `<select id="mov-pessoa" onchange="movPessoa()">
+                 <option value="">— escolha —</option>
+                 ${pessoas.map(p => `<option value="${es(p.nome)}"
+                    data-cargo="${es(p.cargo)}" data-cc="${es(p.cc)}"
+                    data-adm="${p.admissao.toISOString().slice(0,10)}"
+                   >${es(p.nome)} — ${es(p.cargo)}</option>`).join('')}
+               </select>
+               <span class="aviso" id="mov-hoje">${pessoas.length} ativo(s) nesta
+                 unidade, pela base do Headcount${HC ? ' de '
+                 + brDeIso(HC.base.toISOString().slice(0,10)) : ''}</span>`}
+        </div>
+
+        <div class="c">
+          <label for="mov-cargo">Novo cargo</label>
+          ${cargos.length
+            ? `<select id="mov-cargo" onchange="movConferir()">
+                 <option value="">— mantém o cargo atual —</option>
+                 ${cargos.map(c => `<option>${es(c)}</option>`).join('')}
+               </select>`
+            : `<input id="mov-cargo" placeholder="deixe em branco para manter"
+                 oninput="movConferir()">`}
+        </div>
+
+        <div class="c">
+          <label for="mov-loja">Nova loja</label>
+          <select id="mov-loja" onchange="movConferir()">
+            <option value="">— mantém a loja atual —</option>
+            ${todas.map(u => `<option>${es(u)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="c w"><span class="aviso" id="mov-resumo">Escolha o
+          colaborador e o que muda.</span></div>
+
+        <div class="c">
+          <label for="mov-data">Data prevista da movimentação</label>
+          <input id="mov-data" placeholder="DD/MM/AAAA" maxlength="10">
+        </div>
+
+        <div class="c w">
+          <label for="mov-just">Justificativa</label>
+          <textarea id="mov-just" placeholder="Por que esta movimentação, e o que ela resolve."></textarea>
+        </div>
+
+        <div class="c w">
+          <label for="mov-obs">Observação (opcional)</label>
+          <input id="mov-obs" placeholder="qualquer coisa que o RH precise saber">
+        </div>
+      </div>
+
+      <div class="barra">
+        <button class="btn btn-sm btn-primary" onclick="enviarMov(this)"
+          >Enviar solicitação</button>
+        <span class="sub">O pedido fica registrado com o seu nome e a data.</span>
+      </div>
+    </div>`}
+
+    <div class="dsg">
+      <h3>${movVerArquivo ? 'Arquivadas' : 'Movimentações em aberto'}${
+        visiveis.length ? ` · ${visiveis.length}` : ''}</h3>
+      <div class="sub">${movVerArquivo
+        ? 'Pedidos já finalizados. Continuam no banco para consulta.'
+        : (ehGerente() ? 'Os pedidos da sua loja.'
+        : ehRegional() ? 'Os pedidos das lojas da sua regional.'
+        : 'Todos os pedidos abertos pelos gerentes.')}</div>
+      ${!arquivadas.length && !movVerArquivo ? '' : `
+      <div style="margin-top:11px">
+        <button class="chip ${movVerArquivo ? 'on' : ''}" onclick="movArquivo()"
+          >${movVerArquivo ? '← Voltar aos pedidos em aberto'
+                           : `Ver arquivadas (${arquivadas.length})`}</button>
+      </div>`}
+      <div style="margin-top:15px">
+        ${!visiveis.length
+          ? `<div class="sub">${movVerArquivo ? 'Nada arquivado ainda.'
+              : 'Nenhuma movimentação em aberto.'}</div>`
+          : visiveis.map(linhaMov).join('')}
+      </div>
+    </div>`;
+  movConferir();
+}
+
+/* O que muda, dito em uma linha, antes de enviar. Movimentação é pedido
+   que se lê rápido e se confere devagar; esta linha é a conferência. */
+function movConferir() {
+  const r = $('mov-resumo');
+  if (!r) return;
+  const el = $('mov-pessoa');
+  const op = el && el.tagName === 'SELECT' ? el.selectedOptions[0] : null;
+  const nome = el ? (el.value || '').trim() : '';
+  const cargoAtual = op ? op.dataset.cargo : '';
+  const cargoNovo = ($('mov-cargo').value || '').trim();
+  const lojaNova = ($('mov-loja').value || '').trim();
+  const origem = ehGerente() ? PERFIL.unidade : ($('mov-un').value || movUnidade);
+
+  if (!nome) { r.textContent = 'Escolha o colaborador e o que muda.';
+               r.classList.remove('sem'); return; }
+  const partes = [];
+  if (cargoNovo && cargoNovo !== cargoAtual)
+    partes.push(`cargo: ${cargoAtual || '—'} → ${cargoNovo}`);
+  if (lojaNova && lojaNova !== origem)
+    partes.push(`loja: ${origem} → ${lojaNova}`);
+  r.classList.toggle('sem', !partes.length);
+  r.textContent = partes.length ? '↪ ' + partes.join('  ·  ')
+    : 'Nada muda ainda — escolha um novo cargo ou uma nova loja.';
+}
+
+function movPessoa() { movConferir(); }
+function movTrocarUnidade(u) { movUnidade = u; pintarMov(); }
+function movArquivo() { movVerArquivo = !movVerArquivo; pintarMov(); }
+
+function linhaMov(m) {
+  const mudou = [];
+  if (m.cargo_novo) mudou.push(`<b>${es(m.cargo_atual || '—')}</b> → <b>${es(m.cargo_novo)}</b>`);
+  if (m.unidade_nova) mudou.push(`<b>${es(m.unidade)}</b> → <b>${es(m.unidade_nova)}</b>`);
+  return `<div class="dl">
+    <div class="topo">
+      <b>${es(m.colaborador_nome)}</b>
+      <span class="un">${es(m.unidade)}</span>
+      <span class="sub">${es(m.cargo_atual || '—')}</span>
+    </div>
+    <div class="met">
+      ↪ ${mudou.join(' · ')}<br>
+      Prevista para <b>${brDeIso(m.data_prevista)}</b>
+      · pedida por ${es(m.solicitante_nome || '—')} em ${brDeIso(String(m.criado_em).slice(0,10))}
+      ${m.observacao ? '<br>Obs.: ' + es(m.observacao) : ''}
+    </div>
+    <div class="fb"><b>Justificativa</b><br>${es(m.justificativa)}</div>
+
+    ${m.status === 'concluido' ? `<div class="met arq">
+      ✓ Efetivada em <b>${brDeIso(m.data_efetiva)}</b>${
+        m.concluido_por_nome ? ' · por ' + es(m.concluido_por_nome) : ''}</div>`
+    : !podeFinalizarMov() ? '' : `
+    <div class="fim" id="fmov-${m.id}">
+      <button class="btn btn-sm btn-ghost" onclick="abrirFinalMov('${m.id}')"
+        >Finalizar solicitação</button>
+      <div class="cx">
+        <label for="fmov-data-${m.id}">Data da movimentação</label>
+        <input id="fmov-data-${m.id}" maxlength="10" placeholder="DD/MM/AAAA"
+               value="${brDeIso(m.data_prevista)}">
+        <span class="sub">Vem preenchida com a prevista — corrija se a mudança
+          aconteceu em outro dia.</span>
+        <div class="bts">
+          <button class="btn btn-sm btn-primary" onclick="finalizarMov('${m.id}', this)"
+            >Arquivar</button>
+          <button class="btn btn-sm btn-ghost" onclick="abrirFinalMov('${m.id}', true)"
+            >Cancelar</button>
+        </div>
+        <div class="msg" id="fmov-msg-${m.id}"></div>
+      </div>
+    </div>`}
+  </div>`;
+}
+
+function abrirFinalMov(id, fechando) {
+  const box = $('fmov-' + id);
+  if (!box) return;
+  box.classList.toggle('on', !fechando);
+  if (!fechando) $('fmov-data-' + id).focus();
+}
+
+async function finalizarMov(id, bt) {
+  if (!podeFinalizarMov()) return alert(SO_RH);
+  const m = MOV.find(x => x.id === id);
+  if (!m) return;
+  const iso = isoDeBr($('fmov-data-' + id).value.trim());
+  if (!iso) return msg('fmov-msg-' + id, 'Informe a data no formato DD/MM/AAAA.', 'err');
+  bt.disabled = true; bt.textContent = 'Arquivando…';
+  try {
+    const patch = { status: 'concluido', data_efetiva: iso,
+                    concluido_em: new Date().toISOString(),
+                    concluido_por_nome: PERFIL.nome || '' };
+    const { error } = await cliente().from('movimentacoes').update(patch).eq('id', id);
+    if (error) throw new Error(error.message);
+    Object.assign(m, patch);
+    pintarMov();
+    msg('mov-msg', `Movimentação de ${m.colaborador_nome} arquivada.`, 'ok');
+    setTimeout(() => msg('mov-msg', ''), 9000);
+  } catch (e) {
+    bt.disabled = false; bt.textContent = 'Arquivar';
+    msg('fmov-msg-' + id, 'Não consegui arquivar: ' + e.message, 'err');
+  }
+}
+
+async function enviarMov(bt) {
+  const el = $('mov-pessoa');
+  const op = el.tagName === 'SELECT' ? el.selectedOptions[0] : null;
+  const nome = (el.value || '').trim();
+  const origem = ehGerente() ? PERFIL.unidade : ($('mov-un').value || movUnidade);
+  const cargoAtual = op ? op.dataset.cargo : null;
+  let cargoNovo = ($('mov-cargo').value || '').trim();
+  let lojaNova = ($('mov-loja').value || '').trim();
+  if (cargoNovo === cargoAtual) cargoNovo = '';
+  if (lojaNova === origem) lojaNova = '';
+  const prevista = isoDeBr($('mov-data').value.trim());
+  const just = $('mov-just').value.trim();
+
+  const falta = [];
+  if (!nome) falta.push('o colaborador');
+  if (!cargoNovo && !lojaNova) falta.push('o que muda — novo cargo ou nova loja');
+  if (!prevista) falta.push('a data prevista (DD/MM/AAAA)');
+  if (just.length < 15) falta.push('a justificativa (ao menos 15 caracteres)');
+  if (falta.length) return msg('mov-msg', 'Falta ' + falta.join(', ') + '.', 'err');
+
+  const linha = {
+    solicitante_nome: PERFIL.nome || '',
+    unidade: origem,
+    colaborador_nome: nome,
+    colaborador_cc: op ? op.dataset.cc : null,
+    colaborador_admissao: op ? op.dataset.adm : null,
+    cargo_atual: cargoAtual || null,
+    cargo_novo: cargoNovo || null,
+    unidade_nova: lojaNova || null,
+    data_prevista: prevista,
+    justificativa: just,
+    observacao: $('mov-obs').value.trim() || null,
+  };
+
+  bt.disabled = true; bt.textContent = 'Enviando…';
+  try {
+    const { data, error } = await cliente().from('movimentacoes')
+      .insert(linha).select('*').single();
+    if (error) throw new Error(error.message);
+    MOV.unshift(data);
+    const aviso = await avisarMov(data);
+    pintarMov();
+    msg('mov-msg', 'Movimentação registrada' + (aviso ? ' e enviada ao RH.'
+      : ' — mas o e-mail ao RH não saiu. Avise o RH por outro caminho.'),
+      aviso ? 'ok' : 'err');
+    setTimeout(() => msg('mov-msg', ''), 12000);
+  } catch (e) {
+    msg('mov-msg', 'Não consegui registrar: ' + e.message, 'err');
+  } finally { bt.disabled = false; bt.textContent = 'Enviar solicitação'; }
+}
+
+async function avisarMov(m) {
+  if (!AVISAR_VAGA) return true;
+  const mudou = [];
+  if (m.cargo_novo) mudou.push(`cargo: ${m.cargo_atual || '—'} → ${m.cargo_novo}`);
+  if (m.unidade_nova) mudou.push(`loja: ${m.unidade} → ${m.unidade_nova}`);
+  try {
+    const r = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        access_key: WEB3FORMS_KEY,
+        subject: `🔁 Solicitação de movimentação — ${m.colaborador_nome} · ${m.unidade}`,
+        from_name: 'Trilha de Admissão · Movimentação',
+        'Aviso': 'Chegou uma nova solicitação de movimentação.',
+        'Colaborador': m.colaborador_nome
+          + (m.colaborador_admissao ? ' · admitido em ' + brDeIso(m.colaborador_admissao) : ''),
+        'O que muda': mudou.join('  |  '),
+        'Loja de origem': m.unidade,
+        'Cargo atual': m.cargo_atual || '—',
+        'Data prevista': brDeIso(m.data_prevista),
+        'Justificativa': m.justificativa,
+        'Observação': m.observacao || '—',
+        'Solicitado por': (m.solicitante_nome || '—') + ' em '
+          + new Date(m.criado_em).toLocaleString('pt-BR'),
+      }),
+    });
+    return r.ok;
+  } catch (_) { return false; }
 }
 
 /* ╔══════════════════════════════════════════════════════════════════════╗
