@@ -489,6 +489,9 @@
   .dsg input:focus,.dsg select:focus,.dsg textarea:focus{border-color:var(--green);
     box-shadow:0 0 0 3px rgba(74,143,58,.12)}
   .dsg .aviso{font-size:11.5px;color:var(--gray-400);margin-top:3px}
+  /* Campo que vem da folha e não se digita: cinza, sem cursor de texto. */
+  .dsg input.travado{background:var(--gray-50);color:var(--gray-500);cursor:default}
+  .dsg select:disabled{background:var(--gray-50);color:var(--gray-400);cursor:not-allowed}
   .dsg .marca{display:flex;align-items:center;gap:8px;font-size:13px;
     color:var(--gray-700);padding-top:6px}
   .dsg .marca input{width:16px;height:16px;accent-color:var(--green)}
@@ -4132,19 +4135,44 @@ function movPessoas() {
     .slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
-/* Os cargos que existem na folha, sem repetição. Vem de toda a base e não
-   só da loja: movimentação de cargo muitas vezes é para um cargo que a
-   loja ainda não tem — é esse o ponto de promover alguém. */
-function movCargos() {
-  if (!HC) return [];
-  return [...new Set(HC.ativos.map(x => x.cargo).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+/* Os cargos que JÁ EXISTEM na loja de destino. A regra é do negócio, não
+   minha: move-se alguém para uma cadeira que existe naquela loja, não para
+   um cargo inventado no formulário.
+
+   Consequência que vale conhecer: criar na loja um cargo que ela ainda não
+   tem não se faz por aqui — isso é vaga nova, e vaga nova tem aba própria. */
+function movCargosDaLoja(unidade) {
+  if (!HC || !unidade) return [];
+  const hoje = new Date();
+  return [...new Set(hcAtivosEm(hoje.getUTCFullYear(), hoje.getUTCMonth(), unidade)
+    .map(x => x.cargo).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+/* Redesenha só a lista de cargos quando o destino muda. Repintar a aba
+   inteira apagaria a data e a justificativa já digitadas. */
+function movTrocarDestino() {
+  //  A diretoria vê a lista sem formulário nenhum: aqui não há o que mexer.
+  if (!$('mov-loja') || !$('mov-cargo')) return;
+  const destino = ($('mov-loja').value || '').trim();
+  const sel = $('mov-cargo');
+  const antes = sel.value;
+  const cargos = movCargosDaLoja(destino);
+  sel.innerHTML = `<option value="">${destino ? '— escolha o cargo —'
+    : '— escolha a loja de destino primeiro —'}</option>`
+    + cargos.map(c => `<option${c === antes ? ' selected' : ''}>${es(c)}</option>`).join('');
+  sel.disabled = !destino || !cargos.length;
+  const av = $('mov-cargo-aviso');
+  av.classList.toggle('sem', !!destino && !cargos.length);
+  av.textContent = !destino
+    ? 'A lista depende da loja de destino.'
+    : cargos.length ? `${cargos.length} cargo(s) existem hoje em ${destino}.`
+    : `O Headcount não mostra ninguém ativo em ${destino} — sem cargos para escolher.`;
+  movConferir();
 }
 
 function pintarMov() {
   const unidades = movUnidadesPossiveis();
   const pessoas = movPessoas();
-  const cargos = movCargos();
   const todas = (UNIDADES.length ? UNIDADES : UNIDADES_RESERVA);
   const podeAbrir = podeSolicitarMov();
   const abertas = MOV.filter(m => m.status !== 'concluido');
@@ -4163,17 +4191,26 @@ function pintarMov() {
         <div class="c">
           <label for="mov-un">Loja de origem</label>
           ${unidades.length === 1
-            ? `<input id="mov-un" value="${es(unidades[0])}" readonly
-                 style="background:var(--gray-50);color:var(--gray-500)">`
+            ? `<input id="mov-un" value="${es(unidades[0])}" readonly class="travado">`
             : `<select id="mov-un" onchange="movTrocarUnidade(this.value)">
                  ${unidades.map(u => `<option ${u === movUnidade ? 'selected' : ''}
                    >${es(u)}</option>`).join('')}</select>`}
         </div>
 
+        <div class="c">
+          <label for="mov-loja">Loja de destino</label>
+          <select id="mov-loja" onchange="movTrocarDestino()">
+            <option value="">— escolha —</option>
+            ${todas.map(u => `<option>${es(u)}</option>`).join('')}
+          </select>
+          <span class="aviso">Pode ser a mesma, quando só o cargo muda.</span>
+        </div>
+
         <div class="c w">
           <label for="mov-pessoa">Colaborador</label>
           ${movHcErro || !pessoas.length
-            ? `<input id="mov-pessoa" placeholder="nome completo do colaborador">
+            ? `<input id="mov-pessoa" placeholder="nome completo do colaborador"
+                 oninput="movPessoa()">
                <span class="aviso sem">${es(movHcErro
                  ? 'não consegui ler a base do Headcount (' + movHcErro + ') — digite o nome'
                  : 'o Headcount não tem ninguém ativo nesta unidade — digite o nome')}</span>`
@@ -4190,22 +4227,18 @@ function pintarMov() {
         </div>
 
         <div class="c">
-          <label for="mov-cargo">Novo cargo</label>
-          ${cargos.length
-            ? `<select id="mov-cargo" onchange="movConferir()">
-                 <option value="">— mantém o cargo atual —</option>
-                 ${cargos.map(c => `<option>${es(c)}</option>`).join('')}
-               </select>`
-            : `<input id="mov-cargo" placeholder="deixe em branco para manter"
-                 oninput="movConferir()">`}
+          <label for="mov-cargo-atual">Cargo atual</label>
+          <input id="mov-cargo-atual" readonly class="travado"
+                 placeholder="vem do colaborador escolhido">
+          <span class="aviso">Vem da folha e não se digita.</span>
         </div>
 
         <div class="c">
-          <label for="mov-loja">Nova loja</label>
-          <select id="mov-loja" onchange="movConferir()">
-            <option value="">— mantém a loja atual —</option>
-            ${todas.map(u => `<option>${es(u)}</option>`).join('')}
+          <label for="mov-cargo">Novo cargo</label>
+          <select id="mov-cargo" onchange="movConferir()" disabled>
+            <option value="">— escolha a loja de destino primeiro —</option>
           </select>
+          <span class="aviso" id="mov-cargo-aviso">A lista depende da loja de destino.</span>
         </div>
 
         <div class="c w"><span class="aviso" id="mov-resumo">Escolha o
@@ -4222,8 +4255,8 @@ function pintarMov() {
         </div>
 
         <div class="c w">
-          <label for="mov-obs">Observação (opcional)</label>
-          <input id="mov-obs" placeholder="qualquer coisa que o RH precise saber">
+          <label for="mov-obs">Observação</label>
+          <input id="mov-obs" placeholder="o que o RH precisa saber para tratar este pedido">
         </div>
       </div>
 
@@ -4255,7 +4288,7 @@ function pintarMov() {
           : visiveis.map(linhaMov).join('')}
       </div>
     </div>`;
-  movConferir();
+  movTrocarDestino();
 }
 
 /* O que muda, dito em uma linha, antes de enviar. Movimentação é pedido
@@ -4264,9 +4297,8 @@ function movConferir() {
   const r = $('mov-resumo');
   if (!r) return;
   const el = $('mov-pessoa');
-  const op = el && el.tagName === 'SELECT' ? el.selectedOptions[0] : null;
   const nome = el ? (el.value || '').trim() : '';
-  const cargoAtual = op ? op.dataset.cargo : '';
+  const cargoAtual = ($('mov-cargo-atual').value || '').trim();
   const cargoNovo = ($('mov-cargo').value || '').trim();
   const lojaNova = ($('mov-loja').value || '').trim();
   const origem = ehGerente() ? PERFIL.unidade : ($('mov-un').value || movUnidade);
@@ -4283,7 +4315,12 @@ function movConferir() {
     : 'Nada muda ainda — escolha um novo cargo ou uma nova loja.';
 }
 
-function movPessoa() { movConferir(); }
+function movPessoa() {
+  const el = $('mov-pessoa');
+  const op = el.tagName === 'SELECT' ? el.selectedOptions[0] : null;
+  $('mov-cargo-atual').value = op ? (op.dataset.cargo || '') : '';
+  movConferir();
+}
 function movTrocarUnidade(u) { movUnidade = u; pintarMov(); }
 function movArquivo() { movVerArquivo = !movVerArquivo; pintarMov(); }
 
@@ -4365,20 +4402,31 @@ async function enviarMov(bt) {
   const op = el.tagName === 'SELECT' ? el.selectedOptions[0] : null;
   const nome = (el.value || '').trim();
   const origem = ehGerente() ? PERFIL.unidade : ($('mov-un').value || movUnidade);
-  const cargoAtual = op ? op.dataset.cargo : null;
-  let cargoNovo = ($('mov-cargo').value || '').trim();
-  let lojaNova = ($('mov-loja').value || '').trim();
-  if (cargoNovo === cargoAtual) cargoNovo = '';
-  if (lojaNova === origem) lojaNova = '';
+  const cargoAtual = ($('mov-cargo-atual').value || '').trim() || null;
+  const destino = ($('mov-loja').value || '').trim();
+  const cargoEscolhido = ($('mov-cargo').value || '').trim();
   const prevista = isoDeBr($('mov-data').value.trim());
   const just = $('mov-just').value.trim();
+  const obs = $('mov-obs').value.trim();
 
+  /* Nenhum campo em branco — e, além disso, alguma coisa tem de mudar.
+     Escolher a mesma loja e o mesmo cargo preenche o formulário inteiro e
+     não é movimentação nenhuma; o banco recusaria, e é melhor dizer aqui. */
   const falta = [];
   if (!nome) falta.push('o colaborador');
-  if (!cargoNovo && !lojaNova) falta.push('o que muda — novo cargo ou nova loja');
+  if (!destino) falta.push('a loja de destino');
+  if (!cargoEscolhido) falta.push('o novo cargo');
   if (!prevista) falta.push('a data prevista (DD/MM/AAAA)');
   if (just.length < 15) falta.push('a justificativa (ao menos 15 caracteres)');
+  if (!obs) falta.push('a observação');
   if (falta.length) return msg('mov-msg', 'Falta ' + falta.join(', ') + '.', 'err');
+
+  //  só vai para o banco o que de fato mudou
+  const cargoNovo = cargoEscolhido === cargoAtual ? '' : cargoEscolhido;
+  const lojaNova = destino === origem ? '' : destino;
+  if (!cargoNovo && !lojaNova)
+    return msg('mov-msg', 'Esta movimentação não move nada: mesma loja e mesmo '
+             + 'cargo. Mude o cargo, a loja, ou as duas.', 'err');
 
   const linha = {
     solicitante_nome: PERFIL.nome || '',
@@ -4391,7 +4439,7 @@ async function enviarMov(bt) {
     unidade_nova: lojaNova || null,
     data_prevista: prevista,
     justificativa: just,
-    observacao: $('mov-obs').value.trim() || null,
+    observacao: obs,
   };
 
   bt.disabled = true; bt.textContent = 'Enviando…';
