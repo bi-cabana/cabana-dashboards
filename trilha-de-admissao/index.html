@@ -503,6 +503,20 @@
   .dl .fb{font-size:12.5px;color:var(--gray-700);background:var(--gray-50);
     border-radius:8px;padding:9px 11px;margin-top:9px;line-height:1.55}
   .dl .sem{color:#b45309;font-weight:700}
+  .dl .arq{color:var(--green-dark);font-weight:600;margin-top:9px;
+    border-top:1px solid var(--gray-100);padding-top:9px}
+  .fim{margin-top:10px;border-top:1px solid var(--gray-100);padding-top:10px}
+  .fim .cx{display:none;margin-top:10px;background:var(--gray-50);
+    border-radius:9px;padding:12px 13px;max-width:330px}
+  .fim.on .cx{display:block}
+  .fim.on > button{display:none}
+  .fim label{display:block;font-size:11.5px;font-weight:700;
+    color:var(--gray-500);margin-bottom:4px}
+  .fim input{width:150px;padding:8px 11px;border:1.5px solid var(--gray-200);
+    border-radius:8px;font-family:inherit;font-size:13.5px;outline:none}
+  .fim input:focus{border-color:var(--green)}
+  .fim .sub{display:block;margin-top:6px;line-height:1.5}
+  .fim .bts{display:flex;gap:7px;margin-top:11px}
 
   .gap{margin-top:16px;border-top:1px solid var(--gray-100);padding-top:15px}
   .gap table{width:100%;border-collapse:collapse;font-size:13px}
@@ -4054,7 +4068,7 @@ function pintarGap() {
         <td class="${l.gap < 0 ? 'falta' : 'ok'}">${l.gap > 0 ? '+' : ''}${l.gap}</td>
       </tr>`).join('')}</tbody>
     </table>
-    <div class="fonte">Base do Headcount de ${es(dataBR(HC.base.toISOString().slice(0,10)))},
+    <div class="fonte">Base do Headcount de ${es(brDeIso(HC.base.toISOString().slice(0,10)))},
       lida agora. Conta quem estava na folha no fim do mês nos centros de custo
       Liderança, Salão e Cozinha — <b>sem aprendiz e sem estagiário</b>, que não
       ocupam vaga de quadro. É a mesma regra da tabela "Meta vs real" do Headcount.</div>
@@ -4075,7 +4089,12 @@ function pintarGap() {
    ║  O NOME VEM DO HEADCOUNT, não digitado. Nome digitado erra, e erro   ║
    ║  de nome num pedido de desligamento é o pior lugar para errar.       ║
    ╚══════════════════════════════════════════════════════════════════════╝ */
-let DESLIG = [], dsgUnidade = '', dsgHcErro = '';
+let DESLIG = [], dsgUnidade = '', dsgHcErro = '', dsgVerArquivo = false;
+
+/* Fechar um pedido é tarefa do RH — a política de update no banco diz o
+   mesmo. Quem pediu não arquiva o próprio pedido, senão o registro do que
+   foi decidido passa a depender de quem queria a decisão. */
+const podeFinalizarDeslig = () => ehRH();
 
 /* Os cinco motivos previstos. A mesma lista está no banco, como trava —
    aqui ela guia, lá ela garante. Texto livre durou uma semana e virou
@@ -4136,7 +4155,9 @@ function pintarDeslig() {
   const unidades = dsgUnidadesPossiveis();
   const pessoas = dsgPessoas();
   const podeAbrir = podeSolicitarDeslig();
-  const visiveis = DESLIG;
+  const abertos = DESLIG.filter(d => d.status !== 'concluido');
+  const arquivados = DESLIG.filter(d => d.status === 'concluido');
+  const visiveis = dsgVerArquivo ? arquivados : abertos;
 
   $('deslig').innerHTML = `
     ${!podeAbrir ? '' : `
@@ -4172,7 +4193,7 @@ function pintarDeslig() {
                    >${es(p.nome)} — ${es(p.cargo)}</option>`).join('')}
                </select>
                <span class="aviso">${pessoas.length} ativo(s) nesta unidade,
-                 pela base do Headcount${HC ? ' de ' + dataBR(HC.base.toISOString().slice(0,10)) : ''}</span>`}
+                 pela base do Headcount${HC ? ' de ' + brDeIso(HC.base.toISOString().slice(0,10)) : ''}</span>`}
         </div>
 
         <div class="c">
@@ -4234,13 +4255,23 @@ function pintarDeslig() {
     </div>`}
 
     <div class="dsg">
-      <h3>Solicitações${visiveis.length ? ` · ${visiveis.length}` : ''}</h3>
-      <div class="sub">${ehGerente() ? 'Os pedidos da sua loja.'
+      <h3>${dsgVerArquivo ? 'Arquivados' : 'Solicitações em aberto'}${
+        visiveis.length ? ` · ${visiveis.length}` : ''}</h3>
+      <div class="sub">${dsgVerArquivo
+        ? 'Pedidos já finalizados. Continuam no banco para consulta.'
+        : (ehGerente() ? 'Os pedidos da sua loja.'
         : ehRegional() ? 'Os pedidos das lojas da sua regional.'
-        : 'Todos os pedidos abertos pelos gerentes.'}</div>
+        : 'Todos os pedidos abertos pelos gerentes.')}</div>
+      ${!arquivados.length && !dsgVerArquivo ? '' : `
+      <div style="margin-top:11px">
+        <button class="chip ${dsgVerArquivo ? 'on' : ''}" onclick="dsgArquivo()"
+          >${dsgVerArquivo ? '← Voltar aos pedidos em aberto'
+                           : `Ver arquivados (${arquivados.length})`}</button>
+      </div>`}
       <div style="margin-top:15px">
         ${!visiveis.length
-          ? '<div class="sub">Nenhuma solicitação até agora.</div>'
+          ? `<div class="sub">${dsgVerArquivo ? 'Nada arquivado ainda.'
+              : 'Nenhuma solicitação em aberto.'}</div>`
           : visiveis.map(linhaDeslig).join('')}
       </div>
     </div>`;
@@ -4256,21 +4287,86 @@ function linhaDeslig(d) {
       <span class="sub">${es(d.colaborador_cargo || '—')}</span>
     </div>
     <div class="met">
-      Saída prevista <b>${dataBR(d.data_prevista)}</b> ·
+      Saída prevista <b>${brDeIso(d.data_prevista)}</b> ·
       motivo: ${es(d.motivo)}<br>
       ${d.aprovado_superior
         ? `✓ aprovado com ${es(d.aprovador_nome || 'o superior')}`
         : '<span class="sem">⚠️ ainda não aprovado com o superior</span>'}
-      · pedido por ${es(d.solicitante_nome || '—')} em ${dataBR(String(d.criado_em).slice(0,10))}
+      · pedido por ${es(d.solicitante_nome || '—')} em ${brDeIso(String(d.criado_em).slice(0,10))}
       ${d.observacao ? '<br>Obs.: ' + es(d.observacao) : ''}
     </div>
     ${!(d.arquivos || []).length ? '' : `<div class="met">
       ${(d.arquivos || []).map(a => `📎 <a href="#" onclick="abrirCarta('${es(a.caminho)}', this);return false"
         >${es(a.nome)}</a>`).join(' · ')}</div>`}
-    <div class="fb"><b>Último feedback — ${dataBR(d.feedback_data)}</b>${
+    <div class="fb"><b>Último feedback — ${brDeIso(d.feedback_data)}</b>${
       dias != null ? ` <span class="sub">(${dias} dia(s) antes da saída prevista)</span>` : ''
       }<br>${es(d.feedback_texto)}</div>
+
+    ${d.status === 'concluido' ? `<div class="met arq">
+      ✓ Finalizado em <b>${brDeIso(d.data_efetiva)}</b>${
+        d.data_efetiva && d.data_prevista && d.data_efetiva !== d.data_prevista
+          ? ` <span class="sub">(${Math.abs(Math.round((new Date(d.data_efetiva)
+              - new Date(d.data_prevista)) / 86400000))} dia(s) ${
+              d.data_efetiva > d.data_prevista ? 'depois' : 'antes'} do previsto)</span>`
+          : ''}
+      ${d.concluido_por_nome ? ' · por ' + es(d.concluido_por_nome) : ''}</div>`
+    : !podeFinalizarDeslig() ? '' : `
+    <div class="fim" id="fim-${d.id}">
+      <button class="btn btn-sm btn-ghost" onclick="abrirFinal('${d.id}')"
+        >Finalizar solicitação</button>
+      <div class="cx">
+        <label for="fim-data-${d.id}">Data do desligamento</label>
+        <input id="fim-data-${d.id}" maxlength="10" placeholder="DD/MM/AAAA"
+               value="${brDeIso(d.data_prevista)}">
+        <span class="sub">Vem preenchida com a prevista — corrija se a saída
+          aconteceu em outro dia.</span>
+        <div class="bts">
+          <button class="btn btn-sm btn-primary" onclick="finalizarDeslig('${d.id}', this)"
+            >Arquivar</button>
+          <button class="btn btn-sm btn-ghost" onclick="abrirFinal('${d.id}', true)"
+            >Cancelar</button>
+        </div>
+        <div class="msg" id="fim-msg-${d.id}"></div>
+      </div>
+    </div>`}
   </div>`;
+}
+
+function dsgArquivo() { dsgVerArquivo = !dsgVerArquivo; pintarDeslig(); }
+
+function abrirFinal(id, fechando) {
+  const box = $('fim-' + id);
+  if (!box) return;
+  box.classList.toggle('on', !fechando);
+  if (!fechando) $('fim-data-' + id).focus();
+}
+
+/* Arquivar grava a data efetiva e muda o status. A linha continua no banco
+   — some da tela, que é o que foi pedido, e não some do histórico, que é
+   onde ela vale alguma coisa dois anos depois. */
+async function finalizarDeslig(id, bt) {
+  if (!podeFinalizarDeslig()) return alert(SO_RH);
+  const d = DESLIG.find(x => x.id === id);
+  if (!d) return;
+  const iso = isoDeBr($('fim-data-' + id).value.trim());
+  if (!iso) return msg('fim-msg-' + id, 'Informe a data no formato DD/MM/AAAA.', 'err');
+
+  bt.disabled = true; bt.textContent = 'Arquivando…';
+  try {
+    const patch = { status: 'concluido', data_efetiva: iso,
+                    concluido_em: new Date().toISOString(),
+                    concluido_por_nome: PERFIL.nome || '' };
+    const { error } = await cliente().from('desligamentos').update(patch).eq('id', id);
+    if (error) throw new Error(error.message);
+    Object.assign(d, patch);
+    pintarDeslig();
+    msg('dsg-msg', `Pedido de ${d.colaborador_nome} arquivado. `
+      + 'Ele sai desta lista e continua guardado no banco.', 'ok');
+    setTimeout(() => msg('dsg-msg', ''), 9000);
+  } catch (e) {
+    bt.disabled = false; bt.textContent = 'Arquivar';
+    msg('fim-msg-' + id, 'Não consegui arquivar: ' + e.message, 'err');
+  }
 }
 
 /* Link temporário, igual ao dos documentos de cadastro: a carta não fica
@@ -4422,10 +4518,10 @@ async function avisarDeslig(d) {
         'Unidade': d.unidade,
         'Colaborador': d.colaborador_nome
           + (d.colaborador_cargo ? ' · ' + d.colaborador_cargo : '')
-          + (d.colaborador_admissao ? ' · admitido em ' + dataBR(d.colaborador_admissao) : ''),
+          + (d.colaborador_admissao ? ' · admitido em ' + brDeIso(d.colaborador_admissao) : ''),
         'Motivo': d.motivo,
-        'Saída prevista': dataBR(d.data_prevista),
-        'Último feedback': dataBR(d.feedback_data),
+        'Saída prevista': brDeIso(d.data_prevista),
+        'Último feedback': brDeIso(d.feedback_data),
         'O que foi falado': d.feedback_texto,
         'Aprovado com o superior': d.aprovado_superior
           ? 'SIM — ' + (d.aprovador_nome || '') : 'NÃO',
