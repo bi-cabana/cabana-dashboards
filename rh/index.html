@@ -3791,17 +3791,17 @@ async function salvarAcesso(id, campo, valor) {
    ║    O REALIZADO sai de data/dados.xlsx — arquivo de dados, servido    ║
    ║    com CORS aberto. Leitura estável.                                 ║
    ║                                                                      ║
-   ║    A META está escrita DENTRO DO CÓDIGO da página, numa constante    ║
-   ║    chamada METAS_HISTORY. Não há arquivo. Para lê-la é preciso       ║
-   ║    baixar o index.html e garimpar o texto — funciona hoje e quebra   ║
-   ║    no dia em que ele renomear a variável.                            ║
+   ║    A META sai de data/metas.json — publicado pelo Headcount desde    ║
+   ║    nov/26. Até então ela era garimpada de dentro do index.html       ║
+   ║    (constante METAS_HISTORY), o que quebrava se a variável mudasse.  ║
    ║                                                                      ║
-   ║  Por isso a extração da meta mora numa função só, isolada, e falha   ║
+   ║                                                                      ║
+   ║  A leitura da meta mora numa função só, isolada, e falha             ║
    ║  FALANDO: sem meta o painel diz que não conseguiu ler, em vez de     ║
    ║  mostrar um gap calculado contra o vazio. Número errado em tela de   ║
    ║  quadro é pior do que número nenhum — alguém contrata em cima dele.  ║
    ║                                                                      ║
-   ║  Quando existir um data/metas.json, só esta função muda.             ║
+   ║  Se o formato do arquivo mudar, a "versao" dele muda junto.         ║
    ║                                                                      ║
    ║  A REGRA DO REALIZADO, conferida contra as 18 lojas com meta da      ║
    ║  tabela "Meta vs real" — meta, realizado, as três subunidades e a    ║
@@ -3873,51 +3873,61 @@ function hcCarregarScript() {
 }
 
 /* ── A META ───────────────────────────────────────────────────────────────
-   A parte frágil, e a única. Garimpa METAS_HISTORY do HTML do Headcount.
-   Qualquer tropeço aqui vira erroMeta, e quem chama decide o que dizer. */
-/* Separa os { … } de primeiro nível contando chaves. Regex não serve aqui:
-   uma entrada de meta ajustada carrega outro objeto dentro dela
-   (from:{year:2026,month:7}), e qualquer [^}] para no fecha-chaves errado —
-   a entrada vinha com liderança, salão e cozinha zerados, o que daria uma
-   meta de zero para justamente as lojas que tiveram a meta revista. */
-function hcGrupos(texto) {
-  const out = [];
-  let nivel = 0, inicio = -1;
-  for (let i = 0; i < texto.length; i++) {
-    const c = texto[i];
-    if (c === '{') { if (nivel === 0) inicio = i; nivel++; }
-    else if (c === '}') { nivel--; if (nivel === 0 && inicio >= 0) out.push(texto.slice(inicio + 1, i)); }
-  }
-  return out;
-}
+   Vem de data/metas.json, publicado pelo Headcount ao lado da planilha.
+   Antes a meta era garimpada de dentro do index.html (constante
+   METAS_HISTORY); isso quebrava no dia em que a variável mudasse de nome.
+   Agora é um arquivo de dados, com formato declarado em "versao".
+
+   Continua falhando FALANDO: qualquer tropeço vira erroMeta, e quem chama
+   decide o que dizer. Arquivo fora do ar, versão desconhecida ou número
+   faltando — nenhum desses casos produz meta zero em silêncio.
+
+   Diferença em relação ao garimpo antigo: versões com meta zerada (Santo
+   André desde ago/26, Ribeirão Preto desde jun/26) agora são mantidas. O
+   garimpo as descartava, o que fazia a meta anterior valer para sempre.
+   hcQuadro já trata meta total zero como "sem meta", então a loja some do
+   gap em vez de aparecer com a meta velha.
+
+   O formato de mês no arquivo é "AAAA-MM" (mês de 1 a 12). Aqui dentro o
+   mês continua de 0 a 11, como era no Headcount e como hcMetaNoMes espera. */
+const HC_METAS = HC_BASE + 'data/metas.json';
+const HC_METAS_VERSAO = 1;
 
 async function hcLerMetas() {
-  const r = await fetch(HC_BASE + 'index.html', { cache: 'no-store' });
-  if (!r.ok) throw new Error('a página do Headcount respondeu ' + r.status);
-  const html = await r.text();
-  const i = html.indexOf('const METAS_HISTORY');
-  if (i < 0) throw new Error('a constante METAS_HISTORY não está mais na página');
-  const fim = html.indexOf('\n};', i);
-  if (fim < 0) throw new Error('não achei o fim da constante METAS_HISTORY');
-  const bloco = html.slice(i, fim);
+  const r = await fetch(HC_METAS, { cache: 'no-store' });
+  if (!r.ok) throw new Error('o arquivo de metas do Headcount respondeu ' + r.status);
+  let dados;
+  try { dados = await r.json(); }
+  catch (e) { throw new Error('o arquivo de metas do Headcount não é um JSON válido'); }
+  if (!dados || dados.versao !== HC_METAS_VERSAO)
+    throw new Error('o arquivo de metas mudou de formato (versão ' + (dados && dados.versao) + ')');
+  if (!dados.lojas || typeof dados.lojas !== 'object')
+    throw new Error('o arquivo de metas não tem a lista de lojas');
+
+  const inteiro = (v, onde) => {
+    if (!Number.isInteger(v) || v < 0) throw new Error('meta inválida em ' + onde);
+    return v;
+  };
   const metas = {};
-  const re = /'([^']+)'\s*:\s*\[([\s\S]*?)\]\s*,?\s*(?=\n\s*'|\s*$)/g;
-  let m;
-  while ((m = re.exec(bloco))) {
-    const entradas = hcGrupos(m[2]).map(t => {
-      const num = k => { const x = t.match(new RegExp(k + '\\s*:\\s*(\\d+)')); return x ? +x[1] : 0; };
-      const quando = t.match(/from\s*:\s*\{([^}]*)\}/);
-      const ano = quando && quando[1].match(/year\s*:\s*(\d+)/);
-      const mes = quando && quando[1].match(/month\s*:\s*(\d+)/);
+  for (const [loja, def] of Object.entries(dados.lojas)) {
+    if (!def || !Array.isArray(def.versoes)) throw new Error('loja sem versões de meta: ' + loja);
+    const entradas = def.versoes.map(v => {
+      let de = { ano: 2000, mes: 0 };                     // null = desde sempre
+      if (v.vigenteDesde !== null) {
+        const m = /^(\d{4})-(\d{2})$/.exec(String(v.vigenteDesde));
+        if (!m || +m[2] < 1 || +m[2] > 12)
+          throw new Error('data de vigência inválida em ' + loja + ': ' + v.vigenteDesde);
+        de = { ano: +m[1], mes: +m[2] - 1 };
+      }
       return {
-        de: ano ? { ano: +ano[1], mes: mes ? +mes[1] : 0 } : { ano: 2000, mes: 0 },
-        lid: num('lideranca'), sal: num('salao'), coz: num('cozinha'),
+        de,
+        lid: inteiro(v.lideranca, loja), sal: inteiro(v.salao, loja), coz: inteiro(v.cozinha, loja),
       };
-    }).filter(e => e.lid || e.sal || e.coz);
-    if (entradas.length) metas[hcChave(m[1])] = entradas;
+    }).sort((a, b) => (a.de.ano - b.de.ano) || (a.de.mes - b.de.mes)); // hcMetaNoMes depende da ordem
+    if (entradas.length) metas[hcChave(loja)] = entradas;
   }
   if (!Object.keys(metas).length)
-    throw new Error('li a página mas não reconheci nenhuma meta — o formato mudou');
+    throw new Error('li o arquivo de metas mas não reconheci nenhuma loja');
   return metas;
 }
 
