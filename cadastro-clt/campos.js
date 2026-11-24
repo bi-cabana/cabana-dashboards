@@ -333,8 +333,8 @@ const DOCS = [
      pendente no painel do RH — que é onde o acompanhamento acontece — e não
      entra na conta que trava o envio, porque ninguém pode resolvê-lo hoje. */
   { k:'aso', ico:'🩺', nome:'ASO — exame admissional', depois:true,
-    hint:'O RH vai agendar o exame e você recebe a guia. O atestado fica '
-       + 'pendente até a clínica entregar.' },
+    hint:'O gerente da loja vai agendar o exame — avise o colaborador onde '
+       + 'retirar a guia e onde entregar o exame de fezes.' },
 ];
 
 /* Rotulo do documento, resolvendo os que mudam de nome conforme o cadastro. */
