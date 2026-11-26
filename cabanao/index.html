@@ -1810,21 +1810,24 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
         <h2>Mídia esperando aprovação</h2>
         <div id="admFila"></div>
       </div>
-      <div class="cartao">
-        <h2 id="tituloAcessos">Acesso das lojas</h2>
-        <div id="admAcessos"></div>
-      </div>
       <!-- A outra metade da mesma informação: uma linha por PESSOA, com as
-           lojas dela juntas. É aqui que se edita; o cartão de cima é o da
-           cobrança. Os dois leem views diferentes do mesmo dado. -->
+           lojas dela juntas. É aqui que se edita; o cartão de baixo é o da
+           cobrança. Os dois leem views diferentes do mesmo dado.
+           Vem ANTES da lista de cobrança de propósito: aquela lista tem uma
+           linha por loja e por pessoa, passa de 50 linhas, e o que precisa de
+           ação não pode ficar atrás de uma rolagem dessas. -->
       <div class="cartao">
         <h2 id="tituloPessoas">Pessoas com acesso</h2>
         <div id="admPessoas"></div>
-        <p class="nota">Desligar tira o acesso na hora e some da lista de cima,
+        <p class="nota">Desligar tira o acesso na hora e some da lista de baixo,
           mas não apaga o histórico de quem subiu e aprovou cada escudo.
           Criar conta nova ainda é pelo Python
           (<code>cabanao_db.py usuarios</code>) — exige a chave de serviço, que
           não pode morar numa página aberta no navegador.</p>
+      </div>
+      <div class="cartao">
+        <h2 id="tituloAcessos">Acesso das lojas</h2>
+        <div id="admAcessos"></div>
       </div>
     </section>
   </main>
@@ -2798,7 +2801,9 @@ async function pgAdmin() {
 
   // O escudo e a foto são mídia privada: o caminho vem na view, mas o link tem
   // de ser assinado — por isso `assinar()` depois de montar a lista.
-  $("tituloAcessos").textContent = `Acesso das ${a.length} lojas`;
+  const nLojas = new Set(a.map(x => x.loja_id)).size;
+  $("tituloAcessos").textContent =
+    `Acesso de ${nLojas} lojas · ${a.length} vínculos`;
   $("admAcessos").innerHTML = ordenado.map(x => {
     const sem   = !x.user_id;
     const dias  = x.dias_acesso || 0;
