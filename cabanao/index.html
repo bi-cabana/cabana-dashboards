@@ -113,6 +113,18 @@
   .topo .sair{background:transparent; border:1px solid rgba(250,244,233,.3);
               color:var(--maionese); font-size:13px; padding:8px 12px; font-weight:600}
   .faixa{height:4px; background:var(--esquilo)}
+  /* AVISO DE DADO PENDENTE
+     Fica entre o cabeçalho e o conteúdo, em todas as abas: quem abre o app
+     precisa saber que está olhando a tabela de ontem antes de olhar a tabela,
+     não depois. Sai sozinho quando a carga entra — ninguém fecha o aviso. */
+  /* display:none fica SOZINHO aqui. Declarar display duas vezes na mesma
+     regra faz a segunda vencer, e o aviso nunca sumia. */
+  #avisoDado{display:none; margin:10px 12px 0; padding:11px 13px;
+    border-radius:10px; background:#3a2c12; border:1px solid #6b5420;
+    color:#ffe6ab; font-size:12.5px; line-height:1.45}
+  #avisoDado.on{display:flex; gap:9px; align-items:flex-start}
+  #avisoDado svg{width:16px; height:16px; flex:none; margin-top:1px;
+    fill:none; stroke:#ffc866; stroke-width:2; stroke-linecap:round}
 
   /* ---------------------------------------------------------------- CORPO */
   /* No celular a largura é a da tela. No monitor, a tabela tem colunas
@@ -258,6 +270,24 @@
   .s-placa{background:var(--limonada); color:#17300a}
   .s-cheio{background:rgba(119,145,82,.4); color:#d6e8c4}
   .s-perde{background:var(--esquilo); color:#2a0b02}
+  /* POR QUE ESTE PLACAR
+     A pergunta "por que deu empate?" nasce olhando o card do jogo, não a aba
+     de Regras. Então a resposta mora aqui, no próprio jogo, e só aparece nos
+     placares que não se explicam sozinhos. */
+  /* UM CASO CONCRETO VALE MAIS QUE A REGRA ESCRITA
+     A regra do empate técnico estava na aba, mas em forma de definição. Quem
+     chega com a dúvida chega com um placar na mão, não com uma definição. */
+  .caso{background:rgba(178,247,113,.07); border:1px solid rgba(178,247,113,.22);
+        border-radius:11px; padding:12px 13px; margin-top:12px}
+  .caso p{font-size:12.5px; line-height:1.5; margin:0}
+  .caso p + p{margin-top:7px}
+  .caso .tit{font-size:11px; font-weight:800; letter-spacing:.07em;
+        text-transform:uppercase; color:var(--limonada); margin-bottom:7px}
+  .caso b{color:#fff}
+  .jogo .porque{grid-column:1/-1; margin-top:7px; padding-top:8px;
+        border-top:1px solid rgba(250,244,233,.10); font-size:11.5px;
+        line-height:1.4; color:var(--fraco)}
+  .jogo .porque b{color:var(--limonada); font-weight:700}
   .nota{color:var(--fraco); font-size:12.5px; margin:10px 2px 0}
 
   /* ----------------------------------------------------------- MINHA LOJA */
@@ -347,6 +377,40 @@
                line-height:1.7; color:#dfe4da}
 
   /* ---------------------------------------------------------------- ADMIN */
+  /* GESTÃO DE PESSOAS — a lista é por PESSOA, não por loja: o coordenador de
+     cinco lojas é uma linha só. O formulário abre embaixo da própria linha em
+     vez de numa janela: a tela é usada no celular, e janela em celular cobre
+     o contexto que a pessoa precisa para decidir. */
+  .pes{border-bottom:1px solid var(--linha); padding:11px 2px}
+  .pes:last-child{border-bottom:none}
+  .pes .cab{display:flex; align-items:center; gap:10px; cursor:pointer}
+  .pes .q{flex:1; min-width:0}
+  .pes .q b{display:block; font-weight:600}
+  .pes .q small{display:block; color:var(--fraco); font-size:12px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .tag{font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; border:1px solid var(--linha);
+    color:var(--fraco); white-space:nowrap}
+  .tag.adm{border-color:var(--verde); color:var(--verde)}
+  .tag.off{border-color:#8a3d2f; color:#d98a7a}
+  .ed{margin-top:12px; padding:12px; border:1px solid var(--linha);
+    border-radius:11px; background:rgba(255,255,255,.03)}
+  .ed label{display:block; font-size:12px; color:var(--fraco); margin:9px 0 4px}
+  .ed input[type=text], .ed select{width:100%; padding:9px 10px; font:inherit;
+    font-size:14px; color:var(--tinta); background:var(--cartao);
+    border:1px solid var(--linha); border-radius:8px}
+  .lojas{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px}
+  .lojas button{font:inherit; font-size:12.5px; padding:5px 10px; cursor:pointer;
+    border-radius:999px; border:1px solid var(--linha); background:transparent;
+    color:var(--fraco)}
+  .lojas button[aria-pressed=true]{border-color:var(--verde); color:var(--verde);
+    background:rgba(0,99,15,.16)}
+  .ed .acoes{display:flex; gap:8px; margin-top:13px; flex-wrap:wrap}
+  .ed .acoes button{font:inherit; font-size:13.5px; padding:8px 14px;
+    border-radius:9px; cursor:pointer; border:1px solid var(--linha);
+    background:transparent; color:var(--tinta)}
+  .ed .acoes .ok{background:var(--verde); border-color:var(--verde); color:#fff}
+  .ed .acoes .perigo{color:#d98a7a; border-color:#8a3d2f}
   .linha-adm{display:flex; align-items:center; gap:10px; padding:10px 2px;
              border-top:1px solid var(--linha); font-size:14px}
   .linha-adm .q{flex:1; min-width:0}
@@ -1616,6 +1680,11 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
   </header>
   <div class="faixa"></div>
 
+  <div id="avisoDado" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    <span id="avisoDadoTxt"></span>
+  </div>
+
   <main class="corpo">
     <!-- ---------------------------------------------------------- TABELA -->
     <section id="pg-tabela" class="pagina">
@@ -1744,7 +1813,16 @@ l-1 76 -48 50 c-27 27 -77 68 -111 90 -35 23 -63 46 -63 50 0 14 -142 78 -173
       <div class="cartao">
         <h2 id="tituloAcessos">Acesso das lojas</h2>
         <div id="admAcessos"></div>
-        <p class="nota">Criar conta nova é pelo Python
+      </div>
+      <!-- A outra metade da mesma informação: uma linha por PESSOA, com as
+           lojas dela juntas. É aqui que se edita; o cartão de cima é o da
+           cobrança. Os dois leem views diferentes do mesmo dado. -->
+      <div class="cartao">
+        <h2 id="tituloPessoas">Pessoas com acesso</h2>
+        <div id="admPessoas"></div>
+        <p class="nota">Desligar tira o acesso na hora e some da lista de cima,
+          mas não apaga o histórico de quem subiu e aprovou cada escudo.
+          Criar conta nova ainda é pelo Python
           (<code>cabanao_db.py usuarios</code>) — exige a chave de serviço, que
           não pode morar numa página aberta no navegador.</p>
       </div>
@@ -1983,6 +2061,7 @@ async function abrir() {
   assinar($("app"));
   montarNav();
   await carregarRodadas();
+  await avisoRelatorio();
   await mostrar(EU.loja_id == null ? "tabela" : "tabela");
 }
 
@@ -2010,6 +2089,28 @@ function montarNav() {
     b.addEventListener("click", () => mostrar(b.dataset.p)));
 }
 
+// O aviso de "ainda não chegou o relatório do iFood". Quem decide se aparece
+// é o banco, em v_app_aviso: a regra de horário é de São Paulo e não pode
+// depender do relógio do celular de quem abre. O texto também vem de lá, para
+// mudar a redação sem republicar o app.
+async function avisoRelatorio() {
+  const el = $("avisoDado");
+  if (!el) return;
+  try {
+    const { linhas } = await ler("v_app_aviso", q => q.limit(1));
+    const a = linhas[0];
+    if (a && a.aguardando && a.mensagem) {
+      $("avisoDadoTxt").textContent = a.mensagem;
+      el.classList.add("on");
+    } else {
+      el.classList.remove("on");
+    }
+  } catch (e) {
+    // Aviso que falha não pode derrubar a tela: some e pronto.
+    el.classList.remove("on");
+  }
+}
+
 async function mostrar(p) {
   PAGINA = p;
   document.querySelectorAll(".pagina").forEach(s => s.classList.add("oculto"));
@@ -2017,6 +2118,7 @@ async function mostrar(p) {
   $("nav").querySelectorAll("button").forEach(b =>
     b.classList.toggle("on", b.dataset.p === p));
   window.scrollTo(0, 0);
+  avisoRelatorio();
   if (p === "tabela") await pgTabela();
   if (p === "jogos")  await pgJogos();
   if (p === "atrasos") await pgAtrasos();
@@ -2163,14 +2265,59 @@ async function carregarRodadas() {
   ).join("");
 }
 
+// As constantes da mecânica, buscadas uma vez por sessão. A aba de Jogos
+// precisa delas para explicar um placar, e nenhum número fica escrito à mão
+// no app: se a tolerância mudar no banco, o texto do card muda junto.
+let REGRAS = null;
+async function regras() {
+  if (REGRAS) return REGRAS;
+  const { linhas } = await ler("v_app_regras", q => q.eq("temporada_id", 1));
+  REGRAS = Object.fromEntries(linhas.map(x => [x.chave, Number(x.valor)]));
+  return REGRAS;
+}
+
+// "04:37" -> 277. Devolve null quando o tempo não está visível para quem olha.
+function segDe(txt) {
+  const m = /^(\d+):(\d{2})$/.exec(String(txt || "").trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+// A frase que explica o placar. Só para os casos em que o resultado contraria
+// a leitura ingênua de "quem fez menos tempo ganhou".
+function porque(j, R) {
+  const d = j.decisao_tempo;
+  if (d === "empate técnico") {
+    const a = segDe(j.tempo_casa), b = segDe(j.tempo_fora);
+    const dif = (a !== null && b !== null)
+      ? ` A diferença foi de <b>${Math.abs(a - b)} s</b>.` : "";
+    return `<div class="porque"><b>Empate técnico.</b> Diferença menor que
+      ${R.tolerancia_seg} segundos entre os dois tempos: ninguém leva os
+      ${R.vitoria} gols do melhor tempo do confronto.${dif}
+      O Gol de Placa e o tempo online continuam valendo para as duas.</div>`;
+  }
+  if (d === "regra dos 15 min") {
+    return `<div class="porque"><b>Regra dos 15 minutos.</b> As duas lojas
+      passaram de ${mmss(R.teto_seg)}: acima do teto ninguém marca gol, não
+      importa quem foi mais rápido.</div>`;
+  }
+  if (d === "sem pedido") {
+    return `<div class="porque"><b>Dia sem pedido.</b> Uma das lojas não teve
+      pedido no dia, então não houve tempo para medir e ela fica em zero
+      nesta rodada.</div>`;
+  }
+  return "";
+}
+
 async function pgJogos() {
   if (!RODADA) {
     $("listaJogos").innerHTML = `<p class="vazio">Nenhuma rodada apurada ainda.</p>`;
     $("notaJogos").textContent = ""; return;
   }
   const r = RODADAS.find(x => x.rodada === RODADA);
-  const { linhas: dj, erro: ej } = await ler("v_app_jogos",
-    q => q.eq("rodada", RODADA).order("confronto_id"));
+  const [{ linhas: dj, erro: ej }, R] = await Promise.all([
+    ler("v_app_jogos", q => q.eq("rodada", RODADA).order("confronto_id")),
+    regras(),
+  ]);
   $("erroJogos").innerHTML = falhou(ej);
   const jogos = dj.slice().sort((a, b) => (b.meu_jogo ? 1 : 0) - (a.meu_jogo ? 1 : 0));
   $("tituloRodada").textContent = `Rodada ${RODADA} · ${r.dia}, ${r.data_txt}`
@@ -2182,6 +2329,7 @@ async function pgJogos() {
       <div class="pl">${j.gols_casa} <span style="color:var(--fraco);font-size:13px">x</span> ${j.gols_fora}</div>
       <div class="lado d"><b>${selos(j, "fora")}<i class="sig">${esc(j.fora_sigla || "")}</i>${esc(j.fora)}</b>
         <small>${j.tempo_fora ? "fez " + esc(j.tempo_fora) : "&nbsp;"}</small></div>
+      ${porque(j, R)}
     </div>` : `
     <div class="jogo ${j.meu_jogo ? "meu" : ""}">
       <div class="lado"><b>${esc(j.casa)}<i class="sig">${esc(j.casa_sigla || "")}</i></b></div>
@@ -2506,6 +2654,20 @@ async function pgRegras() {
     </div>
     <p class="nota">Somando tudo, o máximo por mérito próprio num jogo é
       ${R.vitoria + R.placa + R.online} gols.</p>
+    <div class="caso">
+      <p class="tit">Por que um jogo rápido pode dar empate</p>
+      <p>Uma loja fez <b>05:56</b>. A outra fez <b>06:08</b>. São
+        <b>12 segundos</b> de diferença — menos que os ${R.tolerancia_seg}
+        da tolerância, então o campeonato trata as duas como o mesmo tempo.</p>
+      <p>Ninguém leva os ${R.vitoria} gols do melhor tempo. Mas as duas
+        ficaram abaixo de ${mmss(R.meta_seg)} (+${R.placa}) e as duas ficaram
+        ${pct(R.online_cheio)} online (+${R.online}).
+        <b>Placar: ${R.placa + R.online} x ${R.placa + R.online}.</b></p>
+      <p>A tolerância existe para o campeonato não ser decidido por uma
+        oscilação de cronômetro: ${R.tolerancia_seg} segundos em cima de seis
+        minutos é menos do que a própria medição do iFood varia de um dia
+        para o outro.</p>
+    </div>
   </div>
 
   <div class="cartao destaque">
@@ -2664,6 +2826,134 @@ async function pgAdmin() {
       </div>
     </div>`; }).join("");
   await assinar($("admAcessos"));
+  await pgPessoas();
+}
+
+// ---------------------------------------------------------------------------
+// GESTÃO DE PESSOAS
+// ---------------------------------------------------------------------------
+// Lê v_app_admin_pessoas (uma linha por pessoa) e a lista de lojas. Quem não
+// é admin recebe a view vazia — o filtro está no corpo dela, não aqui: se a
+// checagem morasse só na tela, bastaria abrir o código-fonte para contorná-la.
+let LOJAS = [];
+
+async function pgPessoas() {
+  const [{ data: pessoas, error: e1 }, { data: lojas }] = await Promise.all([
+    sb.from("v_app_admin_pessoas").select("*").order("nome"),
+    sb.from("loja").select("id, nome").order("nome"),
+  ]);
+  LOJAS = lojas || [];
+  const ps = pessoas || [];
+  if (e1) {
+    $("admPessoas").innerHTML = `<p class="vazio">Não consegui ler: ${esc(e1.message)}</p>`;
+    return;
+  }
+  $("tituloPessoas").textContent = `Pessoas com acesso (${ps.length})`;
+  $("admPessoas").innerHTML = ps.length ? ps.map(u => {
+    const n = (u.lojas || []).length;
+    return `<div class="pes" data-u="${esc(u.user_id)}">
+      <div class="cab" data-abrir="${esc(u.user_id)}">
+        <div class="q"><b>${esc(u.nome || "(sem nome)")}</b>
+          <small>${esc(u.email || "")} · ${esc(u.lojas_txt || "—")}</small></div>
+        <span class="tag ${u.papel === "admin" ? "adm" : ""}">${esc(u.papel)}</span>
+        ${u.ativo ? "" : '<span class="tag off">desligado</span>'}
+        <span class="tag">${n} ${n === 1 ? "loja" : "lojas"}</span>
+      </div>
+      <div class="ed oculto" id="ed-${esc(u.user_id)}"></div>
+    </div>`; }).join("")
+    : `<p class="vazio">Nenhuma pessoa cadastrada.</p>`;
+
+  $("admPessoas").querySelectorAll("[data-abrir]").forEach(c =>
+    c.addEventListener("click", () => abrirEd(c.dataset.abrir, ps)));
+}
+
+// O formulário abre embaixo da linha, com os valores que estão valendo. Nada
+// é salvo enquanto não clicar em Salvar: fechar sem salvar não muda nada.
+function abrirEd(uid, ps) {
+  const cx = $("ed-" + uid);
+  if (!cx.classList.contains("oculto")) { cx.classList.add("oculto"); return; }
+  $("admPessoas").querySelectorAll(".ed").forEach(e => e.classList.add("oculto"));
+  const u = ps.find(x => x.user_id === uid);
+  if (!u) return;
+  const tem = new Set(u.lojas || []);
+  cx.innerHTML = `
+    <label for="nm-${uid}">Nome</label>
+    <input type="text" id="nm-${uid}" value="${esc(u.nome || "")}" maxlength="80">
+    <label for="pp-${uid}">Papel</label>
+    <select id="pp-${uid}">
+      ${["tecnico", "dirigente", "admin"].map(v =>
+        `<option value="${v}"${v === u.papel ? " selected" : ""}>${v}</option>`).join("")}
+    </select>
+    <label>Lojas que esta pessoa enxerga</label>
+    <div class="lojas" id="lj-${uid}">
+      ${LOJAS.map(l => `<button type="button" data-l="${l.id}"
+          aria-pressed="${tem.has(l.id)}">${esc(l.nome)}</button>`).join("")}
+    </div>
+    <div class="acoes">
+      <button class="ok" data-salvar="${uid}">Salvar</button>
+      <button data-fechar="${uid}">Cancelar</button>
+      <button class="${u.ativo ? "perigo" : ""}" data-liga="${uid}"
+        >${u.ativo ? "Desligar acesso" : "Religar acesso"}</button>
+    </div>
+    <p class="nota" id="av-${uid}"></p>`;
+  cx.classList.remove("oculto");
+  cx.querySelectorAll("[data-l]").forEach(b => b.addEventListener("click", () =>
+    b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true")));
+  cx.querySelector("[data-fechar]").addEventListener("click",
+    () => cx.classList.add("oculto"));
+  cx.querySelector("[data-salvar]").addEventListener("click",
+    () => salvarPessoa(uid, u));
+  cx.querySelector("[data-liga]").addEventListener("click",
+    () => ligar(uid, !u.ativo));
+}
+
+// Grava em duas tabelas: os campos da pessoa em loja_usuario e a lista de
+// lojas em acesso_loja, mexendo só na diferença — some o que foi desmarcado,
+// entra o que foi marcado. O banco recusa qualquer uma das duas se quem está
+// pedindo não for admin, e a trava do 29_gestao_acessos_app.sql recusa deixar
+// a campanha sem admin.
+async function salvarPessoa(uid, u) {
+  const av = $("av-" + uid);
+  const nome = $("nm-" + uid).value.trim();
+  const papel = $("pp-" + uid).value;
+  const marcadas = [...$("lj-" + uid).querySelectorAll('[aria-pressed=true]')]
+    .map(b => +b.dataset.l);
+  if (!nome) { av.textContent = "Escreva o nome."; return; }
+  if (papel !== "admin" && !marcadas.length) {
+    av.textContent = "Quem não é admin precisa de pelo menos uma loja.";
+    return;
+  }
+  av.textContent = "Salvando…";
+
+  const antes = new Set(u.lojas || []);
+  const agora = new Set(marcadas);
+  const entram = marcadas.filter(id => !antes.has(id));
+  const saem = [...antes].filter(id => !agora.has(id));
+
+  const { error: e1 } = await sb.from("loja_usuario")
+    .update({ nome, papel, loja_id: marcadas.length ? Math.min(...marcadas) : null })
+    .eq("user_id", uid);
+  if (e1) { av.textContent = "Não consegui salvar: " + e1.message; return; }
+
+  if (saem.length) {
+    const { error } = await sb.from("acesso_loja").delete()
+      .eq("user_id", uid).in("loja_id", saem);
+    if (error) { av.textContent = "Não consegui tirar a loja: " + error.message; return; }
+  }
+  if (entram.length) {
+    const { error } = await sb.from("acesso_loja")
+      .insert(entram.map(loja_id => ({ user_id: uid, loja_id })));
+    if (error) { av.textContent = "Não consegui incluir a loja: " + error.message; return; }
+  }
+  await pgAdmin();
+}
+
+async function ligar(uid, ativo) {
+  const av = $("av-" + uid);
+  av.textContent = ativo ? "Religando…" : "Desligando…";
+  const { error } = await sb.from("loja_usuario").update({ ativo }).eq("user_id", uid);
+  if (error) { av.textContent = error.message; return; }
+  await pgAdmin();
 }
 
 // O boneco que fica no lugar da foto quando o gerente ainda não mandou a dele.
